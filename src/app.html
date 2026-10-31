@@ -5,243 +5,36 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  /* Layout: one rack row (sequencer + level meters) scaled to fit, a live hint strip, a playable key strip, then the control reference */
-  --page:#111214; --page-2:#1a1b1e; --page-ink:#e7e4dc; --page-dim:#9b978d; --line:#2c2d32; --accent:#ffb43a;
-  --rack:#0a0a0c; --rail-a:#c6c7cc; --rail-b:#76777d;
-  --case:#d7d2c5; --case-lo:#bab4a5; --ink:#2a2824; --ink-2:#625e55;
-  --plate:#2c2b28; --plate-ink:#ece8dd;
-  --led-off:#4b4035; --led-g:#66e872; --led-r:#ff4b3e; --led-a:#ffb43a;
-  --lcd:#161610; --lcd-ink:#ffc55c;
+  /* Layout: the 1-bit GEM screen fills the window; a status line and the playable key strip sit flush under it */
+  --bg:#0c0c0d; --paper:#fff; --ink:#000; --hi:#fff; --dim:#8c8c88;
   --f-screen:'VT323',ui-monospace,monospace;
-  --f-panel:'Barlow Condensed','Arial Narrow',sans-serif;
-  --f-body:'Barlow',system-ui,sans-serif;
-  --f-mono:'IBM Plex Mono',ui-monospace,monospace;
   color-scheme:dark;
 }
-html,body{background:var(--page);color:var(--page-ink)}
-body{font-family:var(--f-body);font-size:15px;line-height:1.5}
-.wrap{max-width:1420px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px;display:flex;flex-direction:column;gap:14px}
-header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 18px}
-h1{font-family:var(--f-panel);font-weight:700;font-size:30px;letter-spacing:.05em;margin:0;text-transform:uppercase;text-wrap:balance}
-h1 span{color:var(--accent)}
-header p{margin:0;color:var(--page-dim);max-width:80ch}
-
-#rackbox{position:relative;width:100%;overflow:hidden;border-radius:4px;background:var(--rack)}
-.rack{position:absolute;left:0;top:0;width:1384px;height:540px;transform-origin:0 0;background:var(--rack);user-select:none;-webkit-user-select:none;touch-action:none}
-.rail{position:absolute;left:0;right:0;height:22px;background:
-  radial-gradient(circle at 50% 50%,#1b1b1e 0 3px,transparent 3.6px) 0 0/20px 22px repeat-x,
-  linear-gradient(var(--rail-a),var(--rail-b))}
-.rail.t{top:2px}.rail.b{bottom:2px}
-.mod{position:absolute;top:30px;height:480px;background:linear-gradient(180deg,#ddd8cb,var(--case) 30%,#cfc9bb);border-radius:2px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 0 -2px 0 rgba(0,0,0,.18),0 2px 0 #000}
-.a{position:absolute}
-.screw{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#f1f1f1,#9a9a9d 70%);box-shadow:inset 0 0 0 1px #77777b}
-.screw::after{content:"";position:absolute;left:2px;right:2px;top:5px;height:2px;background:#5d5d61;transform:rotate(35deg)}
-.brand{font-family:var(--f-panel);font-weight:700;font-size:20px;letter-spacing:.12em;color:var(--ink);line-height:1}
-.brand b{font-weight:700;color:#fff;background:var(--ink);padding:0 5px;margin-left:6px;border-radius:2px}
-.lbl{font-family:var(--f-panel);font-weight:600;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);line-height:1;white-space:nowrap}
-.lbl.c{text-align:center}
-.sect{font-family:var(--f-panel);font-weight:700;font-size:12px;letter-spacing:.16em;color:var(--ink);border-top:1px solid var(--ink-2);padding-top:3px;line-height:1}
-
-.bezel{position:absolute;left:16px;top:30px;width:664px;height:424px;background:#1d1c1a;border-radius:6px;box-shadow:inset 0 0 0 2px #0d0d0c,inset 0 3px 8px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.5)}
-#screen{position:absolute;left:12px;top:12px;width:640px;height:400px;image-rendering:pixelated;image-rendering:crisp-edges;cursor:none;background:#fff;box-shadow:0 0 14px rgba(255,255,255,.12);touch-action:none}
-
-.key{position:absolute;width:80px;height:44px;cursor:pointer}
-.key .cap{position:absolute;inset:0;transform:skewX(-14deg);background:linear-gradient(#ece9e1,#cdc8bb);border:1px solid #8b877c;border-radius:3px;box-shadow:0 4px 0 #8b877c,0 6px 8px rgba(0,0,0,.25);transition:transform .04s,box-shadow .04s}
-.key:active .cap{transform:skewX(-14deg) translateY(3px);box-shadow:0 1px 0 #8b877c,0 2px 3px rgba(0,0,0,.25)}
-.key svg{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%);fill:var(--ink);pointer-events:none}
-.key:active svg{transform:translate(-50%,calc(-50% + 3px))}
-.led{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--led-off);box-shadow:inset 0 1px 1px rgba(0,0,0,.5)}
-.led.g.on{background:var(--led-g);box-shadow:0 0 8px var(--led-g)}
-.led.r.on{background:var(--led-r);box-shadow:0 0 8px var(--led-r)}
-.led.a.on{background:var(--led-a);box-shadow:0 0 8px var(--led-a)}
-.led.blink.on{animation:blink .5s steps(1) infinite}
-@keyframes blink{50%{opacity:.25}}
-
-.knob{position:absolute;border-radius:50%;cursor:ns-resize;background:radial-gradient(circle at 38% 30%,#57554f,#1f1e1b 72%);box-shadow:0 3px 0 #0e0e0d,0 5px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.18)}
-.knob i{position:absolute;left:50%;top:5px;width:3px;height:30%;margin-left:-1.5px;background:#f2eee4;border-radius:2px}
-.jog{position:absolute;border-radius:50%;cursor:ns-resize;background:
-  radial-gradient(circle at 50% 50%,transparent 0 58%,rgba(0,0,0,.25) 59% 60%,transparent 61%),
-  repeating-conic-gradient(#2b2a27 0 4deg,#3a3935 4deg 8deg);box-shadow:0 4px 0 #0e0e0d,0 8px 14px rgba(0,0,0,.4),inset 0 0 0 3px #1a1917}
-.jog .hub{position:absolute;inset:22%;border-radius:50%;background:radial-gradient(circle at 40% 32%,#5d5b55,#262522 75%)}
-.jog .dimple{position:absolute;width:20px;height:20px;border-radius:50%;left:calc(50% - 10px);top:30%;background:radial-gradient(circle at 50% 60%,#1c1b19,#3e3d38);box-shadow:inset 0 2px 3px rgba(0,0,0,.7)}
-
-.sbtn{position:absolute;height:26px;cursor:pointer;background:linear-gradient(#e9e6dd,#cbc6b8);border:1px solid #8b877c;border-radius:3px;box-shadow:0 3px 0 #8b877c;font-family:var(--f-panel);font-weight:700;font-size:12px;letter-spacing:.1em;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px}
-.sbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #8b877c}
-.sbtn .led{position:static;width:7px;height:7px;flex:none}
-.lcd{position:absolute;background:var(--lcd);color:var(--lcd-ink);font-family:var(--f-mono);font-weight:500;font-size:13px;line-height:22px;height:22px;text-align:center;border-radius:2px;box-shadow:inset 0 1px 3px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-shadow:0 0 6px rgba(255,170,40,.45)}
-.lcd.btn{cursor:pointer}
-.plate{position:absolute;border-radius:4px}
-.plate.out{background:var(--plate)}
-
-.pad{position:absolute;border-radius:4px;cursor:crosshair;touch-action:none;background:
-  linear-gradient(rgba(255,180,60,.07) 1px,transparent 1px) 0 0/100% 12.5%,
-  linear-gradient(90deg,rgba(255,180,60,.07) 1px,transparent 1px) 0 0/12.5% 100%,
-  radial-gradient(ellipse at 50% 120%,#2a2418,#121110 70%);box-shadow:inset 0 2px 6px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.5)}
-.pad i{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:radial-gradient(circle,#fff3c4,#ffb43a 45%,rgba(255,180,58,0) 72%);opacity:.35;pointer-events:none;transition:opacity .15s}
-.pad.on i{opacity:1}
-.pad span{position:absolute;font-family:var(--f-mono);font-size:10px;color:rgba(255,197,92,.55);pointer-events:none}
-
-.mrow{position:absolute;left:12px;right:12px;height:44px}
-.mrow .num{position:absolute;left:0;top:4px;font-family:var(--f-panel);font-weight:700;font-size:13px;color:var(--ink-2)}
-.mrow .name{position:absolute;left:16px;top:4px;font-family:var(--f-panel);font-weight:700;font-size:13px;letter-spacing:.06em;color:var(--ink);white-space:nowrap;overflow:hidden;max-width:110px}
-.mrow .led{left:154px;top:7px}
-.meter{position:absolute;left:16px;right:4px;top:24px;height:10px;background:#141412;border-radius:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,.8);overflow:hidden}
-.meter b{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#4fbf5a 0 70%,#ffb43a 70% 88%,#ff4b3e 88%)}
-
-.hint{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;background:var(--page-2);border:1px solid var(--line);border-radius:4px;padding:10px 14px;min-height:46px}
-.hint b{font-family:var(--f-panel);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-size:15px}
-.hint span{color:var(--page-ink);min-width:0;flex:1 1 320px}
-.hint kbd,.ref kbd{font-family:var(--f-mono);font-size:12px;background:#26272b;border:1px solid #3a3b41;border-bottom-width:2px;border-radius:3px;padding:0 5px;color:var(--page-ink);white-space:nowrap}
-
-.kbwrap{overflow-x:auto;padding-bottom:4px}
-.kb{position:relative;height:96px;min-width:560px;user-select:none;-webkit-user-select:none;touch-action:none}
-.kb .w,.kb .k{position:absolute;top:0;border-radius:0 0 3px 3px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;font-family:var(--f-mono);font-size:11px;padding-bottom:5px;cursor:pointer}
-.kb .w{height:96px;background:linear-gradient(#f2efe7,#dcd7ca);color:#4a463e;border:1px solid #0a0a0b}
-.kb .k{height:58px;background:linear-gradient(#2e2d2a,#121211);color:#bdb8ab;z-index:2;border:1px solid #000}
-.kb .on.w{background:var(--accent)}.kb .on.k{background:#b5711a}
-.kb small{font-size:10px;opacity:.7}
-
-.ref{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px 28px;margin-top:6px}
-.ref section{min-width:0}
-.ref h2{font-family:var(--f-panel);font-weight:700;font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
-.ref table{width:100%;border-collapse:collapse;font-size:14px}
-.ref td{padding:4px 0;vertical-align:top;border-bottom:1px solid #1f2023}
-.ref td:first-child{width:42%;padding-right:10px}
-.ref ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:72ch}
-.ref li::marker{color:var(--accent)}
-.note{color:var(--page-dim);font-size:13px}
-@media (prefers-reduced-motion:reduce){.led.blink.on{animation:none}}
+html,body{height:100%;background:var(--bg);color:var(--hi)}
+body{font-family:var(--f-screen);margin:0;overflow:hidden}
+.app{height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
+#screen{display:block;image-rendering:pixelated;image-rendering:crisp-edges;cursor:none;touch-action:none;background:var(--paper)}
+.status{display:flex;align-items:baseline;gap:10px;box-sizing:border-box;height:calc(26px*var(--u));padding:0 8px;background:var(--ink);color:var(--hi);
+  font-size:calc(19px*var(--u));line-height:calc(26px*var(--u));white-space:nowrap;overflow:hidden;border-top:1px solid var(--hi)}
+.status b{font-weight:normal;background:var(--hi);color:var(--ink);padding:0 5px;flex:none}
+.status span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.status kbd{font-family:inherit;border:1px solid var(--hi);padding:0 5px;line-height:1;flex:none}
+.status em{font-style:normal;color:var(--dim);flex:none}
+.kb{position:relative;box-sizing:border-box;height:calc(74px*var(--u,1));background:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none;border-top:1px solid var(--hi)}
+.kb .w,.kb .k{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+  font-size:calc(16px*var(--u,1));line-height:1;padding-bottom:4px;cursor:pointer}
+.kb .w{height:100%;background:var(--paper);color:var(--ink);border-right:1px solid var(--ink)}
+.kb .k{height:58%;background:var(--ink);color:var(--hi);z-index:2;border:1px solid var(--hi);border-top:0}
+.kb .on.w{background:repeating-conic-gradient(var(--ink) 0 25%,var(--paper) 0 50%) 0 0/2px 2px}
+.kb .on.k{background:repeating-conic-gradient(var(--hi) 0 25%,var(--ink) 0 50%) 0 0/2px 2px}
+.kb small{font-size:calc(13px*var(--u,1))}
 </style>
 
-<div class="wrap">
-  <header>
-    <h1>Arranger <span>ST</span></h1>
-    <p>An arrange-window sequencer with eight DS-10 style synths, a mixer with inserts and two send buses, and a KAOSS pad for recording knob moves. Click once to start the audio engine, then press <kbd>Space</kbd>. Letter keys play notes. Your song saves itself in this browser.</p>
-  </header>
-
-  <div id="rackbox">
-    <div class="rack" id="rack">
-      <div class="rail t"></div><div class="rail b"></div>
-
-      <div class="mod" style="left:0;width:1180px">
-        <div class="screw" style="left:6px;top:6px"></div><div class="screw" style="right:6px;top:6px"></div>
-        <div class="screw" style="left:6px;bottom:6px"></div><div class="screw" style="right:6px;bottom:6px"></div>
-        <div class="a brand" style="left:30px;top:6px">ARRANGER<b>ST</b></div>
-        <div class="a lbl" style="left:220px;top:11px">8 DS-10 voices · mixer · 96 ppq</div>
-        <div class="a lbl" id="saveLbl" style="right:30px;top:11px">saved</div>
-
-        <div class="bezel"><canvas id="screen" width="640" height="400"></canvas></div>
-        <div class="a lbl" style="left:30px;top:460px">Right-click the screen for tools · F1–F5 switch windows · double-click a knob to reset it</div>
-
-        <div class="a sect" style="left:700px;top:32px;width:460px">TRANSPORT</div>
-        <div class="key" style="left:700px;top:56px" data-act="rtz" data-hint="Return to zero|Jumps the song position to bar 1.|Home"><div class="cap"></div><svg viewBox="0 0 24 24"><rect x="3" y="5" width="3" height="14"/><path d="M13 5v14L6 12zM21 5v14l-7-7z"/></svg></div>
-        <div class="key" style="left:795px;top:56px" data-act="stop" data-hint="Stop|Stops playback and returns automated knobs to their patch values. Press again to jump to the left locator, then to bar 1.|Numpad 0 · Space toggles"><div class="cap"></div><i class="led a" id="ledStop" style="left:10px;top:6px"></i><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14"/></svg></div>
-        <div class="key" style="left:890px;top:56px" data-act="play" data-hint="Play|Starts from the song position. In cycle mode it loops between the L and R locators.|Space · Numpad Enter"><div class="cap"></div><i class="led g" id="ledPlay" style="left:10px;top:6px"></i><svg viewBox="0 0 24 24"><path d="M6 4v16l14-8z"/></svg></div>
-        <div class="key" style="left:985px;top:56px" data-act="rec" data-hint="Record|Records notes into the active track. While recording, the KAOSS pad and any knob you turn write automation into the part under the playhead. In Key Edit while stopped it arms step input.|Enter · Numpad *"><div class="cap"></div><i class="led r" id="ledRec" style="left:10px;top:6px"></i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg></div>
-        <div class="key" style="left:1080px;top:56px" data-act="cyc" data-hint="Cycle|Loops between the L and R locators. Recording in cycle layers each pass onto the last.|/ · Numpad /"><div class="cap"></div><i class="led a" id="ledCyc" style="left:10px;top:6px"></i><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 0 1 12-5l2-2v6h-6l2.3-2.3A4.5 4.5 0 0 0 7.5 12zM19 12a7 7 0 0 1-12 5l-2 2v-6h6l-2.3 2.3a4.5 4.5 0 0 0 7.8-3.3z"/></svg></div>
-        <div class="a lbl c" style="left:700px;top:110px;width:80px">RTZ</div>
-        <div class="a lbl c" style="left:795px;top:110px;width:80px">STOP</div>
-        <div class="a lbl c" style="left:890px;top:110px;width:80px">PLAY</div>
-        <div class="a lbl c" style="left:985px;top:110px;width:80px">REC</div>
-        <div class="a lbl c" style="left:1080px;top:110px;width:80px">CYCLE</div>
-
-        <div class="jog" id="jog" style="left:708px;top:136px;width:136px;height:136px" data-hint="Position wheel|Drag up or down, or scroll, to move the song position by the quantize value. Hold Shift to move by bars.|← →"><div class="hub"></div><div class="dimple"></div></div>
-        <div class="a lbl c" style="left:708px;top:282px;width:136px">POSITION</div>
-
-        <div class="a lbl c" style="left:868px;top:132px;width:72px">TEMPO</div>
-        <div class="knob" id="kTempo" style="left:878px;top:148px;width:52px;height:52px" data-hint="Tempo|Drag vertically or scroll. Shift for fine steps, double-click resets to 120 BPM. BPM-synced LFOs and delays follow it.|"><i></i></div>
-        <div class="lcd" id="dTempo" style="left:868px;top:208px;width:72px">120.0</div>
-        <div class="a lbl c" style="left:952px;top:132px;width:72px">QUANT</div>
-        <div class="knob" id="kQuant" style="left:962px;top:148px;width:52px;height:52px" data-hint="Quantize|Stepped knob. Sets the grid for recording, the position wheel, note drawing and automation drawing.|[ and ]"><i></i></div>
-        <div class="lcd" id="dQuant" style="left:952px;top:208px;width:72px">1/16</div>
-        <div class="a lbl c" style="left:1040px;top:132px;width:120px">TRACK</div>
-        <div class="sbtn" style="left:1040px;top:148px;width:56px" data-act="trkup" data-hint="Previous track|Makes the track above active. The active track is the one the keyboard plays, records into and the KAOSS pad controls.|↑">▲</div>
-        <div class="sbtn" style="left:1104px;top:148px;width:56px" data-act="trkdn" data-hint="Next track|Makes the track below active.|↓">▼</div>
-        <div class="lcd" id="dTrack" style="left:1040px;top:182px;width:120px;text-align:left;padding-left:8px">T1 BASS</div>
-        <div class="lcd" id="dTool" style="left:1040px;top:208px;width:120px;text-align:left;padding-left:8px">TOOL POINTER</div>
-
-        <div class="sbtn" style="left:868px;top:244px;width:54px" data-act="v_arr" data-hint="Arrange window|The song: tracks, parts and locators.|F1"><i class="led a" id="ledV_arr"></i>ARR</div>
-        <div class="sbtn" style="left:928px;top:244px;width:54px" data-act="v_edit" data-hint="Key Edit|Notes, velocities and automation lanes of the selected part.|F2"><i class="led a" id="ledV_edit"></i>EDIT</div>
-        <div class="sbtn" style="left:988px;top:244px;width:54px" data-act="v_syn" data-hint="Synth|The DS-10 patch of the active track, laid out like the DS-10 synth screen and patch panel.|F3"><i class="led a" id="ledV_syn"></i>SYN</div>
-        <div class="sbtn" style="left:1048px;top:244px;width:54px" data-act="v_mix" data-hint="Mixer|Volume, pan, sends, two insert slots per track, two send buses and the master.|F4"><i class="led a" id="ledV_mix"></i>MIX</div>
-        <div class="sbtn" style="left:1108px;top:244px;width:52px" data-act="v_fx" data-hint="Effect editor|Knobs of the selected insert or bus effect.|F5"><i class="led a" id="ledV_fx"></i>FX</div>
-
-        <div class="a sect" style="left:868px;top:290px;width:292px">KEYBOARD IN</div>
-        <div class="sbtn" style="left:868px;top:310px;width:70px" data-act="qwerty" data-hint="Computer keyboard input|When lit, letter keys play notes (VCV QWERTY layout, physical key positions). Turn it off to use letters as tool hotkeys: A P E S G M.|"><i class="led g" id="ledQwerty"></i>QWERTY</div>
-        <div class="sbtn" style="left:944px;top:310px;width:60px" data-act="midi" data-hint="Web MIDI input|Listens to every connected MIDI keyboard. The artifact viewer may block MIDI; open the HTML file locally in Chromium to use a real keyboard.|"><i class="led g" id="ledMidi"></i>MIDI</div>
-        <div class="sbtn" style="left:1010px;top:310px;width:34px" data-act="octdn" data-hint="Octave down|Moves the computer-keyboard range down one octave.|-">−</div>
-        <div class="lcd" id="dOct" style="left:1048px;top:312px;width:46px">C2</div>
-        <div class="sbtn" style="left:1098px;top:310px;width:34px" data-act="octup" data-hint="Octave up|Moves the computer-keyboard range up one octave.|=">+</div>
-        <i class="led g" id="ledIn" style="left:1144px;top:319px"></i>
-
-        <div class="a sect" style="left:700px;top:334px;width:236px">KAOSS PAD</div>
-        <div class="pad" id="pad" style="left:700px;top:352px;width:236px;height:102px" data-hint="KAOSS pad|Touch and drag: X and Y move two knobs of the active track. Press Record and play to write the moves into the part as automation. Releasing returns the knobs to their patch values.|"><i id="padDot" style="left:50%;top:50%"></i><span style="left:6px;bottom:3px" id="padTx">X</span><span style="right:6px;top:3px" id="padTy">Y</span></div>
-        <div class="a lbl" style="left:946px;top:352px">X</div>
-        <div class="lcd btn" id="dPadX" style="left:960px;top:347px;width:200px;text-align:left;padding-left:8px" data-hint="Pad X target|Click for the next knob, Shift-click for the previous one, or scroll.|">VCF CUTOFF</div>
-        <div class="a lbl" style="left:946px;top:381px">Y</div>
-        <div class="lcd btn" id="dPadY" style="left:960px;top:376px;width:200px;text-align:left;padding-left:8px" data-hint="Pad Y target|Click for the next knob, Shift-click for the previous one, or scroll.|">VCF PEAK</div>
-        <div class="sbtn" style="left:946px;top:410px;width:96px" data-act="padmode" data-hint="Automation curve|SMT records a smooth line between points; HLD holds each value until the next one, for stepped sequences. Applies to lanes recorded from now on.|"><i class="led a" id="ledSmt"></i><span id="padModeTx">SMOOTH</span></div>
-        <div class="lcd" id="dPadV" style="left:1050px;top:412px;width:110px">— · —</div>
-      </div>
-
-      <div class="mod" style="left:1184px;width:200px">
-        <div class="screw" style="left:6px;top:6px"></div><div class="screw" style="right:6px;bottom:6px"></div>
-        <div class="a brand" style="left:24px;top:6px;font-size:17px">LEVELS</div>
-        <div id="mRows"></div>
-        <div class="a lbl" style="left:12px;top:440px">MASTER</div>
-        <div class="meter" style="left:64px;right:12px;top:438px;height:6px"><b id="mL"></b></div>
-        <div class="meter" style="left:64px;right:12px;top:448px;height:6px"><b id="mR"></b></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="hint" id="hint"><b id="hintT">Hover a control</b><span id="hintD">Every knob, key and on-screen area explains itself here, with its keyboard shortcut.</span><kbd id="hintK" hidden></kbd></div>
-
-  <div class="kbwrap"><div class="kb" id="kb" data-hint="On-screen keys|Click to play the active track. The labels show which computer key plays each note. Physical positions, so QWERTZ and AZERTY keyboards work the same.|"></div></div>
-
-  <div class="ref">
-    <section>
-      <h2>Keyboard</h2>
-      <table>
-        <tr><td><kbd>Z</kbd>…<kbd>,</kbd> and <kbd>Q</kbd>…<kbd>P</kbd></td><td>Play notes. <kbd>Shift</kbd> plays at velocity 127.</td></tr>
-        <tr><td><kbd>-</kbd> <kbd>=</kbd></td><td>Keyboard octave down / up</td></tr>
-        <tr><td><kbd>F1</kbd>…<kbd>F5</kbd></td><td>Arrange, Key Edit, Synth, Mixer, Effect</td></tr>
-        <tr><td><kbd>Space</kbd></td><td>Play / stop. Inserts a rest in step input.</td></tr>
-        <tr><td><kbd>Enter</kbd></td><td>Record. In Key Edit while stopped: step input.</td></tr>
-        <tr><td><kbd>/</kbd></td><td>Cycle on / off</td></tr>
-        <tr><td><kbd>Home</kbd></td><td>Return to bar 1</td></tr>
-        <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Move position one bar (<kbd>Shift</kbd>: one beat)</td></tr>
-        <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Active track. In Key Edit: transpose the selected note.</td></tr>
-        <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>Quantize coarser / finer</td></tr>
-        <tr><td><kbd>Tab</kbd></td><td>Next tool</td></tr>
-        <tr><td><kbd>Del</kbd></td><td>Delete selection</td></tr>
-        <tr><td><kbd>Esc</kbd></td><td>Close menu, leave step input, back to Arrange</td></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Undo / save the song as JSON</td></tr>
-      </table>
-    </section>
-    <section>
-      <h2>Sound and automation</h2>
-      <table>
-        <tr><td>Synth window</td><td>DS-10 layout: VCO, VCO1, VCO2, VCF and EG columns, the patch row underneath, plus a 4-pole highpass and voice count per track.</td></tr>
-        <tr><td>Knobs on screen</td><td>Drag vertically, scroll, or double-click to reset. Shift for fine steps.</td></tr>
-        <tr><td>Patch row</td><td>Each destination has a depth knob and a source box: SIN, SAW, SQR, S&amp;H (the MG), EG or VCO2.</td></tr>
-        <tr><td>Mixer slots</td><td>Click a slot to pick DS-10 FX, Midiverb, Tape delay or Distortion, bypass it or open its editor.</td></tr>
-        <tr><td>Recording automation</td><td>Press Record and play, then move the KAOSS pad or any knob of the active track. Each move lands in the part under the playhead.</td></tr>
-        <tr><td>Automation lanes</td><td>In Key Edit, click the lane name under the grid to switch between velocity and the part's knob lanes; scroll it to add any knob. Draw with the pointer or pencil.</td></tr>
-        <tr><td>Saving</td><td>Changes save to this browser as you work. File ▸ Save JSON writes a file; File ▸ Open JSON loads one.</td></tr>
-      </table>
-    </section>
-    <section>
-      <h2>About the sound</h2>
-      <ul>
-        <li>The voice is a port of the ds10emu reimplementation of the DS-10. Knob ranges, the LFO, envelope, portamento, filter mapping and VCA run at the DS-10's 512 Hz control rate, as on the Nintendo DS.</li>
-        <li>Oscillators are polyBLEP, and the filter is a TPT state-variable filter with clipped states, instead of the DS-10's aliasing oscillators and Chamberlin filter.</li>
-        <li>Delay, chorus and flanger use the DS-10's single delay-line algorithm with its three parameter mappings.</li>
-        <li>Midiverb, Midifex and Midiverb II programs are converted from the midiverb_emulator decompilation and run at 24 kHz. The tape delay is a port of camouflage FakeTapeDelay.</li>
-      </ul>
-      <p class="note">Each track is mono (legato, with portamento) or polyphonic up to 8 voices; set it in the Synth window.</p>
-    </section>
-  </div>
+<div class="app">
+  <canvas id="screen" width="640" height="400"></canvas>
+  <div class="status" id="status"><b id="hintT">ARRANGER ST</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="saveLbl"></em></div>
+  <div class="kb" id="kb"></div>
   <input type="file" id="fileIn" accept=".json,application/json" hidden>
 </div>
 
@@ -295,7 +88,7 @@ const S={tracks:[],buses:[],master:null,parts:[],nextId:1,active:0,sel:null,view
   tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,
   menu:null,popup:null,dialog:null,toolbox:null,step:false,stepPos:0,stepHeld:0,editHi:72,takeId:0,
   mx:-1,my:-1,lastIn:null,inFlash:0,drag:null,pencil:null,lane:'vel',
-  fxSel:{w:{s:'t',i:0},slot:0},padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
+  fxSel:{w:{s:'t',i:0},slot:0},showKb:true,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
 const gate=new Array(8).fill(0);
 let dirty=true;
 const q=()=>QS[S.qi][1];
@@ -394,10 +187,12 @@ function undo(){
 }
 const LS_KEY='arranger-st.song.v2';
 let saveTimer=null;
-function songChanged(){clearTimeout(saveTimer);$('#saveLbl').textContent='saving…';saveTimer=setTimeout(autosave,900);}
+let saveState='';
+function songChanged(){clearTimeout(saveTimer);saveState='saving…';dirty=true;saveTimer=setTimeout(autosave,900);}
 function autosave(){
-  try{localStorage.setItem(LS_KEY,JSON.stringify(songObj()));$('#saveLbl').textContent='saved in this browser';}
-  catch(e){$('#saveLbl').textContent='not saved: browser storage off';}
+  try{localStorage.setItem(LS_KEY,JSON.stringify(songObj()));saveState='saved';}
+  catch(e){saveState='not saved: storage off';}
+  dirty=true;
 }
 async function saveJSON(){
   const data=JSON.stringify(songObj());const filename=(S.songName||'song').replace(/[^\w-]+/g,'_')+'.json';
@@ -685,7 +480,7 @@ const LOWLBL='Z S X D C V G B H N J M ,'.split(' '),UPLBL='Q 2 W 3 E R 5 T 6 Y 7
 const base=()=>12*(S.oct+2);
 function codeToNote(c){let i=LOWER.indexOf(c);if(i>=0)return base()+i;i=UPPER.indexOf(c);if(i>=0)return base()+12+i;return -1;}
 const TOOLKEYS={KeyA:'pointer',KeyP:'pencil',KeyE:'eraser',KeyS:'scissors',KeyG:'glue',KeyM:'mute'};
-const FKEYS={F1:'arr',F2:'edit',F3:'syn',F4:'mix',F5:'fx'};
+const FKEYS={F1:'arr',F2:'edit',F3:'syn',F4:'mix',F5:'fx',F6:'pad'};
 document.addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT')return;
   if(FKEYS[e.code]){e.preventDefault();setView(FKEYS[e.code]);return;}
@@ -763,6 +558,7 @@ const CUR={
   glue:{h:[2,0],b:['..##..','..##..','.####.','#....#','#.##.#','#.##.#','#....#','#.##.#','#....#','######']},
   mute:{h:[4,4],b:['#########','#.......#','#.#...#.#','#.##.##.#','#.#.#.#.#','#.#...#.#','#.#...#.#','#.......#','#########']},
   resize:{h:[6,2],b:['..#.....#..','.##.....##.','###########','.##.....##.','..#.....#..']},
+  cross:{h:[5,5],b:['....#....','....#....','....#....','.........','###...###','.........','....#....','....#....','....#....'].map(r=>r.replace(/\./g,' '))},
   vert:{h:[2,6],b:['..#..','.###.','#####','..#..','..#..','..#..','..#..','..#..','#####','.###.','..#..']}
 };
 function drawBm(c,x,y,center){
@@ -821,16 +617,16 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'About Arranger ST…',a:()=>dialog(['ARRANGER ST','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'Desk',items:[{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  move bar    Up Down  active track','[  ]   quantize     Del   delete','Ctrl+Z  undo        Ctrl+S  save JSON','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST…',a:()=>dialog(['ARRANGER ST','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
   {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch}]},
   {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',a:locToPart}]},
   {name:'Functions',items:[{l:'Quantize Part',k:()=>QS[S.qi][0],a:quantizePart},{l:'Transpose +12',a:()=>transposePart(12)},{l:'Transpose -12',a:()=>transposePart(-12)},{l:'Clear Notes',a:clearPart},{l:'Clear Automation',a:clearAuto}]},
-  {name:'View',items:[{l:'Arrange',k:'F1',a:()=>setView('arr')},{l:'Key Edit',k:'F2',a:()=>setView('edit')},{l:'Synth',k:'F3',a:()=>setView('syn')},{l:'Mixer',k:'F4',a:()=>setView('mix')},{l:'Effect',k:'F5',a:()=>setView('fx')}]},
+  {name:'View',items:[{l:'Arrange',k:'F1',a:()=>setView('arr')},{l:'Key Edit',k:'F2',a:()=>setView('edit')},{l:'Synth',k:'F3',a:()=>setView('syn')},{l:'Mixer',k:'F4',a:()=>setView('mix')},{l:'Effect',k:'F5',a:()=>setView('fx')},{l:'KAOSS Pad',k:'F6',a:()=>setView('pad')}]},
   {name:'Options',items:[{l:()=>(S.click?'√ ':'  ')+'Metronome',a:()=>{S.click=!S.click;}},{l:()=>(S.autoQ?'√ ':'  ')+'Auto Quantize',a:()=>{S.autoQ=!S.autoQ;}},
     {l:()=>(S.recMode==='replace'?'√ ':'  ')+'Replace Mode',a:()=>{S.recMode=S.recMode==='replace'?'overdub':'replace';}},
     {l:()=>(S.master.shp?'√ ':'  ')+'DS-10 Master Shaper',a:()=>{S.master.shp=S.master.shp?0:1;sendMst();}},{l:'-'},
-    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi}]}
+    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi}]}
 ];
 const lab=v=>typeof v==='function'?v():v;
 function menuBarGeom(){let x=6;return MENUS.map(m=>{const w=tw(m.name)+14;const r={x,w};x+=w;return r;});}
@@ -851,7 +647,6 @@ function drawList(g){
   });
 }
 function dialog(lines){S.dialog={lines};S.menu=null;S.popup=null;dirty=true;}
-let msg=null;function flashMsg(s){msg={s,t:performance.now()};dirty=true;}
 
 let clipPatch=null;
 function copyPatch(){clipPatch=S.tracks[S.active].k.slice(0,33);flashMsg('Patch copied');}
@@ -860,12 +655,13 @@ function initPatch(){INIT_K.slice(0,33).forEach((v,id)=>setParam(S.active,id,v,t
 function sendMst(){post({t:'mst',vol:S.master.vol,shp:S.master.shp});songChanged();dirty=true;}
 
 /* ---------- window chrome ---------- */
-const VIEWNAME={arr:'ARRANGE',edit:'KEY EDIT',syn:'SYNTH',mix:'MIXER',fx:'EFFECT'};
+const VIEWNAME={arr:'ARRANGE',edit:'KEY EDIT',syn:'SYNTH',mix:'MIXER',fx:'EFFECT',pad:'KAOSS'};
+const TABS=[['arr','ARR','F1'],['edit','EDIT','F2'],['syn','SYN','F3'],['mix','MIX','F4'],['fx','FX','F5'],['pad','PAD','F6']];
+function tabGeom(){const ws=TABS.map(t=>tw(t[1])+12);let x=W-ws.reduce((a,b)=>a+b,0);return TABS.map((t,i)=>{const r={v:t[0],l:t[1],k:t[2],x,w:ws[i]};x+=ws[i];return r;});}
 function drawMenuBar(){
   clr(0,0,W,19,WH);hl(0,19,W);
   menuBarGeom().forEach((r,i)=>{const on=S.menu===i;if(on)clr(r.x,0,r.w,19,B);T(MENUS[i].name,r.x+7,10,on?WH:B);});
-  if(msg&&performance.now()-msg.t<2400)T(msg.s,W-6,10,B,'right');
-  else T(VIEWNAME[S.view],W-6,10,B,'right');
+  for(const t of tabGeom()){const on=S.view===t.v;if(on)clr(t.x,0,t.w,19,B);vl(t.x,0,19);T(t.l,t.x+t.w/2,10,on?WH:B,'center');}
 }
 function drawTitle(label,closer){
   clr(0,20,W,18,WH);hl(0,37,W);
@@ -1206,6 +1002,7 @@ function render(){
   else if(S.view==='syn'){drawTitle('SYNTH  DS-10 VOICE',true);drawSynth();}
   else if(S.view==='mix'){drawTitle('MIXER',true);drawMixer();}
   else if(S.view==='fx'){drawTitle('EFFECT',true);drawFx();}
+  else if(S.view==='pad'){drawTitle('KAOSS PAD',true);drawPad();}
   else{drawTitle('ARRANGE  '+(S.songName||'untitled').toUpperCase(),false);drawArrange();}
   drawTransport();
   if(S.menu!=null)drawList(menuGeom(S.menu));
@@ -1215,7 +1012,7 @@ function render(){
   for(let i=0;i<d.length;i+=4){const v=d[i]+d[i+1]+d[i+2]>390?255:0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}
   ctx.putImageData(im,0,0);
   if(S.mx>=0)drawBm(CUR[cursorFor(S.mx,S.my)],S.mx,S.my);
-  syncPanel();
+  $('#saveLbl').textContent=saveState;
 }
 function cursorFor(x,y){
   if(S.dialog||S.menu!=null||S.toolbox||S.popup||y<38||y>=TBY)return regionAt(x,y)?.cur||'arrow';
@@ -1255,10 +1052,11 @@ cv.addEventListener('pointerdown',e=>{
     const inWork=S.view==='arr'?(x>=TLX&&y>=TRY&&y<TRY+8*TRH):S.view==='edit'?(y>=GY&&y<GY+NH*NROWS):false;
     if(inWork){const list=S.view==='arr'?TOOLS_ARR:TOOLS_EDIT;S.toolbox={x:clamp(x-45,2,W-94),y:clamp(y-13,40,TBY-60),list,openT:now};}
     return;}
-  if(y<19){const i=menuBarGeom().findIndex(r=>x>=r.x&&x<r.x+r.w);if(i>=0)S.menu=i;return;}
+  if(y<19){const tb=tabGeom().find(t=>x>=t.x&&x<t.x+t.w);if(tb){setView(tb.v);return;}const i=menuBarGeom().findIndex(r=>x>=r.x&&x<r.x+r.w);if(i>=0)S.menu=i;return;}
   const r=regionAt(x,y);
   if(r){
     if(dbl&&r.dbl){r.dbl();return;}
+    if(r.pad){padDown(x,y);return;}
     if(r.down)r.down(e);
     if(r.drag){let ly=y;S.drag={move:(x2,y2,ev)=>{r.drag(ly-y2,ev);ly=y2;}};}
     return;}
@@ -1360,14 +1158,11 @@ function editDown(x,y,e,dbl){
 }
 
 /* ---------- hints ---------- */
-const hT=$('#hintT'),hD=$('#hintD'),hK=$('#hintK');
-let lastHint='';
-function showHint(t,d,k){const key=t+d+k;if(key===lastHint)return;lastHint=key;hT.textContent=t;hD.textContent=d;hK.textContent=k||'';hK.hidden=!k;}
 function canvasHint(x,y){
   if(S.dialog)return ['Alert box','Click OK or press Enter.','Enter'];
   if(S.toolbox)return ['Toolbox','Release the right button over a tool, or click one. Esc closes.','Tab'];
   if(S.popup)return ['Menu','Click an item.','Esc'];
-  if(y<19)return ['Menu bar','Click a title to open its menu; slide across to switch menus.',''];
+  if(y<19){const tb=tabGeom().find(t=>x>=t.x&&x<t.x+t.w);if(tb)return [VIEWNAME[tb.v]+' window','Click to switch windows.',tb.k];return ['Menu bar','Click a title to open its menu; slide across to switch menus.',''];}
   if(S.menu!=null)return ['Menu','Click an item. Shortcuts are shown on the right.',''];
   const r=regionAt(x,y);if(r&&r.hint)return r.hint;
   if(y<38)return ['Window title','The open window.',''];
@@ -1394,81 +1189,61 @@ function canvasHint(x,y){
   }
   return ['',''];
 }
-document.querySelectorAll('[data-hint]').forEach(el=>{el.addEventListener('pointerenter',()=>{const [t,d,k]=el.dataset.hint.split('|');showHint(t,d||'',k||'');});});
 
-/* ---------- panel ---------- */
-const ACT={rtz,stop,play,rec,cyc:toggleCycle,qwerty:()=>{S.qwerty=!S.qwerty;allOff();},midi:toggleMidi,
-  octdn:()=>octave(-1),octup:()=>octave(1),trkup:()=>setActive(S.active-1),trkdn:()=>setActive(S.active+1),
-  v_arr:()=>setView('arr'),v_edit:()=>setView('edit'),v_syn:()=>setView('syn'),v_mix:()=>setView('mix'),v_fx:()=>setView('fx'),
-  padmode:()=>{S.padMode=S.padMode==='h'?'s':'h';songChanged();}};
-document.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('pointerdown',e=>{e.preventDefault();ensureAudio();ACT[el.dataset.act]();dirty=true;}));
-function dragCtl(el,fn){el.addEventListener('pointerdown',e=>{e.preventDefault();ensureAudio();el.setPointerCapture(e.pointerId);let ly=e.clientY;
-  const mv=ev=>{fn(ly-ev.clientY,ev);ly=ev.clientY;dirty=true;};const up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);};
-  el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);});}
-const kTempo=$('#kTempo'),kQuant=$('#kQuant'),jog=$('#jog');
-dragCtl(kTempo,(d,e)=>setTempo(S.tempo+d*(e.shiftKey?0.05:0.5)));
-kTempo.addEventListener('dblclick',()=>setTempo(120));
-kTempo.addEventListener('wheel',e=>{e.preventDefault();setTempo(S.tempo-Math.sign(e.deltaY)*(e.shiftKey?0.1:1));},{passive:false});
-let qAcc=0;dragCtl(kQuant,d=>{qAcc+=d;while(qAcc>18){qAcc-=18;setQ(S.qi+1);}while(qAcc<-18){qAcc+=18;setQ(S.qi-1);}});
-kQuant.addEventListener('wheel',e=>{e.preventDefault();setQ(S.qi-Math.sign(e.deltaY));},{passive:false});
-let jAng=0,jAcc=0;
-dragCtl(jog,(d,e)=>{jAng+=d*2.5;jAcc+=d;while(jAcc>10){jAcc-=10;jogStep(1,e.shiftKey);}while(jAcc<-10){jAcc+=10;jogStep(-1,e.shiftKey);}});
-jog.addEventListener('wheel',e=>{e.preventDefault();const d=-Math.sign(e.deltaY);jAng+=d*15;jogStep(d,e.shiftKey);dirty=true;},{passive:false});
-
-/* KAOSS pad */
-const padEl=$('#pad'),padDot=$('#padDot');
+/* ---------- KAOSS pad window ---------- */
+const PADR={x:8,y:62,w:400,h:268};
 function padTarget(axis,d){const k=axis==='x'?'padX':'padY';S[k]=(S[k]+d+NP)%NP;songChanged();dirty=true;}
-['x','y'].forEach(ax=>{const el=$(ax==='x'?'#dPadX':'#dPadY');
-  el.addEventListener('pointerdown',e=>{e.preventDefault();padTarget(ax,e.shiftKey?-1:1);});
-  el.addEventListener('wheel',e=>{e.preventDefault();padTarget(ax,Math.sign(e.deltaY));},{passive:false});});
 function padApply(fx,fy){
   S.padVX=fx;S.padVY=fy;const ti=inputTrack();
   for(const [id,f] of [[S.padX,fx],[S.padY,fy]]){const p=P[id];setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
-  padDot.style.left=(fx*100)+'%';padDot.style.top=((1-fy)*100)+'%';
 }
-padEl.addEventListener('pointerdown',e=>{
-  e.preventDefault();ensureAudio();padEl.setPointerCapture(e.pointerId);S.padOn=true;padEl.classList.add('on');
-  const at=ev=>{const r=padEl.getBoundingClientRect();padApply(clamp((ev.clientX-r.left)/r.width,0,1),clamp(1-(ev.clientY-r.top)/r.height,0,1));};
-  at(e);
-  const mv=ev=>at(ev);
-  const up=()=>{padEl.removeEventListener('pointermove',mv);padEl.removeEventListener('pointerup',up);padEl.removeEventListener('pointercancel',up);
-    S.padOn=false;padEl.classList.remove('on');const ti=inputTrack();recRelease(ti,[S.padX,S.padY]);
-    for(const id of [S.padX,S.padY]){const t=S.tracks[ti];if(t.lv[id]!==t.k[id]&&!(S.playing&&hasLane(ti,id))){t.lv[id]=t.k[id];post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v:t.k[id]}]});}}
-    dirty=true;};
-  padEl.addEventListener('pointermove',mv);padEl.addEventListener('pointerup',up);padEl.addEventListener('pointercancel',up);
-});
+const padAt=(x,y)=>padApply(clamp((x-PADR.x)/PADR.w,0,1),clamp(1-(y-PADR.y)/PADR.h,0,1));
+function padDown(x,y){ensureAudio();S.padOn=true;padAt(x,y);S.drag={move:(x2,y2)=>padAt(x2,y2),up:padUp};}
+function padUp(){
+  S.padOn=false;const ti=inputTrack();recRelease(ti,[S.padX,S.padY]);
+  for(const id of [S.padX,S.padY]){const t=S.tracks[ti];if(t.lv[id]!==t.k[id]&&!(S.playing&&hasLane(ti,id))){t.lv[id]=t.k[id];post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v:t.k[id]}]});}}
+  dirty=true;
+}
 function hasLane(ti,id){return S.parts.some(p=>p.track===ti&&p.auto&&p.auto[id]&&p.auto[id].pts.length);}
-
-/* level meters */
-const mRows=$('#mRows');const mBars=[],mLeds=[],mNames=[];
-for(let i=0;i<8;i++){const r=document.createElement('div');r.className='mrow';r.style.top=(34+i*48)+'px';
-  r.innerHTML=`<span class="num">${i+1}</span><span class="name"></span><i class="led g"></i><div class="meter"><b></b></div>`;
-  r.addEventListener('pointerdown',()=>{setActive(i);});
-  r.addEventListener('pointerenter',()=>showHint('Track '+(i+1)+' level','Post-fader peak level. The LED lights while a note sounds. Click to make the track active.',''));
-  mRows.appendChild(r);mBars.push(r.querySelector('b'));mLeds.push(r.querySelector('.led'));mNames.push(r.querySelector('.name'));}
-
-const L_={};['ledStop','ledPlay','ledRec','ledCyc','ledQwerty','ledMidi','ledIn','ledSmt','dTempo','dQuant','dTrack','dTool','dOct','dPadX','dPadY','dPadV','padModeTx','padTx','padTy','mL','mR'].forEach(id=>L_[id]=$('#'+id));
-const vLeds={arr:$('#ledV_arr'),edit:$('#ledV_edit'),syn:$('#ledV_syn'),mix:$('#ledV_mix'),fx:$('#ledV_fx')};
-const setLed=(el,on)=>el.classList.toggle('on',!!on);
-const dbw=v=>Math.max(0,Math.min(100,(1+Math.log10(Math.max(v,1e-4))/2.6)*100))+'%';
-function syncPanel(){
-  setLed(L_.ledStop,!S.playing);setLed(L_.ledPlay,S.playing);setLed(L_.ledRec,S.rec||S.step);L_.ledRec.classList.toggle('blink',S.step);
-  setLed(L_.ledCyc,S.cycle);setLed(L_.ledQwerty,S.qwerty);setLed(L_.ledMidi,S.midi);setLed(L_.ledIn,held.size>0||performance.now()-S.inFlash<90);
-  for(const k in vLeds)setLed(vLeds[k],S.view===k);
-  L_.dTempo.textContent=S.tempo.toFixed(1);L_.dQuant.textContent=QS[S.qi][0];
-  const it=inputTrack();L_.dTrack.textContent='T'+(it+1)+' '+S.tracks[it].name.toUpperCase();
-  L_.dTool.textContent=S.step?'STEP INPUT':'TOOL '+S.tool.toUpperCase();
-  L_.dOct.textContent=nname(base());
-  L_.dPadX.textContent=P[S.padX][1];L_.dPadY.textContent=P[S.padY][1];
-  const t=S.tracks[it];L_.dPadV.textContent=pfmt(S.padX,t.lv[S.padX])+' · '+pfmt(S.padY,t.lv[S.padY]);
-  L_.padTx.textContent='X '+P[S.padX][0];L_.padTy.textContent='Y '+P[S.padY][0];
-  setLed(L_.ledSmt,S.padMode==='s');L_.padModeTx.textContent=S.padMode==='s'?'SMOOTH':'HOLD';
-  kTempo.style.transform=`rotate(${(S.tempo-140)/100*140}deg)`;
-  kQuant.style.transform=`rotate(${-135+S.qi*(270/(QS.length-1))}deg)`;
-  jog.style.transform=`rotate(${jAng}deg)`;
-  for(let i=0;i<8;i++){mBars[i].style.width=dbw(meters.tr[i]);setLed(mLeds[i],gate[i]>0||meters.v[i]>0);if(mNames[i].textContent!==S.tracks[i].name.toUpperCase())mNames[i].textContent=S.tracks[i].name.toUpperCase();}
-  L_.mL.style.width=dbw(meters.l);L_.mR.style.width=dbw(meters.r);
+function drawPad(){
+  const ti=inputTrack(),t=S.tracks[ti],R=PADR;
+  clr(0,38,W,TBY-38,WH);
+  clr(0,38,W,18,WH);hl(0,55,W);
+  box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>setActive(ti-1),hint:['Previous track','The pad controls the active track.','↑']});
+  box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
+  T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);
+  if(S.rec&&S.playing){clr(W-212,40,208,14,B);T('RECORDING AUTOMATION',W-108,47,WH,'center');}
+  else T('Record + play to write moves',W-8,47,B,'right');
+  box(R.x-1,R.y-1,R.w+2,R.h+2);
+  for(let i=1;i<8;i++){dotV(R.x+Math.round(i*R.w/8),R.y,R.h,4);dotH(R.x,R.y+Math.round(i*R.h/8),R.w,4);}
+  const vx=(t.lv[S.padX]-P[S.padX][2])/(P[S.padX][3]-P[S.padX][2]),vy=(t.lv[S.padY]-P[S.padY][2])/(P[S.padY][3]-P[S.padY][2]);
+  const px=Math.round(R.x+vx*R.w),py=Math.round(R.y+(1-vy)*R.h);
+  if(S.padOn){vl(px,R.y,R.h);hl(R.x,py,R.w);clr(px-5,py-5,11,11,B);}
+  else{box(px-5,py-5,11,11);}
+  clr(R.x+1,R.y+R.h-15,tw('X '+P[S.padX][1])+8,14,B);T('X '+P[S.padX][1],R.x+5,R.y+R.h-8,WH);
+  clr(R.x+1,R.y+1,tw('Y '+P[S.padY][1])+8,14,B);T('Y '+P[S.padY][1],R.x+5,R.y+8,WH);
+  reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track. Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
+  const x0=424,cw=W-x0-8;
+  const axis=(ax,y)=>{const id=ax==='x'?S.padX:S.padY;
+    T(ax.toUpperCase()+' AXIS',x0,y);
+    box(x0,y+8,16,18);T('<',x0+8,y+17,B,'center');box(x0+cw-16,y+8,16,18);T('>',x0+cw-8,y+17,B,'center');
+    box(x0+18,y+8,cw-36,18);T(P[id][1].slice(0,20),x0+cw/2,y+17,B,'center');
+    T('value '+pfmt(id,t.lv[id])+'   patch '+pfmt(id,t.k[id]),x0,y+36);
+    const h=['Pad '+ax.toUpperCase()+' target','Click the arrows or the name to pick the knob this axis moves; scroll to step through.',''];
+    reg(x0,y+8,16,18,{down:()=>padTarget(ax,-1),hint:h});reg(x0+cw-16,y+8,16,18,{down:()=>padTarget(ax,1),hint:h});
+    reg(x0+18,y+8,cw-36,18,{down:e=>padTarget(ax,e.shiftKey?-1:1),wheel:d=>padTarget(ax,d),hint:h});};
+  axis('x',70);axis('y',130);
+  T('CURVE',x0,198);
+  [['SMOOTH','s'],['HOLD','h']].forEach(([l,m],i)=>{const bx=x0+i*(cw/2),on=S.padMode===m;box(bx,206,cw/2-2,18,on?B:WH);T(l,bx+cw/4-1,215,on?WH:B,'center');
+    reg(bx,206,cw/2-2,18,{down:()=>{S.padMode=m;songChanged();dirty=true;},hint:['Automation curve','SMOOTH draws a line between recorded points; HOLD keeps each value until the next, for stepped sequences. Applies to lanes recorded from now on.','']});});
+  T('Recorded lanes show',x0,250);T('in Key Edit under the',x0,266);T('note grid (F2).',x0,282);
 }
+
+/* ---------- status line ---------- */
+const hT=$('#hintT'),hD=$('#hintD'),hK=$('#hintK');
+let lastHint='',msgUntil=0;
+function showHint(t,d,k){if(performance.now()<msgUntil)return;const key=t+d+k;if(key===lastHint)return;lastHint=key;hT.textContent=t||'ARRANGER ST';hD.textContent=d;hK.textContent=k||'';hK.hidden=!k;}
+function flashMsg(s){msgUntil=performance.now()+2400;lastHint='';hT.textContent='NOTE';hD.textContent=s;hK.hidden=true;}
 
 /* ---------- on-screen keyboard ---------- */
 const kb=$('#kb');let kbKeys={};
@@ -1486,11 +1261,19 @@ function buildKb(){
     kb.appendChild(el);kbKeys[p]=el;}
 }
 function kbLight(p,on){const el=kbKeys[p];if(el)el.classList.toggle('on',on);}
+kb.addEventListener('pointerenter',()=>showHint('On-screen keys','Click to play the active track. Labels show the computer key for each note; physical positions, so QWERTZ and AZERTY work the same.','- ='));
 
 /* ---------- loop & layout ---------- */
-const rack=$('#rack'),rackbox=$('#rackbox');
-function fit(){const s=Math.min(1,rackbox.clientWidth/1384);rack.style.transform=`scale(${s})`;rackbox.style.height=(540*s)+'px';}
-window.addEventListener('resize',fit);fit();
+const statusEl=$('#status');
+function fit(){
+  const aw=window.innerWidth-32,r=Math.min(aw/640,(window.innerHeight-20)/500),f=Math.max(1,r);
+  const sh=Math.round(26*f),kbh=S.showKb?Math.round(74*f):0,ah=window.innerHeight-20-sh-kbh;
+  let s=Math.min(aw/640,ah/400);s=s>=2?Math.floor(s):Math.max(0.3,s);
+  document.documentElement.style.setProperty('--u',f.toFixed(3));
+  const w=Math.round(640*s),h=Math.round(400*s);
+  cv.style.width=w+'px';cv.style.height=h+'px';statusEl.style.width=w+'px';kb.style.width=w+'px';kb.hidden=!S.showKb;
+}
+window.addEventListener('resize',fit);
 document.addEventListener('pointerdown',()=>ensureAudio(),{once:true});
 
 function frame(){
@@ -1505,7 +1288,7 @@ function frame(){
     liveQ.sort((a,b)=>a.at-b.at);
     dirty=true;
   }
-  if(gate.some(g=>g>0)||S.step||held.size||performance.now()-S.inFlash<500||msg||meters.l>0.001)dirty=true;
+  if(gate.some(g=>g>0)||S.step||held.size||performance.now()-S.inFlash<500||meters.l>0.001)dirty=true;
   meters.l*=0.97;meters.r*=0.97;for(let i=0;i<8;i++)meters.tr[i]*=0.97;
   if(dirty){dirty=false;render();}
   requestAnimationFrame(frame);
@@ -1515,7 +1298,7 @@ window.__ast={S,get ac(){return ac},get ready(){return ready},meters};
   let ok=false;
   try{const s=localStorage.getItem(LS_KEY);if(s){loadSong(JSON.parse(s));ok=true;}}catch(e){ok=false;}
   if(!ok)loadDemo();
-  buildKb();
+  buildKb();fit();
   (document.fonts?document.fonts.load('16px VT323'):Promise.resolve()).catch(()=>{}).then(()=>{dirty=true;requestAnimationFrame(frame);});
 })();
 })();
