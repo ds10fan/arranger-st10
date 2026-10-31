@@ -59,9 +59,9 @@ class Voice {
     this.t1 = 0; this.t2 = 0; this.d1 = 0; this.d2 = 0; this.o1d = 0; this.o2d = 0; this.o2 = 0; this.h2 = 0;
     this.n1 = 13174; this.n2 = 13036;
     // VCF
-    this.praw = T.peak[0]; this.q = 32767; this.cut = 127 << 15; this.typ = 0; this.treq = 0;
+    this.praw = T.peak[0]; this.q = 32767; this.cut = 127 << 15; this.cutT = this.cut; this.cutR = 0; this.rampF = 0; this.typ = 0; this.treq = 0;
     this.feg = 64; this.fin = 64; this.fls = 4; this.fes = 2; this.fosc = 0;
-    this.s1 = 0; this.s2 = 0; this.g = 0.1; this.gd = 0; this.gT = -1; this.k = 2; this.kd = 0; this.kT = 2; this.qg = 1;
+    this.s1 = 0; this.s2 = 0; this.g = 0.1; this.gm = 1; this.gT = -1; this.k = 2; this.kd = 0; this.kT = 2; this.qg = 1;
     // VCA
     this.dist = 0; this.wet = 0; this.alk = 0; this.ain = 0; this.aeg = 0; this.als = 4; this.aes = 2;
     this.dr1 = 0; this.dr2 = 32767; this.lvl = 0; this.lvd = 0; this.lvT = 0;
@@ -85,7 +85,12 @@ class Voice {
         break;
       }
       case 10: this.sync = v; break;
-      case 11: this.cut = v << 15; break;
+      // cutoff glides to its new value over rampF frames; fractional values are kept
+      case 11:
+        this.cutT = Math.round(v * 32768);
+        if (this.rampF <= 0) { this.cut = this.cutT; this.cutR = 0; }
+        else this.cutR = Math.abs(this.cutT - this.cut) / this.rampF;
+        break;
       case 12: {
         this.praw = T.peak[v];
         let t2 = (0xFFFFFF - (this.praw >> 7)) * 64; if (t2 > 0xFFFFFF) t2 = 0xFFFFFF;
@@ -180,7 +185,11 @@ class Voice {
     const o2i = Math.round(this.o2 * 32767);
     let mod = (I(MA[this.fin], (eo(this.fes) + LO[this.fls]) >> 9) >> 15) + (I(MA[this.feg], EO0 >> 9) >> 15)
       + (I(MB[this.fin], this.fosc * o2i) >> 15);
-    let v = clampi(mod * 0x7F + this.cut, -0xB8000, 0x3F8000) + 0xB8000;
+    if (this.cut !== this.cutT) {
+      const d = this.cutT - this.cut;
+      this.cut = Math.abs(d) <= this.cutR ? this.cutT : this.cut + (d > 0 ? this.cutR : -this.cutR);
+    }
+    let v = clampi(Math.round(mod * 0x7F + this.cut), -0xB8000, 0x3F8000) + 0xB8000;
     const ci = v >> 15, cf = v & 0x7FFF, coef = T.coef[ci] + m15(cf, T.coef[ci + 1] - T.coef[ci]);
     let res = coef - 1367566549; if (res < 1) res = 0;
     const sq = fl(res * res / 2147483648);
@@ -191,7 +200,9 @@ class Voice {
     if (fc > SR * 0.45) fc = SR * 0.45; else if (fc < 8) fc = 8;
     const gT = Math.tan(Math.PI * fc / SR), kT = dT / 8388608;
     if (this.gT < 0) { this.gT = gT; this.kT = kT; }
-    this.g = this.gT; this.gd = (gT - this.gT) / FR; this.gT = gT;
+    // the coefficient moves every sample: a geometric ramp from the last frame's value to this one's,
+    // i.e. a straight line in log-frequency
+    this.g = this.gT; this.gm = Math.pow(gT / this.gT, 1 / FR); this.gT = gT;
     this.k = this.kT; this.kd = (kT - this.kT) / FR; this.kT = kT;
     this.qg = this.q / 32768;
     if (this.typ !== this.treq) { this.typ = this.treq; this.s1 = 0; this.s2 = 0; }
@@ -267,7 +278,7 @@ class Voice {
     this.s1 = s1 > 1 ? 1 : s1 < -1 ? -1 : s1; this.s2 = s2 > 1 ? 1 : s2 < -1 ? -1 : s2;
     let f;
     if (this.typ === 0) f = v2; else if (this.typ === 1) { f = xin - k * v1 - v2; f = f > 1 ? 1 : f < -1 ? -1 : f; } else f = v1;
-    this.g += this.gd; this.k += this.kd;
+    this.g *= this.gm; this.k += this.kd;
     // VCA: drive, optional ring-mod against VCO2, level
     let c = f * this.dr1 / 2048; c = c < -1 ? -1 : c > 1 ? 1 : c;
     let o = (c * 0.5 + f * this.dr2 / 32768) * 0.5 * this.lvl / 16777216;
@@ -280,12 +291,16 @@ class Voice {
 
 // 4-pole highpass: two TPT SVF sections, resonance on the second
 class HP4 {
-  constructor() { this.a = [0, 0, 0, 0]; this.set(0, 0); }
-  set(c, r) {
-    this.byp = c === 0 && r === 0;
+  constructor() { this.a = [0, 0, 0, 0]; this.n = 0; this.gm = 1; this.set(0, 0, 0); }
+  // `ramp` in samples: the cutoff coefficient glides geometrically, one step per sample
+  set(c, r, ramp) {
     const fc = 20 * Math.pow(400, c / 127), rr = r / 127;
-    this.g = Math.tan(Math.PI * Math.min(fc, SR * 0.45) / SR);
+    const gT = Math.tan(Math.PI * Math.min(fc, SR * 0.45) / SR);
     this.k1 = 1.8478 * (1 - 0.3 * rr); this.k2 = 0.7654 * (1 - 0.97 * rr);
+    this.off = c <= 0 && r <= 0;
+    if (!ramp || this.g === undefined) { this.g = gT; this.n = 0; this.gm = 1; }
+    else { this.n = Math.max(1, Math.round(ramp)); this.gm = Math.pow(gT / this.g, 1 / this.n); }
+    this.gT = gT; this.byp = this.off && this.n === 0;
   }
   sec(x, k, i) {
     const g = this.g, s = this.a;
@@ -295,7 +310,11 @@ class HP4 {
     if (s[i] > 2) s[i] = 2; else if (s[i] < -2) s[i] = -2;
     return x - k * v1 - v2;
   }
-  p(x) { return this.byp ? x : this.sec(this.sec(x, this.k1, 0), this.k2, 2); }
+  p(x) {
+    if (this.byp) return x;
+    if (this.n > 0) { this.g *= this.gm; if (--this.n === 0) { this.g = this.gT; this.byp = this.off; } }
+    return this.sec(this.sec(x, this.k1, 0), this.k2, 2);
+  }
 }
 
 const volGain = v => (v * v * 0x10404 / 32768) / 32768;
@@ -305,12 +324,24 @@ class Track {
     this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.stack = []; this.ageC = 0;
     for (let i = 0; i < 8; i++) this.vs.push(new Voice());
     this.hp = new HP4(); this.ins = [null, null]; this.mute = 0; this.solo = 0; this.peak = 0;
-    for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i]);
+    for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i], 0);
   }
-  set(id, v) {
+  // `ramp` in samples (undefined = default glide for hand moves, 0 = jump)
+  set(id, v, ramp) {
+    const r = ramp === undefined ? SR * 0.02 : ramp;
+    if (id >= NPARAM) {
+      // 37..52: knob j of insert slot s, id = 37 + s*8 + j, in the order of that effect's controls
+      const s = (id - NPARAM) >> 3, fx = this.ins[s];
+      if (fx) { const key = FXKEYS[fx.type_][(id - NPARAM) & 7]; if (key) fx.set(key, Math.round(v)); }
+      return;
+    }
     this.k[id] = v;
-    if (id < 31) { for (const vo of this.vs) vo.knob(id, v); return; }
-    if (id <= 32) this.hp.set(this.k[31], this.k[32]);
+    if (id < 31) {
+      if (id !== 11) v = Math.round(v);
+      for (const vo of this.vs) { vo.rampF = r / FR; vo.knob(id, v); }
+      return;
+    }
+    if (id <= 32) this.hp.set(this.k[31], this.k[32], r);
     this.g = volGain(this.k[33]); this.pr = this.k[34] * 258 / 32767; this.pl = 1 - this.pr;
     this.ga = volGain(this.k[35]); this.gb = volGain(this.k[36]);
   }
@@ -582,6 +613,7 @@ class FxDist {
 }
 
 const FXC = { ds10: FxDS10, mverb: FxMverb, tape: FxTape, dist: FxDist };
+const FXKEYS = { ds10: ['type', 'time', 'ratio', 'lfo', 'depth', 'sync', 'fb', 'mix'], mverb: ['dev', 'prog', 'fb', 'mix'], tape: ['speed', 'fb', 'len', 'mix'], dist: ['drive', 'tone', 'level', 'mix'] };
 function mkFx(d) {
   if (!d || !FXC[d.type]) return null;
   const fx = new FXC[d.type](); fx.type_ = d.type; fx.on = d.on !== false;
@@ -611,7 +643,7 @@ class Engine {
   cfg(c) {
     c.tracks.forEach((t, i) => {
       const tr = this.tr[i]; if (!tr) return;
-      tr.setNv(t.nv || 1); t.k.forEach((v, id) => tr.set(id, v));
+      tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v, 0); });
       tr.mute = t.mute ? 1 : 0; tr.solo = t.solo ? 1 : 0;
       tr.ins = (t.ins || [null, null]).map(mkFx);
     });
@@ -640,7 +672,7 @@ class Engine {
     switch (e.k) {
       case 'on': t.noteOn(e.p, e.v); break;
       case 'off': t.noteOff(e.p); break;
-      case 'knob': t.set(e.id, e.v); break;
+      case 'knob': t.set(e.id, e.v, e.ramp === undefined ? undefined : e.ramp * SR); break;
       case 'tempo': this.setTempo(e.v); break;
       case 'play': for (const tr of this.tr) for (const v of tr.vs) v.resetLfo(); break;
       case 'alloff': for (const tr of this.tr) tr.allOff(); break;
