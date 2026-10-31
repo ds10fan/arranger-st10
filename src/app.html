@@ -51,6 +51,7 @@ const nname=p=>NN[p%12]+(Math.floor(p/12)-2);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const pad=(n,l)=>String(n).padStart(l,'0');
 const MV_NAMES=@@MVNAMES@@;
+@@MANUAL@@
 
 /* ---------- parameters: 0..30 are the DS-10 patch knobs, 31..36 the track strip ---------- */
 const SRC=['---','SIN','SAW','SQR','S&H','EG','VCO2'];
@@ -99,7 +100,7 @@ const S={tracks:[],buses:[],master:null,parts:[],nextId:1,active:0,sel:null,view
   tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,
   menu:null,popup:null,dialog:null,toolbox:null,step:false,stepPos:0,stepHeld:0,editHi:72,takeId:0,
   mx:-1,my:-1,lastIn:null,inFlash:0,drag:null,pencil:null,lane:'vel',
-  fxSel:{w:{s:'t',i:0},slot:0},showKb:true,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
+  fxSel:{w:{s:'t',i:0},slot:0},showKb:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
 const gate=new Array(8).fill(0);
 let dirty=true;
 const q=()=>QS[S.qi][1];
@@ -531,6 +532,14 @@ const TOOLKEYS={KeyA:'pointer',KeyP:'pencil',KeyE:'eraser',KeyS:'scissors',KeyG:
 const FKEYS={F1:'arr',F2:'edit',F3:'syn',F4:'mix',F5:'fx',F6:'pad'};
 document.addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT')return;
+  if(S.input){e.preventDefault();const I=S.input;
+    if(e.key==='Enter')inputDone(true);else if(e.key==='Escape')inputDone(false);
+    else if(e.key==='Backspace')I.value=I.value.slice(0,-1);
+    else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&I.value.length<I.max&&/^[\x20-\x7e]$/.test(e.key))I.value+=e.key;
+    dirty=true;return;}
+  if(e.code==='F9'){e.preventDefault();setView('man');return;}
+  if(S.view==='man'&&['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(e.code)){e.preventDefault();
+    const pg=MAN_VIS-2;S.manTop+=({ArrowUp:-1,ArrowDown:1,PageUp:-pg,PageDown:pg,Home:-1e9,End:1e9})[e.code];dirty=true;return;}
   if(FKEYS[e.code]){e.preventDefault();setView(FKEYS[e.code]);return;}
   if(e.ctrlKey||e.metaKey){
     if(e.code==='KeyZ'){e.preventDefault();undo();}else if(e.code==='KeyS'){e.preventDefault();saveJSON();}
@@ -675,12 +684,12 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  move bar    Up Down  active track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST…',a:()=>dialog(['ARRANGER ST','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
-  {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON}]},
-  {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  move bar    Up Down  active track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST…',a:()=>dialog(['ARRANGER ST','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON},{l:'-'},{l:'Rename Song…',a:renameSong}]},
+  {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
   {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',a:locToPart}]},
   {name:'Functions',items:[{l:'Quantize Part',k:()=>QS[S.qi][0],a:quantizePart},{l:'Transpose +12',a:()=>transposePart(12)},{l:'Transpose -12',a:()=>transposePart(-12)},{l:'Clear Notes',a:clearPart},{l:'Clear Automation',a:clearAuto}]},
-  {name:'View',items:[{l:'Arrange',k:'F1',a:()=>setView('arr')},{l:'Key Edit',k:'F2',a:()=>setView('edit')},{l:'Synth',k:'F3',a:()=>setView('syn')},{l:'Mixer',k:'F4',a:()=>setView('mix')},{l:'Effect',k:'F5',a:()=>setView('fx')},{l:'KAOSS Pad',k:'F6',a:()=>setView('pad')}]},
+  {name:'View',items:[{l:'Arrange',k:'F1',a:()=>setView('arr')},{l:'Key Edit',k:'F2',a:()=>setView('edit')},{l:'Synth',k:'F3',a:()=>setView('syn')},{l:'Mixer',k:'F4',a:()=>setView('mix')},{l:'Effect',k:'F5',a:()=>setView('fx')},{l:'KAOSS Pad',k:'F6',a:()=>setView('pad')},{l:'Manual',k:'F9',a:()=>setView('man')}]},
   {name:'Options',items:[{l:()=>(S.click?'√ ':'  ')+'Metronome',a:()=>{S.click=!S.click;}},{l:()=>(S.autoQ?'√ ':'  ')+'Auto Quantize',a:()=>{S.autoQ=!S.autoQ;}},
     {l:()=>(S.recMode==='replace'?'√ ':'  ')+'Replace Mode',a:()=>{S.recMode=S.recMode==='replace'?'overdub':'replace';}},
     {l:()=>(S.master.shp?'√ ':'  ')+'DS-10 Master Shaper',a:()=>{S.master.shp=S.master.shp?0:1;sendMst();}},{l:'-'},
@@ -704,6 +713,18 @@ function drawList(g){
     T(lab(r.o.l),r.x+8,r.y+9,hv?WH:B);if(r.o.k)T(lab(r.o.k),r.x+r.w-6,r.y+9,hv?WH:B,'right');
   });
 }
+// one-line text entry (song and track names); the keyboard types into it instead of playing notes
+function askText(title,value,max,ok){S.input={title,value:String(value||''),max,ok};S.menu=S.popup=null;allOff();dirty=true;}
+function inputDone(okd){const i=S.input;S.input=null;dirty=true;if(okd&&i.value.trim())i.ok(i.value.trim());}
+function drawInput(){
+  if(!S.input)return;const I=S.input,w=Math.max(300,tw('M'.repeat(I.max))+60),h=96,x=(W-w)/2|0,y=110;
+  box(x,y,w,h);box(x+3,y+3,w-6,h-6);T(I.title,x+w/2,y+18,B,'center');
+  box(x+20,y+32,w-40,22);T(I.value,x+26,y+43);if(Math.floor(performance.now()/450)%2===0)clr(x+27+tw(I.value),y+36,7,14,B);
+  [['Cancel',false],['OK',true]].forEach(([l,o],i)=>{const bx=x+w/2-86+i*100,by=y+64;box(bx,by,72,22);if(o)box(bx+2,by+2,68,18);T(l,bx+36,by+11,B,'center');
+    reg(bx,by,72,22,{down:()=>inputDone(o),hint:[l,o?'Enter':'Esc','']});});
+}
+function renameSong(){askText('Song name',S.songName,24,v=>{S.songName=v;songChanged();flashMsg('Song renamed');});}
+function renameTrack(ti){if(ti==null)ti=S.active;askText('Name of track '+(ti+1),S.tracks[ti].name,8,v=>{S.tracks[ti].name=v;S.tracks[ti].autoName=false;songChanged();});}
 // buttons: [{l, a, def}]; the default button (double frame) answers Enter, Esc closes without acting
 function dialog(lines,buttons){S.dialog={lines,buttons:buttons||[{l:'OK',def:true}]};S.menu=null;S.popup=null;dirty=true;}
 function dialogBtns(){const g=dialogGeom(),b=S.dialog.buttons,bw=72,gap=14,tot=b.length*bw+(b.length-1)*gap;return b.map((o,i)=>({o,x:g.x+(g.w-tot)/2+i*(bw+gap),y:g.y+g.h-32,w:bw,h:22}));}
@@ -720,7 +741,7 @@ function initPatch(){
 function sendMst(){post({t:'mst',vol:S.master.vol,shp:S.master.shp});songChanged();dirty=true;}
 
 /* ---------- window chrome ---------- */
-const VIEWNAME={arr:'ARRANGE',edit:'KEY EDIT',syn:'SYNTH',mix:'MIXER',fx:'EFFECT',pad:'KAOSS'};
+const VIEWNAME={arr:'ARRANGE',edit:'KEY EDIT',syn:'SYNTH',mix:'MIXER',fx:'EFFECT',pad:'KAOSS',man:'MANUAL'};
 const TABS=[['arr','ARR','F1'],['edit','EDIT','F2'],['syn','SYN','F3'],['mix','MIX','F4'],['fx','FX','F5'],['pad','PAD','F6']];
 function tabGeom(){const ws=TABS.map(t=>tw(t[1])+12);let x=W-ws.reduce((a,b)=>a+b,0);return TABS.map((t,i)=>{const r={v:t[0],l:t[1],k:t[2],x,w:ws[i]};x+=ws[i];return r;});}
 function drawMenuBar(){
@@ -734,6 +755,7 @@ function drawTitle(label,closer){
   clr(20,23,W-43,12,PLINE);
   const w=tw(label)+18;clr(W/2-w/2,21,w,16,WH);T(label,W/2,29,B,'center');
   box(W-17,22,14,14);box(W-14,25,8,8);
+  if(!closer&&S.view==='arr')reg(W/2-w/2,21,w,16,{down:renameSong,hint:['Song name','Click to rename the song.','']});
   if(closer)reg(3,22,14,14,{down:toArr,hint:['Closer box','Closes this window and returns to Arrange.','Esc']});
   else reg(3,22,14,14,{hint:['Closer box','The Arrange window is the song; it stays open.','']});
 }
@@ -884,7 +906,7 @@ function drawSynth(){
   clr(0,38,W,18,WH);hl(0,55,W);
   box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>setActive(ti-1),hint:['Previous track','','↑']});
   box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
-  T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);
+  T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);reg(42,40,tw('T'+(ti+1)+' '+t.name.toUpperCase())+6,14,{down:()=>renameTrack(ti),hint:['Track name','Click to rename this track.','']});
   const bx=[[240,'PRESET',()=>{S.presetPick=!S.presetPick;},'Patch library','Browse the DS-10 factory set and 502 patches from the ds10emu song saves.'],[300,'INIT',initPatch,'Init patch','Resets all synth knobs to the DS-10 init patch.'],[352,'COPY',copyPatch,'Copy patch','Copies this track\'s synth knobs.'],[404,'PASTE',pastePatch,'Paste patch','Pastes copied knobs onto this track.']];
   for(const [x,l,f,h1,h2] of bx){const on=l==='PRESET'&&S.presetPick,bw=l==='PRESET'?56:48;box(x,40,bw,14,on?B:WH);T(l,x+bw/2,47,on?WH:B,'center');reg(x,40,bw,14,{down:f,hint:[h1,h2,'']});}
   const recOn=S.rec&&S.playing;if(recOn){clr(470,40,166,14,B);T('KNOBS RECORD AUTOMATION',553,47,WH,'center');}
@@ -1111,11 +1133,12 @@ function render(){
   else if(S.view==='mix'){drawTitle('MIXER',true);drawMixer();}
   else if(S.view==='fx'){drawTitle('EFFECT',true);drawFx();}
   else if(S.view==='pad'){drawTitle('KAOSS PAD',true);drawPad();}
+  else if(S.view==='man'){drawTitle('MANUAL',true);drawManual();}
   else{drawTitle('ARRANGE  '+(S.songName||'untitled').toUpperCase(),false);drawArrange();}
   drawTransport();
   if(S.menu!=null)drawList(menuGeom(S.menu));
   if(S.popup)drawList(popupGeom());
-  drawToolbox();drawDialog();
+  drawToolbox();drawDialog();drawInput();
   if(S.mx>=0)drawBm(CUR[cursorFor(S.mx,S.my)],S.mx,S.my);
   $('#saveLbl').textContent=saveState;
 }
@@ -1146,6 +1169,7 @@ cv.addEventListener('pointerdown',e=>{
   ensureAudio();e.preventDefault();cv.setPointerCapture(e.pointerId);
   const {x,y}=mpos(e);S.mx=x;S.my=y;dirty=true;
   const now=performance.now(),dbl=now-lastDown.t<350&&Math.abs(x-lastDown.x)<5&&Math.abs(y-lastDown.y)<5;lastDown={t:dbl?0:now,x,y};
+  if(S.input){const r=regionAt(x,y);if(r&&r.down)r.down(e);return;}
   if(S.dialog){const r=dialogBtns().find(r=>inR(r,x,y));if(r)dialogAnswer(r.o);return;}
   if(S.toolbox){const c=toolboxCells().find(c=>inR(c,x,y));if(c)setTool(c.t);S.toolbox=null;return;}
   if(S.popup){const g=popupGeom();const it=g.rows.find(r=>inR(r,x,y));S.popup=null;if(it&&it.o.l!=='-')it.o.a();return;}
@@ -1386,6 +1410,46 @@ function drawPad(){
   T('Recorded lanes show',x0,250);T('in Key Edit under the',x0,266);T('note grid (F2).',x0,282);
 }
 
+/* ---------- manual window ---------- */
+const MAN_X=8,MAN_W=W-30,MAN_LH=16,MAN_Y=58,MAN_VIS=Math.floor((TBY-MAN_Y-2)/MAN_LH);
+let manLines=null;
+function wrap(text,w,f){const out=[];let line='';for(const word of text.split(' ')){const t=line?line+' '+word:word;if(tw(t,f)>w&&line){out.push(line);line=word;}else line=t;}out.push(line);return out;}
+function buildManual(){
+  // flatten MANUAL into display lines: [kind, text, extra]; headings remember their line for the contents
+  const L=[],heads=[];
+  for(const e of MANUAL){
+    if(e[0]==='h'){if(L.length)L.push(['sp','']);heads.push([e[1],L.length]);L.push(['h',e[1]]);}
+    else if(e[0]==='p'){for(const l of wrap(e[1],MAN_W))L.push(['p',l]);L.push(['sp','']);}
+    else if(e[0]==='b'){wrap(e[1],MAN_W-16).forEach((l,i)=>L.push(['b',l,i===0]));}
+    else if(e[0]==='k'){const kw=150;wrap(e[2],MAN_W-kw).forEach((l,i)=>L.push(['k',l,i===0?e[1]:'']));}
+  }
+  manLines={L,heads};
+}
+function drawManual(){
+  if(!manLines)buildManual();const {L,heads}=manLines;
+  clr(0,38,W,TBY-38,WH);
+  // contents row
+  clr(0,38,W,18,WH);hl(0,55,W);
+  let cx=6;const cur=heads.filter(h=>h[1]<=S.manTop+1).pop();
+  T('GO TO',cx,47,B,'left',14);cx+=tw('GO TO',14)+8;
+  box(cx,40,W-cx-6,14);T((cur?cur[0]:heads[0][0])+'  ▾',cx+6,47,B,'left',14);
+  reg(cx,40,W-cx-6,14,{down:()=>{S.popup={x:cx,y:56,items:heads.map(h=>({l:(h===cur?'√ ':'  ')+h[0],a:()=>{S.manTop=h[1];}}))};},hint:['Contents','Jump to a section.','']});
+  S.manTop=clamp(S.manTop||0,0,Math.max(0,L.length-MAN_VIS));
+  for(let i=0;i<MAN_VIS;i++){const ln=L[S.manTop+i];if(!ln)break;const y=MAN_Y+i*MAN_LH+MAN_LH/2;
+    if(ln[0]==='h'){clr(MAN_X-4,y-7,MAN_W+8,15,B);T(ln[1].toUpperCase(),MAN_X,y,WH);}
+    else if(ln[0]==='p')T(ln[1],MAN_X,y);
+    else if(ln[0]==='b'){if(ln[2])clr(MAN_X+3,y-2,4,4,B);T(ln[1],MAN_X+16,y);}
+    else if(ln[0]==='k'){if(ln[2]){T(ln[2],MAN_X,y,B,'left',ln[2].length>22?13:16);}T(ln[1],MAN_X+150,y);}
+  }
+  // scroll bar
+  const sbx=W-14,sby=MAN_Y,sbh=MAN_VIS*MAN_LH;box(sbx,sby,10,sbh);
+  const th=Math.max(16,sbh*MAN_VIS/L.length),ty=sby+(sbh-th)*(S.manTop/Math.max(1,L.length-MAN_VIS));
+  ctx.fillStyle=P50;clr(sbx+1,sby+1,8,sbh-2,P50);box(sbx,ty,10,th);
+  let acc=0;
+  reg(sbx-2,sby,14,sbh,{drag:d=>{acc-=d;const st=Math.trunc(acc/(sbh/L.length));if(st){acc-=st*sbh/L.length;S.manTop+=st;dirty=true;}},wheel:d=>{S.manTop+=d*3;dirty=true;},hint:['Scroll','Drag, scroll, or use the arrow and Page keys.','PgUp PgDn'],cur:'vert'});
+  reg(0,MAN_Y,W-16,sbh,{wheel:d=>{S.manTop+=d*3;dirty=true;},hint:['Manual','Scroll with the wheel, the arrow keys or Page Up / Page Down. Esc returns to Arrange.','F9']});
+}
+
 /* ---------- status line ---------- */
 const hT=$('#hintT'),hD=$('#hintD'),hK=$('#hintK');
 let lastHint='',msgUntil=0;
@@ -1446,7 +1510,7 @@ function frame(){
     liveQ.sort((a,b)=>a.at-b.at);
     dirty=true;
   }
-  if(gate.some(g=>g>0)||S.step||held.size||performance.now()-S.inFlash<500||meters.l>0.001)dirty=true;
+  if(gate.some(g=>g>0)||S.step||S.input||held.size||performance.now()-S.inFlash<500||meters.l>0.001)dirty=true;
   meters.l*=0.97;meters.r*=0.97;for(let i=0;i<8;i++)meters.tr[i]*=0.97;
   if(dirty){dirty=false;render();}
   requestAnimationFrame(frame);
