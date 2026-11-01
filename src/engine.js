@@ -369,9 +369,10 @@ class Track {
     if (!v) v = this.sv.reduce((a, b) => (a.age < b.age ? a : b));
     const pn = (e.pn === undefined ? 64 : e.pn) * 258 / 32767;
     v.on = true; v.d = e.p; v.L = smp.L; v.R = smp.R; v.n = smp.L.length; v.pos = (e.st || 0) / 128 * v.n;
-    v.rate = Math.pow(2, (e.pt || 0) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC;
+    v.rate = Math.pow(2, (e.pt || 0) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC; v.id = e.id;
   }
-  drumOff(p) { for (const v of this.sv) if (v.on && v.d === p) v.rel = true; }
+  // a note-off releases only the hit its note-on started (by id); without an id, every hit of that drum
+  drumOff(p, id) { for (const v of this.sv) if (v.on && v.d === p && (id === undefined || v.id === id)) v.rel = true; }
   stereo() {
     let l = 0, r = 0;
     for (const v of this.sv) {
@@ -739,7 +740,7 @@ class Engine {
     const t = this.tr[e.tr];
     switch (e.k) {
       case 'on': if (t.drum) t.drumOn(e); else t.noteOn(e.p, e.v); break;
-      case 'off': if (t.drum) t.drumOff(e.p); else t.noteOff(e.p); break;
+      case 'off': if (t.drum) t.drumOff(e.p, e.id); else t.noteOff(e.p); break;
       case 'knob': t.set(e.id, e.v); break;
       case 'tempo': this.setTempo(e.v); break;
       case 'play': for (const tr of this.tr) for (const v of tr.vs) v.resetLfo(); break;

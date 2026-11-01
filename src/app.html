@@ -368,7 +368,8 @@ function scheduleRange(a,b,time,pass,ev){
       if(abs<a||abs>=b||n.fresh===pass)continue;
       if(p.dmute&&p.dmute[n.p]&&tr.kind==='drum')continue;
       const t0=time+(abs-a)*k,t1=t0+Math.max(4,n.d)*k;
-      ev.push({time:t0,k:'on',tr:p.track,p:n.p,v:n.v,pt:n.pt,pn:n.pn,st:n.st},{time:t1,k:'off',tr:p.track,p:n.p});
+      const id=++noteIdC;
+      ev.push({time:t0,k:'on',tr:p.track,p:n.p,v:n.v,pt:n.pt,pn:n.pn,st:n.st,id},{time:t1,k:'off',tr:p.track,p:n.p,id});
       const ti=p.track;
       setTimeout(()=>{gate[ti]++;},Math.max(0,(t0-ac.currentTime)*1000));
       setTimeout(()=>{gate[ti]=Math.max(0,gate[ti]-1);},Math.max(0,(t1-ac.currentTime)*1000));
@@ -509,6 +510,7 @@ function stepBack(){const p=part(S.editPart);if(!p)return;S.stepPos=Math.max(0,S
 
 /* ---------- note input ---------- */
 const held=new Map();
+let noteIdC=0;   // every note-on gets an id; its note-off carries the same id, so a drum hit is only released by its own key
 function drumCtx(){if(S.view==='drum'&&S.drumEd)return S.drumEd;if(S.view==='fx'&&S.fxSel.w.s==='d')return {tr:S.fxSel.w.i,d:S.fxSel.w.d};return null;}
 function inputTrack(){if(S.view==='edit'){const p=part(S.editPart);if(p)return p.track;}const dc=drumCtx();if(dc)return dc.tr;return S.active;}
 // which drum a key plays: MIDI from C1 (36) like GM, the computer keys from the bottom-left key; while one drum is being edited
@@ -522,17 +524,18 @@ function noteOn(key,p,v,drumIdx){
   ensureAudio();
   const tr=inputTrack(),kp=p;let pt=0;
   if(isDrumT(tr)){const m=drumIdx!=null?{d:drumIdx,pt:0}:drumFor(key,p);p=m.d;pt=m.pt;}
-  post({t:'ev',ev:[{time:0,k:'on',tr,p,v,pt}]});
+  const id=++noteIdC;
+  post({t:'ev',ev:[{time:0,k:'on',tr,p,v,pt,id}]});
   gate[tr]++;S.lastIn={p,v};S.inFlash=performance.now();
   let rn=null;
   if(S.playing&&S.rec)rn=recordStart(tr,p,v);
   else if(S.step&&S.view==='edit'){const pt=part(S.editPart);if(pt){pt.notes.push({t:S.stepPos,p,v,d:gateLen()||q()});S.stepHeld++;}}
-  held.set(key,{p,kp,rn,tr,step:S.step});
+  held.set(key,{p,kp,rn,tr,step:S.step,id});
   kbLight(kp,true);dirty=true;
 }
 function noteOff(key){
   const h=held.get(key);if(!h)return;held.delete(key);
-  post({t:'ev',ev:[{time:0,k:'off',tr:h.tr,p:h.p}]});
+  post({t:'ev',ev:[{time:0,k:'off',tr:h.tr,p:h.p,id:h.id}]});
   gate[h.tr]=Math.max(0,gate[h.tr]-1);
   if(h.rn)finalizeRec(h.rn);
   if(h.step&&S.step){S.stepHeld=Math.max(0,S.stepHeld-1);if(S.stepHeld===0)stepAdvance();}
@@ -650,7 +653,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{if(held.has('k:'+e.code))noteOff('k:'+e.code);});
 window.addEventListener('blur',allOff);
 function octave(d){S.oct=clamp(S.oct+d,-1,6);allOff();buildKb();dirty=true;}
-function audition(p,v,n){ensureAudio();const tr=inputTrack();post({t:'ev',ev:[{time:0,k:'on',tr,p,v:v||100,pt:n&&n.pt,pn:n&&n.pn,st:n&&n.st},{time:(ac?ac.currentTime:0)+(isDrumT(tr)?0.6:0.25),k:'off',tr,p}]});}
+function audition(p,v,n){ensureAudio();const tr=inputTrack(),id=++noteIdC;post({t:'ev',ev:[{time:0,k:'on',tr,p,v:v||100,pt:n&&n.pt,pn:n&&n.pn,st:n&&n.st,id},{time:(ac?ac.currentTime:0)+(isDrumT(tr)?0.6:0.25),k:'off',tr,p,id}]});}
 
 /* MIDI */
 let midiAcc=null;
