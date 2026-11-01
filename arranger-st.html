@@ -898,7 +898,7 @@ const MANUAL=[
 ['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. In Key Edit while stopped, Record arms step input instead.'],
 ['k','Cycle','/ or Numpad /. Loops between the L and R locators. Recording in cycle layers each pass onto the last.'],
 ['k','Return to zero','Home or Numpad . jumps to bar 1.'],
-['k','Position','Arrows move the song position by a bar (Shift: a beat). Scrolling over the position display steps by the quantize value.'],
+['k','Position','Shift+Left/Right moves the song position by a bar. Plain Left/Right page the Arrange and Key Edit views a screen at a time (in the other windows they move the position). Scrolling over the position display steps by the quantize value.'],
 ['k','L and R','Click L or R to set that locator to the current bar. Shift-click jumps to the locator.'],
 ['k','OVERDUB / REPLACE','Overdub adds recorded notes to what is already there. Replace erases the active track\'s notes under the playhead while you record.'],
 ['k','AUTO-Q','Snaps recorded notes to the quantize grid.'],
@@ -922,7 +922,7 @@ const MANUAL=[
 ['k','Small square','Lights while the track is sounding.'],
 ['k','Cycle strip','The thin strip at the top of the ruler. Drag across bars to set the cycle range, or click it to turn cycle on or off.'],
 ['k','Ruler','Click or drag to set the song position. Shift snaps to beats.'],
-['k','Scroll wheel','Scrolls the bars. Over the track list, it changes the active track.'],
+['k','Scroll wheel','Scrolls the bars. Over the track list, it changes the active track. Left/Right page by a screen (16 bars).'],
 ['p','Tools: right-press anywhere in the parts area to open the toolbox, slide to a tool and release. Tab steps through the tools.'],
 ['k','Pointer','Drag a part to move it (Shift: by beats). Drag its right edge to resize. Alt-drag to copy. Double-click a part to open Key Edit, or double-click an empty lane to add a one-bar part.'],
 ['k','Pencil','Drag across an empty lane to draw a part. On a part, drag to set its length.'],
@@ -933,14 +933,19 @@ const MANUAL=[
 ['p','A small box in a part\'s corner means the part has automation. The Structure menu has Repeat Part x4, Split Part at Position, Glue Part to Next and Locators to Part. Functions has Quantize Part, Transpose +12 and -12, Clear Notes and Clear Automation.'],
 
 ['h','Key Edit window'],
-['p','Key Edit shows the selected part. The piano keys are on the left (click one to hear it), the note grid fills the middle, and a lane underneath shows velocity or one automation lane. The scroll wheel scrolls the pitch.'],
+['p','Key Edit shows the selected part. The piano keys are on the left (click one to hear it), the note grid fills the middle, and a lane underneath shows velocity or one automation lane.'],
+['k','Wheel','Scrolls left and right: by bars, or by beats when one bar fills the screen.'],
+['k','Ctrl+wheel','Zooms in whole bars: 1, 2, 3 … bars on screen, up to the whole part. The title shows the view. While playing or in step input the view follows.'],
+['k','Shift+wheel','Scrolls the pitch range.'],
+['k','Double-click the ruler','Fits the whole part again.'],
+['k','Left / Right','Page the view one screen.'],
 ['k','Pointer','Drum parts work the same way, with one row per drum. Click a note to select it; Shift-click adds or removes notes. Drag on empty grid to select a group with a box. Drag a selected note to move the whole group (Alt: no snapping). Drag a note\'s right end to stretch the group. Double-click empty grid to add a note.'],
 ['k','Pencil','Draws notes. See Gate below.'],
 ['k','Eraser','Click or drag over notes to delete them.'],
 ['k','Ctrl+A','Selects all notes in the part.'],
 ['k','Ctrl+C / X / V','Copy, cut and paste notes. Paste lands at the song position, snapped to the grid. The copy keeps every note value (drum pitch, pan and start too) and the part\'s automation over the copied span; paste writes that automation at the new place, replacing what was there. Cut removes the notes but leaves the automation.'],
 ['k','Del','Deletes the selected notes.'],
-['k','Up / Down','Transposes the selected notes by a semitone (Shift: an octave). With nothing selected, it scrolls the pitch.'],
+['k','Up / Down','Transposes the selected notes by a semitone (Shift: an octave). With nothing selected, it opens the part on the next track above or below (the one overlapping this part, else the nearest), keeping the zoom.'],
 ['p','Gate: the GATE bar under the grid sets how the pencil and step input enter notes, like the DS-10 step sequencer. Press ` to cycle the gates.'],
 ['k','FREE','The pencil follows the quantize grid; drag to set the length.'],
 ['k','25% 50% 75% 100%','Click enters a 16th note held for that part of the step. Dragging fills consecutive 16ths. Clicking an existing note sets it to that length. Clicking a gate button with notes selected sets their length.'],
@@ -1033,8 +1038,8 @@ const MANUAL=[
 ['k','Enter','Record; step input in Key Edit while stopped'],
 ['k','/','Cycle'],
 ['k','Home','Bar 1'],
-['k','Left / Right','Position by a bar (Shift: a beat)'],
-['k','Up / Down','Active track; in Key Edit, transpose the selection'],
+['k','Left / Right','Page Arrange and Key Edit (Shift: song position by a bar)'],
+['k','Up / Down','Active track; in Key Edit, transpose the selection or go to the next track\'s part'],
 ['k','[ ]','Quantize'],
 ['k','Tab','Next tool (Shift: previous)'],
 ['k','`','Note gate'],
@@ -1100,7 +1105,7 @@ const S={tracks:[],buses:[],master:null,parts:[],nextId:1,active:0,sel:null,view
   tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,
   menu:null,popup:null,dialog:null,toolbox:null,step:false,stepPos:0,stepHeld:0,editHi:72,takeId:0,
   mx:-1,my:-1,lastIn:null,inFlash:0,drag:null,pencil:null,lane:'vel',
-  fxSel:{w:{s:'t',i:0},slot:0},showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
+  fxSel:{w:{s:'t',i:0},slot:0},ezoom:0,escroll:0,showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
 const gate=new Array(8).fill(0);
 let dirty=true;
 const q=()=>QS[S.qi][1];
@@ -1467,6 +1472,7 @@ function openEdit(p){
   if(!p)return dialog(['This track has no parts yet.','Double-click an empty lane','in the Arrange window to add one.']);
   if(S.step)exitStep();
   S.view='edit';S.editPart=p.id;S.sel=p.id;S.active=p.track;selOnly(null);
+  {const rel=S.pos-p.start;S.escroll=0;if(rel>=0&&rel<p.len)eFollow(p,rel);}
   const ps=p.notes.map(n=>n.p);const hi=ps.length?Math.max(...ps):66,lo=ps.length?Math.min(...ps):60;
   S.editHi=clamp(Math.round((hi+lo)/2)+12,23,127);if(hi>S.editHi)S.editHi=clamp(hi+1,23,127);
   if((!NOTE_LANES[S.lane]&&!p.auto[S.lane])||(NOTE_LANES[S.lane]&&S.lane!=='vel'&&!isDrumT(p.track)))S.lane='vel';
@@ -1474,6 +1480,15 @@ function openEdit(p){
   dirty=true;
 }
 function setView(v){S.presetPick=false;S.padPick=null;if(S.step&&v!=='edit')exitStep();if(v==='edit')return openEdit();S.view=v;S.tool=v==='arr'?S.arrTool:S.tool;if(v!=='edit'&&v!=='arr')S.tool=S.arrTool;S.menu=S.popup=S.toolbox=null;dirty=true;}
+// Key Edit, nothing selected: Up/Down open the part on the next track above/below that overlaps this part (else the nearest one)
+function editTrackStep(d){
+  const p=part(S.editPart);if(!p)return;const V=eView(p),abs=p.start+V.s;
+  for(let ti=p.track+d;ti>=0&&ti<8;ti+=d){
+    const ps=partsOn(ti);if(!ps.length)continue;
+    const np=ps.find(o=>o.start<p.start+p.len&&o.start+o.len>p.start)||ps.reduce((a,b)=>Math.abs(b.start-p.start)<Math.abs(a.start-p.start)?b:a);
+    const z=S.ezoom;openEdit(np);S.ezoom=z;S.escroll=abs-np.start;eView(np);flashMsg('T'+(ti+1)+' '+S.tracks[ti].name);return;}
+  flashMsg(d<0?'No parts on tracks above':'No parts on tracks below');
+}
 function noteCmd(c){
   const p=part(S.editPart);if(!p)return;
   if(c==='KeyA'){S.selSet=new Set(p.notes);S.selNote=p.notes[0]||null;}
@@ -1502,7 +1517,7 @@ function toArr(){setView('arr');selOnly(null);}
 function enterStep(){const p=part(S.editPart);if(!p)return;snapshot();S.step=true;S.stepHeld=0;
   const rel=S.pos-p.start;S.stepPos=(rel>=0&&rel<p.len)?Math.floor(rel/stepSize())*stepSize():0;dirty=true;}
 function exitStep(){S.step=false;dirty=true;}
-function stepAdvance(){const p=part(S.editPart);if(!p)return;S.stepPos+=stepSize();if(S.stepPos>=p.len)p.len+=BAR;S.pos=p.start+S.stepPos;dirty=true;}
+function stepAdvance(){const p=part(S.editPart);if(!p)return;S.stepPos+=stepSize();if(S.stepPos>=p.len)p.len+=BAR;S.pos=p.start+S.stepPos;eFollow(p,S.stepPos);dirty=true;}
 function stepBack(){const p=part(S.editPart);if(!p)return;S.stepPos=Math.max(0,S.stepPos-stepSize());p.notes=p.notes.filter(n=>n.t!==S.stepPos);S.pos=p.start+S.stepPos;dirty=true;}
 
 /* ---------- note input ---------- */
@@ -1635,10 +1650,13 @@ document.addEventListener('keydown',e=>{
     case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick||S.padPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;S.padPick=null;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
     case 'Tab':handled();nextTool(e.shiftKey?-1:1);break;
     case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
-    case 'ArrowLeft':handled();relocate(Math.max(0,S.pos-(e.shiftKey?PPQ:BAR)));break;
-    case 'ArrowRight':handled();relocate(S.pos+(e.shiftKey?PPQ:BAR));break;
+    case 'ArrowLeft':case 'ArrowRight':{handled();const d=c==='ArrowLeft'?-1:1;
+      // Arrange and Key Edit page the view a screen at a time; Shift (and the other windows) move the song position by a bar
+      if(!e.shiftKey&&S.view==='arr'){S.scroll=clamp(S.scroll+d*VIS,0,NBARS-VIS);dirty=true;}
+      else if(!e.shiftKey&&S.view==='edit'){const p=part(S.editPart);if(p){const V=eView(p);S.escroll=clamp(S.escroll+d*V.vis,0,Math.max(0,p.len-V.vis));dirty=true;}}
+      else relocate(Math.max(0,S.pos+d*BAR));break;}
     case 'ArrowUp':case 'ArrowDown':{handled();const d=c==='ArrowUp'?1:-1;
-      if(S.view==='edit'){if(S.selSet.size){snapshot();const mxp=eg().maxP;for(const m of S.selSet)m.p=clamp(m.p+d*(e.shiftKey&&mxp>12?12:1),0,mxp);const a=S.selNote||selList()[0];audition(a.p,a.v);}else S.editHi=clamp(S.editHi+d*2,23,127);}
+      if(S.view==='edit'){if(S.selSet.size){snapshot();const mxp=eg().maxP;for(const m of S.selSet)m.p=clamp(m.p+d*(e.shiftKey&&mxp>12?12:1),0,mxp);const a=S.selNote||selList()[0];audition(a.p,a.v);}else editTrackStep(-d);}
       else setActive(S.active-d);dirty=true;break;}
     case 'BracketLeft':handled();setQ(S.qi-1);break;
     case 'BracketRight':handled();setQ(S.qi+1);break;
@@ -1758,7 +1776,7 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  move bar    Up Down  active track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST…',a:()=>dialog(['ARRANGER ST','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST…',a:()=>dialog(['ARRANGER ST','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
   {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON},{l:'-'},{l:'Rename Song…',a:renameSong}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
   {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',a:locToPart}]},
@@ -1907,10 +1925,10 @@ const isBlack=p=>[1,3,6,8,10].includes(p%12);
 function laneShort(l,ti){return NOTE_LANES[l]?NOTE_LANES[l][0]:PD(ti,+l)[0].slice(0,6);}
 function drawEdit(){
   const p=part(S.editPart);if(!p){S.view='arr';return drawArrange();}
-  const ppt=(W-GX)/p.len;
+  const V=eView(p),ppt=V.ppt,ES=V.s;
   clr(0,38,W,18,WH);hl(0,55,W);vl(GX-1,38,TBY-38);
   const beatPx=PPQ*ppt;
-  for(let b=0;b*PPQ<=p.len;b++){const x=Math.round(GX+b*PPQ*ppt),abs=p.start+b*PPQ,isBar=abs%BAR===0;
+  for(let b=0;b*PPQ<=p.len;b++){const x=Math.round(GX+((b*PPQ)-ES)*ppt),abs=p.start+b*PPQ,isBar=abs%BAR===0;if(x<GX||x>W)continue;
     vl(x,isBar?44:51,isBar?11:4);
     if(isBar&&b*PPQ<p.len)T(String(abs/BAR+1),x+3,48);
     else if(beatPx>=40&&b*PPQ<p.len)T('.'+((abs%BAR)/PPQ+1),x+2,49);}
@@ -1930,11 +1948,11 @@ function drawEdit(){
     else{clr(0,y,GX-1,NH,WH);if(pitch%12===0||pitch%12===5)hl(0,y+NH-1,GX-1);}
     if(pitch%12===0)T(nname(pitch),GX-3,y+5,B,'right');
   }
-  for(let tk=0;tk<=p.len;tk+=q()){const x=Math.round(GX+tk*ppt);if((p.start+tk)%BAR===0)vl(x,GY,GH);else if(tk%PPQ===0)dotV(x,GY,GH,2);else dotV(x,GY,GH,5);}
+  for(let tk=0;tk<=p.len;tk+=q()){const x=Math.round(GX+((tk)-ES)*ppt);if(x<GX||x>W)continue;if((p.start+tk)%BAR===0)vl(x,GY,GH);else if(tk%PPQ===0)dotV(x,GY,GH,2);else dotV(x,GY,GH,5);}
   ctx.save();ctx.beginPath();ctx.rect(GX,GY,W-GX,GH);ctx.clip();
   const nh=G.dr?Math.round(G.rh*0.6):NH;
   for(const n of p.notes){const r=G.top-n.p;if(r<0||r>=G.rows)continue;
-    const x=Math.round(GX+n.t*ppt),w=Math.max(3,Math.round(n.d*ppt)),y=Math.round(GY+r*G.rh+(G.dr?(G.rh-nh)/2:0))+1;
+    const x=Math.round(GX+((n.t)-ES)*ppt),w=Math.max(3,Math.round(n.d*ppt)),y=Math.round(GY+r*G.rh+(G.dr?(G.rh-nh)/2:0))+1;
     const off=G.dr&&p.dmute&&p.dmute[n.p];
     if(isSel(n)||off){clr(x,y,w,nh-2,B);clr(x+2,y+2,w-4,nh-6,off&&!isSel(n)?P50:WH);}else{clr(x,y,w,nh-2,B);if(n.t>=p.len)clr(x+1,y+1,w-2,nh-4,WH);}}
   ctx.restore();
@@ -1957,27 +1975,27 @@ function drawEdit(){
     dotH(GX,yv(def),W-GX,4);
     if(S.laneNote||(S.mx>=GX&&S.my>=VY-2&&S.my<TBY)){
       let hn=S.laneNote;
-      if(!hn){let best=7;for(const n of p.notes){const dx=Math.abs(GX+n.t*ppt-S.mx);if(dx<best&&(!S.selSet.size||isSel(n))){best=dx;hn=n;}}}
+      if(!hn){let best=7;for(const n of p.notes){const dx=Math.abs(GX+((n.t)-ES)*ppt-S.mx);if(dx<best&&(!S.selSet.size||isSel(n))){best=dx;hn=n;}}}
       if(hn){const v=noteVal(hn,S.lane),dn=S.tracks[p.track].drums;
         const txt=S.lane==='pt'&&dn?(v>0?'+':'')+v+' st = '+nname(clamp(dn[hn.p].note+v,0,127)):S.lane==='pn'?pfmt(34,v):String(v);
         clr(W-4-tw(txt,14)-8,VY,tw(txt,14)+8,13,WH);T(txt,W-8,VY+6,B,'right',14);}}
-    for(const n of p.notes){const x=Math.round(GX+n.t*ppt),y1=yv(noteVal(n,S.lane)),ya=Math.min(y0,y1),h=Math.max(1,Math.abs(y1-y0));
+    for(const n of p.notes){const x=Math.round(GX+((n.t)-ES)*ppt);if(x<GX||x>W)continue;const y1=yv(noteVal(n,S.lane)),ya=Math.min(y0,y1),h=Math.max(1,Math.abs(y1-y0));
       if(isSel(n)){clr(x,ya,4,h,B);if(h>2)clr(x+1,ya+1,2,h-2,WH);}else clr(x,ya,3,h,B);}
   }else{
     const id=+S.lane,mn=PD(p.track,id)[2],mx=PD(p.track,id)[3],yv=v=>VY+VH-1-Math.round((v-mn)/(mx-mn)*(VH-2));
     dotH(GX,yv(S.tracks[p.track].k[id]),W-GX,6);
     if(ln&&ln.pts.length){
-      ctx.strokeStyle=B;ctx.lineWidth=1;ctx.beginPath();
-      ln.pts.forEach((pt,i)=>{const x=GX+pt.t*ppt+0.5,y=yv(pt.v)+0.5;
+      ctx.save();ctx.beginPath();ctx.rect(GX,VY-1,W-GX,VH+2);ctx.clip();ctx.strokeStyle=B;ctx.lineWidth=1;ctx.beginPath();
+      ln.pts.forEach((pt,i)=>{const x=GX+((pt.t)-ES)*ppt+0.5,y=yv(pt.v)+0.5;
         if(i===0){ctx.moveTo(GX,y);ctx.lineTo(x,y);}else if(ln.m==='h'){ctx.lineTo(x,yv(ln.pts[i-1].v)+0.5);ctx.lineTo(x,y);}else ctx.lineTo(x,y);});
       ctx.lineTo(W,yv(ln.pts[ln.pts.length-1].v)+0.5);ctx.stroke();
-      ln.pts.forEach(pt=>{const px=Math.round(GX+pt.t*ppt),py=yv(pt.v);if(S.ptSel.has(pt)){clr(px-3,py-3,7,7,B);clr(px-2,py-2,5,5,WH);clr(px-1,py-1,3,3,B);}else clr(px-1,py-1,3,3,B);});
+      ln.pts.forEach(pt=>{const px=Math.round(GX+((pt.t)-ES)*ppt),py=yv(pt.v);if(S.ptSel.has(pt)){clr(px-3,py-3,7,7,B);clr(px-2,py-2,5,5,WH);clr(px-1,py-1,3,3,B);}else clr(px-1,py-1,3,3,B);});ctx.restore();
     }else T('Empty lane: draw here, or record with the pad',GX+8,VY+VH/2);
   }
   hl(0,TBY-1,W);
-  if(S.step){const x=Math.round(GX+S.stepPos*ppt);for(let y=GY;y<GY+GH;y+=2)clr(x,y,2,1,B);
-    const blink=Math.floor(performance.now()/400)%2;clr(x-1,38,32,12,blink?B:WH);T('STEP',x+2,44,blink?WH:B);}
-  const rel=S.pos-p.start;if(rel>=0&&rel<=p.len){const x=Math.floor(GX+rel*ppt);ctx.globalCompositeOperation='difference';clr(x,38,1,TBY-38,WH);ctx.globalCompositeOperation='source-over';}
+  if(S.step){const x=Math.round(GX+((S.stepPos)-ES)*ppt);if(x>=GX&&x<W){for(let y=GY;y<GY+GH;y+=2)clr(x,y,2,1,B);
+    const blink=Math.floor(performance.now()/400)%2;clr(x-1,38,32,12,blink?B:WH);T('STEP',x+2,44,blink?WH:B);}}
+  const rel=S.pos-p.start;if(rel>=ES&&rel<=ES+V.vis){const x=Math.floor(GX+((rel)-ES)*ppt);ctx.globalCompositeOperation='difference';clr(x,38,1,TBY-38,WH);ctx.globalCompositeOperation='source-over';}
 }
 function laneList(p){const s=new Set(isDrumT(p.track)?['vel','pt','pn','st']:['vel']);for(const k in p.auto)if(p.auto[k].pts.length)s.add(k);for(const id of [S.padX,S.padY])if(!PD(p.track,id)[6])s.add(String(id));if(!NOTE_LANES[S.lane])s.add(String(S.lane));return [...s];}
 
@@ -2274,7 +2292,8 @@ function render(){
   {const c=Math.max(1,Math.round(K))/K,m=new DOMMatrix([c,0,0,c,0,0]);for(const pt of [P50,P25,P12,PLINE])pt.setTransform(m);}
   clr(0,0,W,H,WH);
   drawMenuBar();
-  if(S.view==='edit'){const p=part(S.editPart);drawTitle('KEY EDIT  '+(p?p.name+'  bars '+(p.start/BAR+1)+'-'+((p.start+p.len)/BAR):''),true);drawEdit();}
+  if(S.view==='edit'){const p=part(S.editPart);let vt='';if(p&&S.ezoom){const V=eView(p),a=Math.floor((p.start+V.s)/BAR)+1;vt='  view '+S.ezoom+(S.ezoom>1?' bars':' bar')+' from '+a;}
+    drawTitle('KEY EDIT  '+(p?p.name+'  bars '+(p.start/BAR+1)+'-'+((p.start+p.len)/BAR)+vt:''),true);drawEdit();}
   else if(S.view==='syn'){drawTitle(isDrumT(S.active)?'SYNTH  DRUM KIT':'SYNTH  DS-10 VOICE',true);drawSynth();}
   else if(S.view==='drum'&&S.drumEd){drawTitle('DRUM EDIT  T'+(S.drumEd.tr+1)+'  DRUM '+(S.drumEd.d+1),true);drawPatch(drumTarget(S.drumEd.tr,S.drumEd.d));}
   else if(S.view==='mix'){drawTitle('MIXER',true);drawMixer();}
@@ -2306,10 +2325,25 @@ function mpos(e){const r=cv.getBoundingClientRect();return {x:Math.floor((e.clie
 const inR=(r,x,y)=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;
 function regionAt(x,y){for(let i=regions.length-1;i>=0;i--)if(inR(regions[i],x,y))return regions[i];return null;}
 let lastDown={t:0,x:0,y:0};
-function editPpt(){const p=part(S.editPart);return (W-GX)/p.len;}
-function noteRight(n){const ppt=editPpt();return Math.round(GX+n.t*ppt)+Math.max(3,Math.round(n.d*ppt));}
-function noteAtXY(x,y){const p=part(S.editPart);if(!p)return null;const ppt=editPpt(),pitch=pAtY(y);
-  const ns=p.notes.filter(n=>n.p===pitch&&x>=Math.round(GX+n.t*ppt)&&x<noteRight(n)+1);return ns[ns.length-1]||null;}
+/* Key Edit view: S.ezoom whole bars on screen (0 = the whole part), starting S.escroll ticks into the part */
+function eView(p){
+  const vis=S.ezoom?Math.min(S.ezoom*BAR,p.len):p.len;
+  S.escroll=clamp(S.escroll||0,0,Math.max(0,p.len-vis));
+  return {s:S.escroll,vis,ppt:(W-GX)/vis};
+}
+function editPpt(){return eView(part(S.editPart)).ppt;}
+const eStep=V=>V.vis>=2*BAR?BAR:PPQ;   // scrolling moves by bars, or by beats when one bar fills the screen
+function eScroll(p,dt){const V=eView(p),st=eStep(V);S.escroll=clamp(Math.round((S.escroll+dt)/st)*st,0,Math.max(0,p.len-V.vis));dirty=true;}
+function eZoom(p,d,x){
+  // whole bars on screen, keeping the tick under the pointer where it is
+  const V=eView(p),maxB=Math.max(1,Math.ceil(p.len/BAR)),cur=S.ezoom||maxB,nb=clamp(cur+d,1,maxB);if(nb===cur)return;
+  const tp=(x==null?V.s+V.vis/2:V.s+(x-GX)/V.ppt);S.ezoom=nb>=maxB?0:nb;
+  const V2=eView(p);S.escroll=Math.round((tp-(x==null?V2.vis/2:(x-GX)/V2.ppt))/PPQ)*PPQ;eView(p);dirty=true;
+}
+function eFollow(p,rel){const V=eView(p);if(rel<V.s||rel>=V.s+V.vis){S.escroll=Math.floor(rel/V.vis)*V.vis;eView(p);}}
+function noteRight(n){const V=eView(part(S.editPart));return Math.round(GX+(n.t-V.s)*V.ppt)+Math.max(3,Math.round(n.d*V.ppt));}
+function noteAtXY(x,y){const p=part(S.editPart);if(!p)return null;const V=eView(p),pitch=pAtY(y);
+  const ns=p.notes.filter(n=>n.p===pitch&&x>=Math.round(GX+(n.t-V.s)*V.ppt)&&x<noteRight(n)+1);return ns[ns.length-1]||null;}
 
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{
@@ -2353,7 +2387,7 @@ cv.addEventListener('wheel',e=>{e.preventDefault();const {x,y}=mpos(e);const d=M
   if(S.view==='arr'){if(x<TLX&&y>=TRY)setActive(S.active+d);else S.scroll=clamp(S.scroll+d,0,NBARS-VIS);}
   else if(S.view==='edit'){
     if(x<GX&&y>=VY-2){const p=part(S.editPart),all=[...(isDrumT(p.track)?['vel','pt','pn','st']:['vel']),...Array.from({length:NA},(_,i)=>i).filter(i=>!PD(p.track,i)[6]).map(String)];let i=all.indexOf(String(S.lane));S.lane=all[clamp(i+d,0,all.length-1)];S.ptSel=new Set();}
-    else if(!eg().dr)S.editHi=clamp(S.editHi-d*2,23,127);}
+    else{const p=part(S.editPart);if(e.ctrlKey||e.metaKey)eZoom(p,d,x>=GX?x:null);else if(e.shiftKey){if(!eg().dr)S.editHi=clamp(S.editHi-d*2,23,127);}else eScroll(p,d*eStep(eView(p)));}}
   dirty=true;},{passive:false});
 
 function arrDown(x,y,e,dbl){
@@ -2393,9 +2427,10 @@ function arrDown(x,y,e,dbl){
   else if(tool==='mute'){snapshot();p.mute=!p.mute;}
 }
 function editDown(x,y,e,dbl){
-  const p=part(S.editPart);if(!p)return;const ppt=editPpt();
-  if(y>=38&&y<56&&x>=GX){const set=x2=>relocate(p.start+clamp(Math.floor((x2-GX)/ppt/q())*q(),0,p.len));set(x);S.drag={move:set};
-    if(S.step){S.stepPos=clamp(Math.floor((x-GX)/ppt/q())*q(),0,p.len-1);}return;}
+  const p=part(S.editPart);if(!p)return;const V=eView(p),ppt=V.ppt,ES=V.s;
+  if(y>=38&&y<56&&x>=GX&&dbl){S.ezoom=0;S.escroll=0;dirty=true;return;}
+  if(y>=38&&y<56&&x>=GX){const set=x2=>relocate(p.start+clamp(Math.floor(((x2-GX)/ppt+ES)/q())*q(),0,p.len));set(x);S.drag={move:set};
+    if(S.step){S.stepPos=clamp(Math.floor(((x-GX)/ppt+ES)/q())*q(),0,p.len-1);}return;}
   if(x<GX&&y>=GY&&y<GY+GH){const pitch=pAtY(y),G=eg();if(G.dr)noteOn('ptr',60,100,pitch);else noteOn('ptr',pitch,100);S.drag={up:()=>noteOff('ptr')};return;}
   if(x<GX&&y>=VY-2&&y<TBY){
     if(y<VY+19){const L=laneList(p);S.lane=L[(L.indexOf(String(S.lane))+1)%L.length];S.ptSel=new Set();}
@@ -2406,14 +2441,14 @@ function editDown(x,y,e,dbl){
     const NL=NOTE_LANES[S.lane];
     if(NL){
       const [,,mn,mx,,f]=NL,set=(x2,y2)=>{const v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
-        for(const n of p.notes){const nx=Math.round(GX+n.t*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;S.laneNote=n;}}};
+        for(const n of p.notes){const nx=Math.round(GX+(n.t-ES)*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;S.laneNote=n;}}};
       set(x,y);S.drag={move:set,up:()=>{S.laneNote=null;songChanged();dirty=true;}};return;}
     const id=+S.lane,mn=PD(p.track,id)[2],mx=PD(p.track,id)[3];if(PD(p.track,id)[6])return;
     const ln=()=>p.auto[id]||(p.auto[id]={m:S.padMode,pts:[]});
-    if(S.tool==='eraser'){const er=x2=>{const L=p.auto[id];if(!L)return;const t=(x2-GX)/ppt;const before=L.pts.length;L.pts=L.pts.filter(pt=>Math.abs(pt.t-t)>q()/2);if(L.pts.length!==before&&!snap){snap=true;}};snapshot();er(x);S.drag={move:er};return;}
+    if(S.tool==='eraser'){const er=x2=>{const L=p.auto[id];if(!L)return;const t=((x2-GX)/ppt+ES);const before=L.pts.length;L.pts=L.pts.filter(pt=>Math.abs(pt.t-t)>q()/2);if(L.pts.length!==before&&!snap){snap=true;}};snapshot();er(x);S.drag={move:er};return;}
     if(S.tool==='pointer'){
       const L=p.auto[id],yv=v=>VY+VH-1-Math.round((v-mn)/(mx-mn)*(VH-2)),vy=y2=>mn+(VY+VH-1-y2)/(VH-2)*(mx-mn);
-      const hit=L&&L.pts.find(pt=>Math.abs(GX+pt.t*ppt-x)<=4&&Math.abs(yv(pt.v)-y)<=5);
+      const hit=L&&L.pts.find(pt=>Math.abs(GX+(pt.t-ES)*ppt-x)<=4&&Math.abs(yv(pt.v)-y)<=5);
       if(hit){
         if(e.shiftKey){S.ptSel.has(hit)?S.ptSel.delete(hit):S.ptSel.add(hit);return;}
         if(!S.ptSel.has(hit))S.ptSel=new Set([hit]);
@@ -2427,12 +2462,12 @@ function editDown(x,y,e,dbl){
       if(!e.shiftKey)S.ptSel=new Set();
       const keep=new Set(S.ptSel);S.band={x0:x,y0:y,x1:x,y1:y};
       S.drag={move:(x2,y2)=>{S.band.x1=clamp(x2,GX,W-1);S.band.y1=clamp(y2,VY-1,TBY-2);
-          const b=S.band,t0=(Math.min(b.x0,b.x1)-GX-4)/ppt,t1=(Math.max(b.x0,b.x1)-GX+4)/ppt,ya=Math.min(b.y0,b.y1),yb=Math.max(b.y0,b.y1);
+          const b=S.band,t0=((Math.min(b.x0,b.x1)-GX-4)/ppt+ES),t1=((Math.max(b.x0,b.x1)-GX+4)/ppt+ES),ya=Math.min(b.y0,b.y1),yb=Math.max(b.y0,b.y1);
           S.ptSel=new Set(keep);if(L)for(const pt of L.pts){const py=yv(pt.v);if(pt.t>=t0&&pt.t<=t1&&py>=ya-1&&py<=yb+1)S.ptSel.add(pt);}},
         up:()=>{S.band=null;dirty=true;}};
       return;}
     snapshot();let lastT=null;
-    const setA=(x2,y2)=>{const t=clamp(Math.floor((x2-GX)/ppt/q())*q(),0,p.len-1),v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
+    const setA=(x2,y2)=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/q())*q(),0,p.len-1),v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
       const L=ln();const lo=lastT==null?t:Math.min(lastT,t),hi=lastT==null?t:Math.max(lastT,t);
       L.pts=L.pts.filter(pt=>pt.t<lo||pt.t>hi);
       if(lastT!=null&&lastT!==t){const lv=L._lv;for(let tt=lo;tt<=hi;tt+=q()){const f=(tt-lastT)/(t-lastT);L.pts.push({t:tt,v:Math.round(lv+(v-lv)*f)});}}
@@ -2441,12 +2476,12 @@ function editDown(x,y,e,dbl){
     setA(x,y);S.drag={move:setA,up:()=>{const L=p.auto[id];if(L)delete L._lv;songChanged();}};return;
   }
   if(!(x>=GX&&y>=GY&&y<GY+GH))return;
-  const tk=(x-GX)/ppt,pitch=pAtY(y),n=noteAtXY(x,y),tool=S.tool,G=eg();
+  const tk=((x-GX)/ppt+ES),pitch=pAtY(y),n=noteAtXY(x,y),tool=S.tool,G=eg();
   if(tool==='eraser'){let snap=false;const er=(x2,y2)=>{const nn=noteAtXY(x2,y2);if(nn){if(!snap){snapshot();snap=true;}p.notes=p.notes.filter(o=>o!==nn);S.selSet.delete(nn);if(S.selNote===nn)S.selNote=null;}};er(x,y);S.drag={move:er};return;}
   if(tool==='pencil'&&S.gate){
     const g=gateLen();snapshot();
     if(n){n.d=g;selOnly(n);audition(n.p,n.v,n);songChanged();return;}
-    let last=-1;const paint=x2=>{const t=clamp(Math.floor((x2-GX)/ppt/24)*24,0,p.len-24);if(t===last)return;last=t;
+    let last=-1;const paint=x2=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/24)*24,0,p.len-24);if(t===last)return;last=t;
       if(!p.notes.some(o=>o.t===t&&o.p===pitch)){const nn={t,p:pitch,v:S.newVel,d:g};p.notes.push(nn);selOnly(nn);}};
     paint(x);audition(pitch,S.newVel);S.drag={move:x2=>paint(x2),up:songChanged};return;}
   if(n){
@@ -2467,14 +2502,14 @@ function editDown(x,y,e,dbl){
   if(tool==='pointer'&&!dbl){
     if(!e.shiftKey)selOnly(null);
     const keep=new Set(S.selSet);S.band={x0:x,y0:y,x1:x,y1:y};
-    const pick=()=>{const b=S.band,t0=(Math.min(b.x0,b.x1)-GX)/ppt,t1=(Math.max(b.x0,b.x1)-GX)/ppt,
+    const pick=()=>{const b=S.band,t0=((Math.min(b.x0,b.x1)-GX)/ppt+ES),t1=((Math.max(b.x0,b.x1)-GX)/ppt+ES),
         p0=pAtY(Math.max(b.y0,b.y1)),p1=pAtY(Math.min(b.y0,b.y1));
       S.selSet=new Set(keep);for(const m of p.notes)if(m.p>=p0&&m.p<=p1&&m.t<t1&&m.t+m.d>t0)S.selSet.add(m);S.selNote=selList()[0]||null;};
     S.drag={move:(x2,y2)=>{S.band.x1=clamp(x2,GX,W-1);S.band.y1=clamp(y2,GY,GY+GH-1);pick();},up:()=>{S.band=null;dirty=true;}};
     return;}
   selOnly(null);
   if(tool==='pencil'||dbl){snapshot();const st=clamp(Math.floor(tk/q())*q(),0,p.len-1);const nn={t:st,p:pitch,v:100,d:q()};p.notes.push(nn);selOnly(nn);audition(pitch,100);
-    S.drag={move:x2=>{nn.d=Math.max(q(),Math.ceil(((x2-GX)/ppt-st)/q())*q());}};}
+    S.drag={move:x2=>{nn.d=Math.max(q(),Math.ceil((((x2-GX)/ppt+ES)-st)/q())*q());}};}
 }
 
 /* ---------- hints ---------- */
@@ -2499,7 +2534,7 @@ function canvasHint(x,y){
     return [tl[0],tl[1]+' Right-press to switch tools. A small box on a part means it has automation.','Tab'];
   }
   if(S.view==='edit'){
-    if(y<56)return x<GX?['Pitch readout','Shows the pitch under the pointer.','']:['Ruler','Click to set the song position inside this part.',''];
+    if(y<56)return x<GX?['Pitch readout','Shows the pitch under the pointer.','']:['Ruler','Click to set the song position inside this part. Double-click to fit the whole part. Wheel scrolls, Ctrl+wheel zooms in whole bars, Shift+wheel scrolls pitch.',''];
     if(x<GX&&y<GY+GH)return eg().dr?['Drums','Click a row to hear that drum. Notes in a row play that drum.','']:['Keyboard','Click a key to hear the pitch on this track.',''];
     if(x<GX&&y>=VY-2)return ['Lane','Click the name to switch between velocity and this part\'s automation lanes; scroll it to pick any knob. The box below switches smooth or hold.',''];
     if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With notes selected, only those change; with none selected, any note under the pointer.','']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid. The dotted line is the patch value. Right-press to switch tools.','Tab'];
@@ -2673,6 +2708,7 @@ function frame(){
     prevTick=cur;S.pos=cur;
     if(!cycOn()&&cur>=NBARS*BAR){stop();S.pos=0;}
     if(S.view==='arr'){const bar=Math.floor(cur/BAR);if(bar>=S.scroll+VIS||bar<S.scroll)S.scroll=clamp(bar,0,NBARS-VIS);}
+    if(S.view==='edit'){const p=part(S.editPart);if(p&&S.ezoom){const rel=cur-p.start;if(rel>=0&&rel<p.len)eFollow(p,rel);}}
     const now=ac.currentTime;while(liveQ.length&&liveQ[0].at<=now){const u=liveQ.shift();if(!autoHeld.has(u.tr+':'+u.id))S.tracks[u.tr].lv[u.id]=u.v;}
     liveQ.sort((a,b)=>a.at-b.at);
     dirty=true;
