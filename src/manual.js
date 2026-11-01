@@ -136,6 +136,11 @@ const MANUAL=[
 ['p','Playback: automation moves a live copy of the knob and leaves the patch alone; Stop restores the patch values. Before a part\'s first point the lane holds that value, and after the last point it holds the last value. Changing an insert slot\'s effect type clears that slot\'s lanes.'],
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],
 
+['h','Latency'],
+['p','From a key press to sound takes the browser\'s processing, one 128-sample audio block, up to one 2 ms DS-10 control frame, and the operating system\'s audio output. The last part is usually the largest. Options > Audio Latency shows what your system reports.'],
+['k','Record Latency Compensation','On by default (Options). While recording, notes, their lengths and pad or knob moves are placed where the music you heard was, not where the engine was rendering. That removes the lag of the audio output from recordings.'],
+['p','Lowering the system latency on Linux with PipeWire: check the current buffer size with pw-top (the QUANT column). For a session, run pw-metadata -n settings 0 clock.force-quantum 128, and set it back with 0. Permanently, put context.properties = { default.clock.quantum = 128 default.clock.min-quantum = 64 } into ~/.config/pipewire/pipewire.conf.d/10-lowlatency.conf, and pulse.properties = { pulse.min.req = 128/48000 pulse.min.quantum = 128/48000 } into ~/.config/pipewire/pipewire-pulse.conf.d/10-lowlatency.conf, then run systemctl --user restart pipewire pipewire-pulse. Browsers talk to PipeWire through its PulseAudio layer, so starting the browser with PULSE_LATENCY_MSEC=3 also lowers its buffer. Smaller values need a faster machine: crackles mean go back up (256 is a safe middle).'],
+
 ['h','Songs and saving'],
 ['p','The song saves itself in this browser a moment after every change; the status line shows "saved". This includes tracks, patches, the mixer, effects, parts, notes, automation, tempo, locators and pad settings. Browser storage belongs to this browser only.'],
 ['k','File > Rename Song…','Type a new name and press Enter. You can also click the song name in the Arrange title bar.'],

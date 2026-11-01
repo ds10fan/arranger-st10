@@ -1008,6 +1008,11 @@ const MANUAL=[
 ['p','Playback: automation moves a live copy of the knob and leaves the patch alone; Stop restores the patch values. Before a part\'s first point the lane holds that value, and after the last point it holds the last value. Changing an insert slot\'s effect type clears that slot\'s lanes.'],
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],
 
+['h','Latency'],
+['p','From a key press to sound takes the browser\'s processing, one 128-sample audio block, up to one 2 ms DS-10 control frame, and the operating system\'s audio output. The last part is usually the largest. Options > Audio Latency shows what your system reports.'],
+['k','Record Latency Compensation','On by default (Options). While recording, notes, their lengths and pad or knob moves are placed where the music you heard was, not where the engine was rendering. That removes the lag of the audio output from recordings.'],
+['p','Lowering the system latency on Linux with PipeWire: check the current buffer size with pw-top (the QUANT column). For a session, run pw-metadata -n settings 0 clock.force-quantum 128, and set it back with 0. Permanently, put context.properties = { default.clock.quantum = 128 default.clock.min-quantum = 64 } into ~/.config/pipewire/pipewire.conf.d/10-lowlatency.conf, and pulse.properties = { pulse.min.req = 128/48000 pulse.min.quantum = 128/48000 } into ~/.config/pipewire/pipewire-pulse.conf.d/10-lowlatency.conf, then run systemctl --user restart pipewire pipewire-pulse. Browsers talk to PipeWire through its PulseAudio layer, so starting the browser with PULSE_LATENCY_MSEC=3 also lowers its buffer. Smaller values need a faster machine: crackles mean go back up (256 is a safe middle).'],
+
 ['h','Songs and saving'],
 ['p','The song saves itself in this browser a moment after every change; the status line shows "saved". This includes tracks, patches, the mixer, effects, parts, notes, automation, tempo, locators and pad settings. Browser storage belongs to this browser only.'],
 ['k','File > Rename Song…','Type a new name and press Enter. You can also click the song name in the Arrange title bar.'],
@@ -1094,7 +1099,7 @@ const S={tracks:[],buses:[],master:null,parts:[],nextId:1,active:0,sel:null,view
   tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,
   menu:null,popup:null,dialog:null,toolbox:null,step:false,stepPos:0,stepHeld:0,editHi:72,takeId:0,
   mx:-1,my:-1,lastIn:null,inFlash:0,drag:null,pencil:null,lane:'vel',
-  fxSel:{w:{s:'t',i:0},slot:0},showKb:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
+  fxSel:{w:{s:'t',i:0},slot:0},showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
 const gate=new Array(8).fill(0);
 let dirty=true;
 const q=()=>QS[S.qi][1];
@@ -1540,15 +1545,31 @@ function recPartAt(tr,st){
   }
   return pt;
 }
+/* What you hear left the engine one output latency ago, so while recording, notes and pad/knob moves are
+   placed at the position that was sounding, not the one being rendered. */
+function outLatency(){return ac?(ac.outputLatency||0)+(ac.baseLatency||0):0;}
+function recTick(){
+  let t=curTick();if(!S.latComp||!S.playing)return t;
+  t-=outLatency()/spt();
+  if(cycOn()&&t<S.L&&curTick()>=S.L)t+=S.R-S.L;
+  return Math.max(0,t);
+}
+function latencyInfo(){
+  if(!ac)return dialog(['The audio engine has not started yet.','Click the screen or play a note first.']);
+  const ms=v=>(v*1000).toFixed(1)+' ms',b=ac.baseLatency||0,o=ac.outputLatency||0;
+  dialog(['AUDIO LATENCY','','Browser processing   '+ms(b),'Output (OS, device)  '+(ac.outputLatency==null?'not reported':ms(o)),'Audio block          '+ms(128/ac.sampleRate)+' (128 samples)',
+    'Total from a key     about '+ms(b+o+128/ac.sampleRate),'Sample rate          '+ac.sampleRate+' Hz','',
+    'Record compensation  '+(S.latComp?'on, '+ms(b+o):'off'),'Lower it in PipeWire/JACK; see the manual.']);
+}
 function recordStart(tr,p,v){
-  const raw=curTick();let st=raw;
+  const raw=recTick();let st=raw;
   if(S.autoQ)st=Math.round(raw/q())*q();
   if(cycOn()&&st>=S.R)st=S.L;
   const pt=recPartAt(tr,st);
   const n={t:st-pt.start,p,v,d:6,take:S.takeId,fresh:curPass()};pt.notes.push(n);
   return {n,raw};
 }
-function recLen(rn){let d=curTick()-rn.raw;if(d<0)d+=S.R-S.L;return Math.max(6,Math.round(d));}
+function recLen(rn){let d=recTick()-rn.raw;if(d<0)d+=S.R-S.L;return Math.max(6,Math.round(d));}
 function finalizeRec(rn){rn.n.d=recLen(rn);songChanged();}
 function finalizeHeld(){for(const h of held.values())if(h.rn){finalizeRec(h.rn);h.rn=null;}}
 function eraseReplace(a,b){
@@ -1559,7 +1580,7 @@ function eraseReplace(a,b){
 /* automation recording: the move overwrites the lane from where the previous point was written */
 const recLast={};
 function recAuto(tr,id,v){
-  const tk=curTick();const pt=recPartAt(tr,tk);
+  const tk=recTick();const pt=recPartAt(tr,tk);
   pt.auto=pt.auto||{};
   const rel=clamp(Math.round((tk-pt.start)/6)*6,0,pt.len-1);
   const ln=pt.auto[id]||(pt.auto[id]={m:S.padMode,pts:[]});
@@ -1742,7 +1763,7 @@ const MENUS=[
   {name:'Options',items:[{l:()=>(S.click?'√ ':'  ')+'Metronome',a:()=>{S.click=!S.click;}},{l:()=>(S.autoQ?'√ ':'  ')+'Auto Quantize',a:()=>{S.autoQ=!S.autoQ;}},
     {l:()=>(S.recMode==='replace'?'√ ':'  ')+'Replace Mode',a:()=>{S.recMode=S.recMode==='replace'?'overdub':'replace';}},
     {l:()=>(S.master.shp?'√ ':'  ')+'DS-10 Master Shaper',a:()=>{S.master.shp=S.master.shp?0:1;sendMst();}},{l:'-'},
-    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi}]}
+    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi},{l:'-'},{l:()=>'  Audio Latency: '+(ac?Math.round(outLatency()*1000+128/ac.sampleRate*1000)+' ms':'—')+'…',a:latencyInfo},{l:()=>(S.latComp?'√ ':'  ')+'Record Latency Compensation',a:()=>{S.latComp=!S.latComp;flashMsg('Record compensation '+(S.latComp?'on':'off'));}}]}
 ];
 const lab=v=>typeof v==='function'?v():v;
 function menuBarGeom(){let x=6;return MENUS.map(m=>{const w=tw(m.name)+14;const r={x,w};x+=w;return r;});}
