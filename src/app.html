@@ -475,15 +475,29 @@ function openEdit(p){
   if(!TOOLS_EDIT.includes(S.tool))S.tool='pointer';
   dirty=true;
 }
-function setView(v){S.presetPick=false;if(S.step&&v!=='edit')exitStep();if(v==='edit')return openEdit();S.view=v;S.tool=v==='arr'?S.arrTool:S.tool;if(v!=='edit'&&v!=='arr')S.tool=S.arrTool;S.menu=S.popup=S.toolbox=null;dirty=true;}
+function setView(v){S.presetPick=false;S.padPick=null;if(S.step&&v!=='edit')exitStep();if(v==='edit')return openEdit();S.view=v;S.tool=v==='arr'?S.arrTool:S.tool;if(v!=='edit'&&v!=='arr')S.tool=S.arrTool;S.menu=S.popup=S.toolbox=null;dirty=true;}
 function noteCmd(c){
   const p=part(S.editPart);if(!p)return;
   if(c==='KeyA'){S.selSet=new Set(p.notes);S.selNote=p.notes[0]||null;}
-  else if(c==='KeyC'||c==='KeyX'){const L=selList();if(!L.length)return flashMsg('Select notes first');const t0=Math.min(...L.map(n=>n.t));
-    noteClip=L.map(n=>({t:n.t-t0,p:n.p,v:n.v,d:n.d}));if(c==='KeyX'){snapshot();p.notes=p.notes.filter(n=>!isSel(n));selOnly(null);}flashMsg((c==='KeyX'?'Cut ':'Copied ')+L.length+' notes');}
+  else if(c==='KeyC'||c==='KeyX'){const L=selList();if(!L.length)return flashMsg('Select notes first');
+    // the clip holds the notes (every field, so drum pitch/pan/start too) and the automation over their time span
+    const t0=Math.min(...L.map(n=>n.t)),t1=Math.max(...L.map(n=>n.t+n.d)),auto={};
+    for(const id in p.auto){const ln=p.auto[id],pts=ln.pts.filter(x=>x.t>=t0&&x.t<t1).map(x=>({t:x.t-t0,v:x.v}));
+      const v0=autoAt(ln,t0);if(v0!=null&&!pts.some(x=>x.t===0))pts.unshift({t:0,v:Math.round(v0)});if(pts.length)auto[id]={m:ln.m,pts};}
+    noteClip={notes:L.map(n=>{const o={};for(const f in n)if(!['take','fresh'].includes(f))o[f]=n[f];o.t-=t0;return o;}),len:t1-t0,auto,track:p.track};
+    if(c==='KeyX'){snapshot();p.notes=p.notes.filter(n=>!isSel(n));selOnly(null);}
+    const na=Object.keys(auto).length;flashMsg((c==='KeyX'?'Cut ':'Copied ')+L.length+' notes'+(na?' and '+na+' automation lane'+(na>1?'s':''):''));}
   else if(c==='KeyV'){if(!noteClip)return flashMsg('Copy notes first');snapshot();
-    const at=clamp(Math.round((S.pos-p.start)/q())*q(),0,p.len-1),add=noteClip.filter(n=>at+n.t<p.len).map(n=>({...n,t:at+n.t}));
-    p.notes.push(...add);S.selSet=new Set(add);S.selNote=add[0]||null;flashMsg('Pasted '+add.length+' notes at the song position');}
+    const at=clamp(Math.round((S.pos-p.start)/q())*q(),0,p.len-1),add=noteClip.notes.filter(n=>at+n.t<p.len).map(n=>({...n,t:at+n.t}));
+    p.notes.push(...add);S.selSet=new Set(add);S.selNote=add[0]||null;
+    // automation replaces what was there over the pasted span; lanes that do not apply to this track (e.g. synth knobs on a drum kit) are skipped
+    const end=Math.min(p.len,at+noteClip.len);let na=0;
+    for(const id in noteClip.auto){if(PD(p.track,+id)[6])continue;const src=noteClip.auto[id],ln=p.auto[id]||(p.auto[id]={m:src.m,pts:[]});
+      const vEnd=autoAt(ln,end);ln.pts=ln.pts.filter(x=>x.t<at||x.t>=end);
+      for(const x of src.pts)if(at+x.t<end)ln.pts.push({t:at+x.t,v:x.v});
+      if(vEnd!=null&&end<p.len&&!ln.pts.some(x=>x.t===end))ln.pts.push({t:end,v:Math.round(vEnd)});
+      ln.pts.sort((a,b)=>a.t-b.t);na++;}
+    flashMsg('Pasted '+add.length+' notes'+(na?' and '+na+' automation lane'+(na>1?'s':''):'')+' at the song position');}
   songChanged();dirty=true;
 }
 function toArr(){setView('arr');selOnly(null);}
@@ -602,7 +616,7 @@ document.addEventListener('keydown',e=>{
     case 'NumpadMultiply':handled();rec();break;
     case 'Slash':case 'NumpadDivide':handled();toggleCycle();break;
     case 'Home':case 'NumpadDecimal':handled();rtz();break;
-    case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
+    case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick||S.padPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;S.padPick=null;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
     case 'Tab':handled();nextTool(e.shiftKey?-1:1);break;
     case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
     case 'ArrowLeft':handled();relocate(Math.max(0,S.pos-(e.shiftKey?PPQ:BAR)));break;
@@ -1374,7 +1388,7 @@ function editDown(x,y,e,dbl){
     const NL=NOTE_LANES[S.lane];
     if(NL){
       const [,,mn,mx,,f]=NL,set=(x2,y2)=>{const v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
-        for(const n of p.notes){const nx=Math.round(GX+n.t*ppt);if(Math.abs(nx-x2)<=3&&(S.selSet.size<2||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;}}};
+        for(const n of p.notes){const nx=Math.round(GX+n.t*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;}}};
       set(x,y);S.drag={move:set,up:songChanged};return;}
     const id=+S.lane,mn=PD(p.track,id)[2],mx=PD(p.track,id)[3];if(PD(p.track,id)[6])return;
     const ln=()=>p.auto[id]||(p.auto[id]={m:S.padMode,pts:[]});
@@ -1470,7 +1484,7 @@ function canvasHint(x,y){
     if(y<56)return x<GX?['Pitch readout','Shows the pitch under the pointer.','']:['Ruler','Click to set the song position inside this part.',''];
     if(x<GX&&y<GY+GH)return eg().dr?['Drums','Click a row to hear that drum. Notes in a row play that drum.','']:['Keyboard','Click a key to hear the pitch on this track.',''];
     if(x<GX&&y>=VY-2)return ['Lane','Click the name to switch between velocity and this part\'s automation lanes; scroll it to pick any knob. The box below switches smooth or hold.',''];
-    if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With several notes selected, only those change.','']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid. The dotted line is the patch value. Right-press to switch tools.','Tab'];
+    if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With notes selected, only those change; with none selected, any note under the pointer.','']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid. The dotted line is the patch value. Right-press to switch tools.','Tab'];
     const tl={pointer:['Pointer','Drag on empty grid to select a group; Shift-click adds or removes a note; Ctrl+A selects all. Dragging a selected note moves or stretches the whole group (Alt: no snap). Ctrl+C/X/V copy, cut, paste at the song position. Double-click empty grid adds a note.'],
       pencil:['Pencil','Click to draw a note one quantize step long; drag to stretch it.'],eraser:['Eraser','Click or drag over notes to delete them.']}[S.tool]||['',''];
     return [tl[0],tl[1]+(S.step?' Step input is on: play notes to enter them, Space for a rest, Backspace to step back.':' Enter while stopped starts step input.'),'Tab'];
@@ -1512,19 +1526,37 @@ function drawPad(){
   clr(R.x+1,R.y+1,tw('Y '+DY[1])+8,14,B);T('Y '+DY[1],R.x+5,R.y+8,WH);
   reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track. Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
   const x0=424,cw=W-x0-8;
+  if(S.padPick)return drawPadPick(ti);
   const axis=(ax,y)=>{const id=ax==='x'?S.padX:S.padY;
     T(ax.toUpperCase()+' AXIS',x0,y);
     box(x0,y+8,16,18);T('<',x0+8,y+17,B,'center');box(x0+cw-16,y+8,16,18);T('>',x0+cw-8,y+17,B,'center');
     const nm=PD(ti,id)[1];box(x0+18,y+8,cw-36,18);T(nm.slice(0,22),x0+cw/2,y+17,B,'center',nm.length>19?14:16);
     T('value '+pfmtT(ti,id,t.lv[id])+'   patch '+pfmtT(ti,id,t.k[id]),x0,y+36);
-    const h=['Pad '+ax.toUpperCase()+' target','Click the arrows or the name to pick the knob this axis moves; scroll to step through.',''];
+    const h=['Pad '+ax.toUpperCase()+' target','Click the name to choose from all knobs on one page. The arrows and the scroll wheel step through them one by one.',''];
     reg(x0,y+8,16,18,{down:()=>padTarget(ax,-1),hint:h});reg(x0+cw-16,y+8,16,18,{down:()=>padTarget(ax,1),hint:h});
-    reg(x0+18,y+8,cw-36,18,{down:e=>padTarget(ax,e.shiftKey?-1:1),wheel:d=>padTarget(ax,d),hint:h});};
+    reg(x0+18,y+8,cw-36,18,{down:()=>{S.padPick=ax;dirty=true;},wheel:d=>padTarget(ax,d),hint:h});};
   axis('x',70);axis('y',130);
   T('CURVE',x0,198);
   [['SMOOTH','s'],['HOLD','h']].forEach(([l,m],i)=>{const bx=x0+i*(cw/2),on=S.padMode===m;box(bx,206,cw/2-2,18,on?B:WH);T(l,bx+cw/4-1,215,on?WH:B,'center');
     reg(bx,206,cw/2-2,18,{down:()=>{S.padMode=m;songChanged();dirty=true;},hint:['Automation curve','SMOOTH draws a line between recorded points; HOLD keeps each value until the next, for stepped sequences. Applies to lanes recorded from now on.','']});});
   T('Recorded lanes show',x0,250);T('in Key Edit under the',x0,266);T('note grid (F2).',x0,282);
+}
+
+// full-page chooser for a pad axis: the synth layout, the patch row, the track strip and both inserts
+const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['MG',[24,25]]];
+const PICK_LOW=[['PATCH DEPTH',[3,4,5,15,17],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['PATCH SOURCE',[26,27,28,29,30],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['OUTPUT',[31,32,33,34,35,36]],
+  ['INSERT 1',[0,1,2,3,4,5,6,7].map(j=>NP+j)],['INSERT 2',[0,1,2,3,4,5,6,7].map(j=>NP+8+j)]];
+function drawPadPick(ti){
+  const ax=S.padPick,cur=ax==='x'?S.padX:S.padY,other=ax==='x'?S.padY:S.padX,cw=106,bh=15;
+  clr(0,56,W,TBY-56,WH);
+  reg(0,56,W,TBY-56,{down:()=>{S.padPick=null;dirty=true;},hint:['Choose the '+ax.toUpperCase()+' target','Click a knob. Click elsewhere or press Esc to keep the current one.','Esc']});
+  const item=(id,x,y,w,label)=>{const d=PD(ti,id);if(d[6]){T('—',x+w/2,y+bh/2,B,'center',13);return;}
+    const on=id===cur;box(x,y,w-2,bh-1,on?B:WH);T(label||d[0],x+5,y+bh/2,on?WH:B,'left',13);if(id===other)T(ax==='x'?'Y':'X',x+w-8,y+bh/2,on?WH:B,'right',13);
+    reg(x,y,w-2,bh-1,{down:()=>{S[ax==='x'?'padX':'padY']=id;S.padPick=null;songChanged();dirty=true;},hint:[d[1],'Moves with the pad\'s '+ax.toUpperCase()+' axis.'+(id===other?' Already on the other axis.':''),'']});};
+  T('CHOOSE THE '+ax.toUpperCase()+' AXIS TARGET  ·  T'+(ti+1)+' '+S.tracks[ti].name.toUpperCase(),8,66,B,'left',14);
+  PICK_SYN.forEach(([title,ids],c)=>{const x=c*cw+2;clr(x,74,cw-4,11,B);T(title,x+(cw-4)/2,79,WH,'center',13);ids.forEach((id,r)=>item(id,x,87+r*bh,cw-2));});
+  PICK_LOW.forEach(([title,ids,labels],c)=>{const x=c*128+2;clr(x,152,124,11,B);T(title,x+62,157,WH,'center',13);
+    ids.forEach((id,r)=>item(id,x,165+r*bh,126,labels?labels[r]:id>=NP?PD(ti,id)[1].replace(/^INS\d \w+ /,''):null));});
 }
 
 /* ---------- manual window ---------- */
