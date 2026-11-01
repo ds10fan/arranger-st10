@@ -320,7 +320,7 @@ function sincRead(A, i, f, n, rate) {
 const DRUM_FADE = 1 / (0.005 * SR);   // 5 ms release when a drum note ends or is choked
 const holdSec = k => 0.01 * Math.pow(200, k / 127);   // drum HOLD knob: 10 ms .. 2 s
 
-// Record a drum the way the DS-10 does: its own voice, note C3 (60), into a buffer - here 2 s
+// Record a drum the way the DS-10 does: its own voice, at its note (C3 = 60 by default), into a buffer - here 2 s
 // of stereo at host rate - through its highpass and its two effects.
 function renderDrum(d, tempo) {
   const v = new Voice(); v.setBpm(tempo);
@@ -329,7 +329,7 @@ function renderDrum(d, tempo) {
   const fx = (d.ins || []).map(mkFx).filter(x => x && x.on);
   for (const x of fx) if (x.setTempo) x.setTempo(Math.round(tempo));
   const N = 2 * SR, L = new Float32Array(N), R = new Float32Array(N), hold = Math.round(holdSec(d.hold) * SR);
-  v.resetLfo(); v.rt = 1; v.noteOn(60, 127);
+  v.resetLfo(); v.rt = 1; v.noteOn(d.note || 60, 127);
   let fc = 0;
   for (let i = 0; i < N; i++) {
     if (i === hold) v.noteOff();
