@@ -298,6 +298,56 @@ class HP4 {
   p(x) { return this.byp ? x : this.sec(this.sec(x, this.k1, 0), this.k2, 2); }
 }
 
+// sample interpolation for drum playback: 0 linear, 1 4-point Hermite, 2 windowed sinc that
+// lowers its cutoff when the sample is played faster than recorded, so pitched-up drums do not alias
+function hermite(A, i, f, n) {
+  const xm1 = i > 0 ? A[i - 1] : 0, x0 = A[i], x1 = A[i + 1], x2 = i + 2 < n ? A[i + 2] : 0;
+  const c1 = 0.5 * (x1 - xm1), c2 = xm1 - 2.5 * x0 + 2 * x1 - 0.5 * x2, c3 = 0.5 * (x2 - xm1) + 1.5 * (x0 - x1);
+  return ((c3 * f + c2) * f + c1) * f + x0;
+}
+const SINC_N = 8, SINC_RES = 256, SINC_T = new Float32Array(SINC_N * SINC_RES + 2);
+for (let i = 0; i < SINC_T.length; i++) {
+  const x = i / SINC_RES, w = x >= SINC_N ? 0 : 0.42 + 0.5 * Math.cos(Math.PI * x / SINC_N) + 0.08 * Math.cos(2 * Math.PI * x / SINC_N);
+  SINC_T[i] = x === 0 ? 1 : w * Math.sin(Math.PI * x) / (Math.PI * x);
+}
+function kern(x) { x = x < 0 ? -x : x; if (x >= SINC_N) return 0; const p = x * SINC_RES, j = p | 0; return SINC_T[j] + (SINC_T[j + 1] - SINC_T[j]) * (p - j); }
+function sincRead(A, i, f, n, rate) {
+  const c = rate > 1 ? Math.max(0.25, 1 / rate) : 1, half = Math.ceil(SINC_N / c);
+  let acc = 0;
+  for (let j = i - half + 1; j <= i + half; j++) { if (j < 0 || j >= n) continue; acc += A[j] * kern((j - i - f) * c); }
+  return acc * c;
+}
+const DRUM_FADE = 1 / (0.005 * SR);   // 5 ms release when a drum note ends or is choked
+const holdSec = k => 0.01 * Math.pow(200, k / 127);   // drum HOLD knob: 10 ms .. 2 s
+
+// Record a drum the way the DS-10 does: its own voice, note C3 (60), into a buffer - here 2 s
+// of stereo at host rate - through its highpass and its two effects.
+function renderDrum(d, tempo) {
+  const v = new Voice(); v.setBpm(tempo);
+  for (let id = 0; id < 31; id++) v.knob(id, d.k[id]);
+  const hp = new HP4(); hp.set(d.k[31] || 0, d.k[32] || 0);
+  const fx = (d.ins || []).map(mkFx).filter(x => x && x.on);
+  for (const x of fx) if (x.setTempo) x.setTempo(Math.round(tempo));
+  const N = 2 * SR, L = new Float32Array(N), R = new Float32Array(N), hold = Math.round(holdSec(d.hold) * SR);
+  v.resetLfo(); v.rt = 1; v.noteOn(60, 127);
+  let fc = 0;
+  for (let i = 0; i < N; i++) {
+    if (i === hold) v.noteOff();
+    if (--fc <= 0) { fc += FR; v.frame(); for (const x of fx) if (x.frame) x.frame(); }
+    let x0 = hp.p(v.on ? v.sample() : 0), l = x0, r = x0;
+    for (const x of fx) { x.proc(l, r); l = x.l; r = x.r; }
+    L[i] = l; R[i] = r;
+  }
+  const fl = Math.round(0.02 * SR);
+  for (let i = 0; i < fl; i++) { const g = i / fl; L[N - 1 - i] *= g; R[N - 1 - i] *= g; }
+  return { L, R };
+}
+function wavePeaks(smp, n) {
+  const w = [], step = smp.L.length / n;
+  for (let b = 0; b < n; b++) { let m = 0; for (let i = Math.floor(b * step); i < Math.floor((b + 1) * step); i += 4) { const a = Math.max(Math.abs(smp.L[i]), Math.abs(smp.R[i])); if (a > m) m = a; } w.push(Math.round(m * 1000) / 1000); }
+  return w;
+}
+
 const volGain = v => (v * v * 0x10404 / 32768) / 32768;
 
 class Track {
@@ -305,7 +355,40 @@ class Track {
     this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.stack = []; this.ageC = 0;
     for (let i = 0; i < 8; i++) this.vs.push(new Voice());
     this.hp = new HP4(); this.ins = [null, null]; this.mute = 0; this.solo = 0; this.peak = 0;
+    // drum tracks play rendered samples instead of the voices: kit[d] = {L, R}, sv = sample voices
+    this.drum = false; this.kit = []; this.sv = []; this.sl = 0; this.sr = 0; this.interp = 1;
+    for (let i = 0; i < 16; i++) this.sv.push({ on: false, age: 0 });
     for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i]);
+  }
+  setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
+  // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
+  drumOn(e) {
+    const smp = this.kit[e.p]; if (!smp) return;
+    for (const v of this.sv) if (v.on && v.d === e.p) v.rel = true;            // a drum chokes itself, like a DS-10 drum part
+    let v = this.sv.find(x => !x.on);
+    if (!v) v = this.sv.reduce((a, b) => (a.age < b.age ? a : b));
+    const pn = (e.pn === undefined ? 64 : e.pn) * 258 / 32767;
+    v.on = true; v.d = e.p; v.L = smp.L; v.R = smp.R; v.n = smp.L.length; v.pos = (e.st || 0) / 128 * v.n;
+    v.rate = Math.pow(2, (e.pt || 0) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC;
+  }
+  drumOff(p) { for (const v of this.sv) if (v.on && v.d === p) v.rel = true; }
+  stereo() {
+    let l = 0, r = 0;
+    for (const v of this.sv) {
+      if (!v.on) continue;
+      const i = v.pos | 0;
+      if (i + 1 >= v.n) { v.on = false; continue; }
+      const f = v.pos - i;
+      let g = v.g;
+      if (v.rel) { v.fade -= DRUM_FADE; if (v.fade <= 0) { v.on = false; continue; } g *= v.fade; }
+      let a, b;
+      if (this.interp === 0) { a = v.L[i] + (v.L[i + 1] - v.L[i]) * f; b = v.R[i] + (v.R[i + 1] - v.R[i]) * f; }
+      else if (this.interp === 1) { a = hermite(v.L, i, f, v.n); b = hermite(v.R, i, f, v.n); }
+      else { a = sincRead(v.L, i, f, v.n, v.rate); b = sincRead(v.R, i, f, v.n, v.rate); }
+      l += a * g * v.pl; r += b * g * v.pr;
+      v.pos += v.rate;
+    }
+    this.sl = l; this.sr = r;
   }
   set(id, v) {
     if (id >= NPARAM) {
@@ -354,7 +437,7 @@ class Track {
     }
     for (let i = 0; i < this.nv; i++) { const vo = this.vs[i]; if (vo.gate && vo.note === p) vo.noteOff(); }
   }
-  allOff() { this.stack = []; for (const vo of this.vs) if (vo.gate) vo.noteOff(); }
+  allOff() { this.stack = []; for (const vo of this.vs) if (vo.gate) vo.noteOff(); if (this.sv) for (const v of this.sv) if (v.on) v.rel = true; }
   frame() { for (let i = 0; i < this.nv; i++) this.vs[i].frame(); for (let i = this.nv; i < 8; i++) if (this.vs[i].on) this.vs[i].frame(); }
   sample() {
     let m = 0;
@@ -621,10 +704,17 @@ class Engine {
       tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); });
       tr.mute = t.mute ? 1 : 0; tr.solo = t.solo ? 1 : 0;
       tr.ins = (t.ins || [null, null]).map(mkFx);
+      tr.setKind(t.kind === 'drum'); tr.interp = t.interp ?? 1;
+      if (tr.drum) this.renderKit(i, t.drums || []);
     });
     c.buses.forEach((b, i) => { this.bus[i].ins = (b.ins || []).map(mkFx); this.bus[i].g = volGain(b.ret); });
     this.mst.ins = (c.master.ins || []).map(mkFx); this.mst.g = volGain(c.master.vol); this.mst.shp = c.master.shp ? 1 : 0;
     this.updSolo(); this.setTempo(c.tempo || 120);
+  }
+  renderKit(ti, drums) { drums.forEach((d, j) => this.renderOne(ti, j, d)); }
+  renderOne(ti, j, d) {
+    const tr = this.tr[ti]; tr.kit[j] = d ? renderDrum(d, this.tempo || 120) : null;
+    if (this.post) this.post({ t: 'dw', tr: ti, d: j, w: tr.kit[j] ? wavePeaks(tr.kit[j], 160) : null });
   }
   updSolo() { this.solo = this.tr.some(t => t.solo); }
   msg(m) {
@@ -634,6 +724,9 @@ class Engine {
         for (const e of m.ev) { e.f = e.time > 0 ? Math.round(e.time * SR) : 0; this.q.push(e); }
         this.qs = true; break;
       case 'nv': this.tr[m.tr].setNv(m.n); break;
+      case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
+      case 'drum': this.renderOne(m.tr, m.d, m.def); break;
+      case 'interp': this.tr[m.tr].interp = m.v; break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;
       case 'fx': { const s = this.slot(m.w); s[m.slot] = mkFx(m.fx); if (s[m.slot] && s[m.slot].setTempo) s[m.slot].setTempo(Math.round(this.tempo)); break; }
       case 'fxp': { const x = this.slot(m.w)[m.slot]; if (x) { if (m.k === 'on') x.on = !!m.v; else x.set(m.k, m.v); } break; }
@@ -645,8 +738,8 @@ class Engine {
   apply(e) {
     const t = this.tr[e.tr];
     switch (e.k) {
-      case 'on': t.noteOn(e.p, e.v); break;
-      case 'off': t.noteOff(e.p); break;
+      case 'on': if (t.drum) t.drumOn(e); else t.noteOn(e.p, e.v); break;
+      case 'off': if (t.drum) t.drumOff(e.p); else t.noteOff(e.p); break;
       case 'knob': t.set(e.id, e.v); break;
       case 'tempo': this.setTempo(e.v); break;
       case 'play': for (const tr of this.tr) for (const v of tr.vs) v.resetLfo(); break;
@@ -668,8 +761,9 @@ class Engine {
       let ml = 0, mr = 0, al = 0, ar = 0, bl = 0, br = 0;
       for (let t = 0; t < 8; t++) {
         const T_ = tr[t];
-        const m = T_.sample();
-        let l = m * T_.pl, r = m * T_.pr;
+        let l, r;
+        if (T_.drum) { T_.stereo(); l = T_.sl * T_.pl * 2; r = T_.sr * T_.pr * 2; }   // pan acts as balance on the stereo samples
+        else { const m = T_.sample(); l = m * T_.pl; r = m * T_.pr; }
         for (let s = 0; s < 2; s++) { const x = T_.ins[s]; if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; } }
         const audible = !T_.mute && (!this.solo || T_.solo);
         l *= T_.g; r *= T_.g;
@@ -700,7 +794,7 @@ class Engine {
     this.mcnt += n;
     if (this.mcnt >= 2048 && this.post) {
       this.mcnt = 0;
-      this.post({ t: 'm', tr: tr.map(t => t.peak), l: this.ml, r: this.mr, v: tr.map(t => t.vs.reduce((s, v) => s + (v.gate ? 1 : 0), 0)) });
+      this.post({ t: 'm', tr: tr.map(t => t.peak), l: this.ml, r: this.mr, v: tr.map(t => t.drum ? t.sv.reduce((s, v) => s + (v.on && !v.rel ? 1 : 0), 0) : t.vs.reduce((s, v) => s + (v.gate ? 1 : 0), 0)) });
       for (const t of tr) t.peak = 0; this.ml = this.mr = 0;
     }
   }
