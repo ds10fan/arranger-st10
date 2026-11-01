@@ -984,7 +984,7 @@ const MANUAL=[
 ['k','EDIT','Stops playback and opens the drum editor.'],
 ['p','Drum editor: the same layout as the Synth window, working on one drum. The OUTPUT column holds the drum\'s highpass, HOLD (how long the note is held while recording, 10 ms to 2 s) and the recorded SAMPLE. Every change records the sample again a moment later. Keys and a MIDI keyboard play the drum\'s sample pitched: Q (the upper row\'s C) or MIDI C3 is its recorded NOTE. This also works while the Effect window shows one of the drum\'s slots. The arrows at the top left step through the drums. FX 1 and FX 2 work like mixer slots; Edit… opens the Effect window for that drum, and its closer box returns here. PRESET loads any library patch into the drum (D marks the DS-10\'s own drum patches). DONE or Esc goes back to the kit.'],
 ['p','Playing drums: the computer keys play drums 1-8 from the bottom-left key (Z, S, X, D, C, V, G, B, then again from H). MIDI keyboards play drum 1 on C1 (note 36), then up. A drum cuts off its own previous hit, as on the DS-10.'],
-['p','Drum parts in Key Edit show 8 rows, one per drum, named at the left (click a name to hear it). A note\'s length ends the sample with a short fade, so short notes make short drums. Velocity sets the volume. The lane under the grid also offers per-hit lanes: PITCH (-24 to +24 semitones), PAN, and START, which skips into the sample. Drag across the bars to set them; the dotted line is the default. Pointing at a hit shows its value; on the PITCH lane also the note it sounds (NOTE plus PITCH). With several notes selected, only those change.'],
+['p','Drum parts in Key Edit show 8 rows, one per drum, named at the left (click a name to hear it). The M box beside each name mutes that drum in this part only: its hits turn grey and stay silent, while other parts keep playing it. The mutes are saved with the part and go with it when it is copied or split; Ctrl+Z undoes a mute. A note\'s length ends the sample with a short fade, so short notes make short drums. Velocity sets the volume. The lane under the grid also offers per-hit lanes: PITCH (-24 to +24 semitones), PAN, and START, which skips into the sample. Drag across the bars to set them; the dotted line is the default. Pointing at a hit shows its value; on the PITCH lane also the note it sounds (NOTE plus PITCH). With several notes selected, only those change.'],
 
 ['h','Mixer window'],
 ['p','Signal flow of a track: voices > highpass > pan > insert 1 > insert 2 > fader > mute and solo. From there it goes to the master and, post-fader, through SEND A and SEND B to the two buses. Each bus runs its two inserts, then its RETURN level, into the master. The master runs its two inserts, its volume and the optional DS-10 shaper.'],
@@ -1190,7 +1190,7 @@ function songObj(){
   return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,padX:S.padX,padY:S.padY,padMode:S.padMode,
     tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,ins:d.ins})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
     buses:S.buses,master:S.master,
-    parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
+    parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,...(p.dmute?{dmute:p.dmute.map(Boolean)}:{}),notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
 }
 function cleanAuto(a){const o={};if(a&&typeof a==='object')for(const k in a){const id=+k,ln=a[k];if(id>=0&&id<NA&&ln&&Array.isArray(ln.pts))o[id]={m:ln.m==='h'?'h':'s',pts:ln.pts.filter(x=>x&&isFinite(x.t)&&isFinite(x.v)).map(x=>({t:x.t|0,v:id<NP?clamp(Math.round(x.v),P[id][2],P[id][3]):Math.round(x.v)})).sort((a,b)=>a.t-b.t)};}return o;}
 function loadSong(o){
@@ -1203,7 +1203,7 @@ function loadSong(o){
   while(S.tracks.length<8)S.tracks.push(mkTrack('Track '+(S.tracks.length+1),{},1));
   const bs=o.buses||[];S.buses=[0,1].map(i=>({name:i?'BUS B':'BUS A',ret:clamp((bs[i]||{}).ret??100,0,127),ins:[fx(((bs[i]||{}).ins||[])[0]),fx(((bs[i]||{}).ins||[])[1])]}));
   const m=o.master||{};S.master={vol:clamp(m.vol??100,0,127),shp:m.shp?1:0,ins:[fx((m.ins||[])[0]),fx((m.ins||[])[1])]};
-  S.parts=o.parts.map(p=>({id:p.id|0,track:clamp(p.track|0,0,7),start:Math.max(0,p.start|0),len:Math.max(PPQ,p.len|0),name:String(p.name||'Part').slice(0,16),mute:!!p.mute,
+  S.parts=o.parts.map(p=>({...(Array.isArray(p.dmute)&&p.dmute.some(Boolean)?{dmute:Array.from({length:NDRUM},(_,i)=>!!p.dmute[i])}:{}),id:p.id|0,track:clamp(p.track|0,0,7),start:Math.max(0,p.start|0),len:Math.max(PPQ,p.len|0),name:String(p.name||'Part').slice(0,16),mute:!!p.mute,
     notes:(p.notes||[]).map(n=>{const o={t:n.t|0,p:clamp(n.p|0,0,127),v:clamp(n.v|0,1,127),d:Math.max(1,n.d|0)};if(n.pt!=null)o.pt=clamp(n.pt|0,-24,24);if(n.pn!=null)o.pn=clamp(n.pn|0,0,127);if(n.st!=null)o.st=clamp(n.st|0,0,127);return o;}),auto:cleanAuto(p.auto)}));
   S.nextId=S.parts.reduce((a,p)=>Math.max(a,p.id),0)+1;
   S.tempo=clamp(+o.tempo||120,40,240);S.qi=clamp(o.qi??4,0,QS.length-1);S.L=o.L|0;S.R=o.R|0||BAR*8;S.cycle=!!o.cycle;
@@ -1357,6 +1357,7 @@ function scheduleRange(a,b,time,pass,ev){
     if(!tr.mute)for(const n of p.notes){
       if(n.t>=p.len)continue;const abs=p.start+n.t;
       if(abs<a||abs>=b||n.fresh===pass)continue;
+      if(p.dmute&&p.dmute[n.p]&&tr.kind==='drum')continue;
       const t0=time+(abs-a)*k,t1=t0+Math.max(4,n.d)*k;
       ev.push({time:t0,k:'on',tr:p.track,p:n.p,v:n.v,pt:n.pt,pn:n.pn,st:n.st},{time:t1,k:'off',tr:p.track,p:n.p});
       const ti=p.track;
@@ -1427,7 +1428,7 @@ function split(p,at){
   const auto={},auto2={};
   for(const k in p.auto){const ln=p.auto[k];auto[k]={m:ln.m,pts:ln.pts.filter(x=>x.t<rel)};auto2[k]={m:ln.m,pts:ln.pts.filter(x=>x.t>=rel).map(x=>({t:x.t-rel,v:x.v}))};
     const v=autoAt(ln,rel);if(v!=null&&!auto2[k].pts.some(x=>x.t===0))auto2[k].pts.unshift({t:0,v});}
-  const b={id:S.nextId++,track:p.track,start:at,len:p.len-rel,mute:p.mute,name:p.name,notes:p.notes.filter(n=>n.t>=rel).map(n=>({...n,t:n.t-rel})),auto:auto2};
+  const b={id:S.nextId++,track:p.track,start:at,len:p.len-rel,mute:p.mute,name:p.name,dmute:p.dmute&&p.dmute.slice(),notes:p.notes.filter(n=>n.t>=rel).map(n=>({...n,t:n.t-rel})),auto:auto2};
   p.notes=p.notes.filter(n=>n.t<rel);p.len=rel;p.auto=auto;S.parts.push(b);
 }
 function glue(p){
@@ -1878,7 +1879,10 @@ function drawEdit(){
   let hov='';if(S.mx>=GX&&S.my>=GY&&S.my<GY+GH)hov=G.dr?'DR'+(pAtY(S.my)+1):nname(pAtY(S.my));
   T(hov||(G.dr?'DRUM':'KEY'),GX/2,47,B,'center');
   if(G.dr)for(let r=0;r<NDRUM;r++){const d=G.top-r,y=GY+r*G.rh;clr(0,y,GX-1,G.rh,WH);hl(0,y+G.rh-1,W);if(r%2)clr(GX,y,W-GX,G.rh,P12);
-    T(String(d+1),3,y+7,B,'left',13);T(kit[d].name.slice(0,6),3,y+19,B,'left',kit[d].name.length>5?11:13);}
+    T(String(d+1),3,y+7,B,'left',13);T(kit[d].name.slice(0,6),3,y+19,B,'left',kit[d].name.length>5?11:13);
+    const mu=!!(p.dmute&&p.dmute[d]);box(GX-15,y+2,13,11,mu?B:WH);T('M',GX-9,y+7,mu?WH:B,'center',12);if(mu)clr(GX,y,W-GX,G.rh,P25);
+    reg(GX-16,y+1,15,13,{down:()=>{snapshot();p.dmute=p.dmute||new Array(NDRUM).fill(false);p.dmute[d]=!p.dmute[d];if(!p.dmute.some(Boolean))delete p.dmute;dirty=true;},
+      hint:['Mute drum '+(d+1)+' in this part','Silences '+kit[d].name+' in this part only; other parts keep playing it. Saved with the part.','']});}
   else for(let r=0;r<NROWS;r++){
     const pitch=S.editHi-r,y=GY+r*NH;
     if(isBlack(pitch)){clr(GX,y,W-GX,NH,P12);}
@@ -1892,7 +1896,8 @@ function drawEdit(){
   const nh=G.dr?Math.round(G.rh*0.6):NH;
   for(const n of p.notes){const r=G.top-n.p;if(r<0||r>=G.rows)continue;
     const x=Math.round(GX+n.t*ppt),w=Math.max(3,Math.round(n.d*ppt)),y=Math.round(GY+r*G.rh+(G.dr?(G.rh-nh)/2:0))+1;
-    if(isSel(n)){clr(x,y,w,nh-2,B);clr(x+2,y+2,w-4,nh-6,WH);}else{clr(x,y,w,nh-2,B);if(n.t>=p.len)clr(x+1,y+1,w-2,nh-4,WH);}}
+    const off=G.dr&&p.dmute&&p.dmute[n.p];
+    if(isSel(n)||off){clr(x,y,w,nh-2,B);clr(x+2,y+2,w-4,nh-6,off&&!isSel(n)?P50:WH);}else{clr(x,y,w,nh-2,B);if(n.t>=p.len)clr(x+1,y+1,w-2,nh-4,WH);}}
   ctx.restore();
   if(S.band){const b=S.band,x0=Math.min(b.x0,b.x1),x1=Math.max(b.x0,b.x1),y0=Math.min(b.y0,b.y1),y1=Math.max(b.y0,b.y1);
     dotH(x0,y0,x1-x0,2);dotH(x0,y1,x1-x0,2);dotV(x0,y0,y1-y0,2);dotV(x1,y0,y1-y0,2);}
