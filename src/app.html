@@ -338,12 +338,10 @@ function scheduleRange(a,b,time,pass,ev){
     for(const pid in p.auto){
       const ln=p.auto[pid];if(!ln.pts||!ln.pts.length||autoHeld.has(p.track+':'+pid))continue;
       const lo=Math.max(a,p.start),hi=Math.min(b,p.start+p.len),id=+pid;
-      // cutoffs (11, 31) take fractional values and glide inside the engine; `ramp` is the glide time in seconds
-      const cont=id===11||id===31;
-      const emit=(abs,v,ramp)=>{const dd=PD(p.track,id);if(dd[6])return;v=clamp(cont?v:Math.round(v),dd[2],dd[3]);const key=p.track+':'+id;if(lastAuto[key]===v)return;lastAuto[key]=v;
-        const t=time+(abs-a)*k;ev.push({time:t,k:'knob',tr:p.track,id,v,ramp});liveQ.push({at:t,tr:p.track,id,v:Math.round(v)});};
-      if(ln.m==='h'){if(p.start>=a&&p.start<b)emit(p.start,autoAt(ln,0),0.004);for(const pt of ln.pts){const abs=p.start+pt.t;if(abs>=lo&&abs<hi&&pt.t>0)emit(abs,pt.v,0.004);}}
-      else for(let t=Math.ceil(lo/6)*6;t<hi;t+=6)emit(t,autoAt(ln,t-p.start),6*k);
+      const emit=(abs,v)=>{const dd=PD(p.track,id);if(dd[6])return;v=clamp(Math.round(v),dd[2],dd[3]);const key=p.track+':'+id;if(lastAuto[key]===v)return;lastAuto[key]=v;
+        const t=time+(abs-a)*k;ev.push({time:t,k:'knob',tr:p.track,id,v});liveQ.push({at:t,tr:p.track,id,v});};
+      if(ln.m==='h'){if(p.start>=a&&p.start<b)emit(p.start,autoAt(ln,0));for(const pt of ln.pts){const abs=p.start+pt.t;if(abs>=lo&&abs<hi&&pt.t>0)emit(abs,pt.v);}}
+      else for(let t=Math.ceil(lo/6)*6;t<hi;t+=6)emit(t,autoAt(ln,t-p.start));
     }
   }
   if(S.click){for(let t=Math.ceil(a/PPQ)*PPQ;t<b;t+=PPQ)clickSnd(time+(t-a)*k,t%BAR===0);}
@@ -353,7 +351,7 @@ function chase(tick){
   const ev=[];
   for(const p of S.parts){if(p.mute||tick<p.start||tick>=p.start+p.len)continue;
     for(const pid in p.auto){const ln=p.auto[pid],v=autoAt(ln,tick-p.start);if(v==null)continue;const id=+pid,dd=PD(p.track,id);if(dd[6])continue;const vv=clamp(Math.round(v),dd[2],dd[3]);
-      lastAuto[p.track+':'+id]=vv;S.tracks[p.track].lv[id]=vv;ev.push({time:0,k:'knob',tr:p.track,id,v:vv,ramp:0});}}
+      lastAuto[p.track+':'+id]=vv;S.tracks[p.track].lv[id]=vv;ev.push({time:0,k:'knob',tr:p.track,id,v:vv});}}
   if(ev.length)post({t:'ev',ev});
 }
 function startPlay(){

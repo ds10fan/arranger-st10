@@ -81,7 +81,7 @@ const MANUAL=[
 ['k','Pointer (lane)','Click a point to select it (Shift adds). Drag on an empty part of the lane to select with a box. Drag a selected point to move the group: time snaps to the grid (Alt: free), and the value follows the drag. Del deletes the selected points.'],
 
 ['h','Synth window'],
-['p','Each track plays one DS-10 style voice. The layout and knob ranges follow the DS-10: five columns (VCO, VCO1, VCO2, VCF and EG), with the patch panel underneath. The oscillators are polyBLEP, and the filter is a zero-delay-feedback state-variable filter with clipped states. Its cutoff moves smoothly, recalculated every sample. LFO, envelope, portamento and the filter and amp mapping run at the DS-10\'s 512 Hz control rate.'],
+['p','Each track plays one DS-10 style voice. The layout and knob ranges follow the DS-10: five columns (VCO, VCO1, VCO2, VCF and EG), with the patch panel underneath. The oscillators are polyBLEP, and the filter is a zero-delay-feedback state-variable filter with clipped states. LFO, envelope, portamento and the filter and amp mapping run at the DS-10\'s 512 Hz control rate.'],
 ['p','Knobs: drag up or down, or scroll. Shift gives fine steps, and double-clicking resets a knob. Click a switch\'s boxes to choose.'],
 ['k','OCTAVE','-2 to +2 octaves for both oscillators.'],
 ['k','PORTA','Glide time. In mono, legato notes glide without retriggering.'],
@@ -122,7 +122,7 @@ const MANUAL=[
 ['h','KAOSS pad and automation'],
 ['p','The pad moves two knobs of the active track at once: X left to right and Y bottom to top. Pick the targets with the arrows or by scrolling over their names. Any synth knob, the highpass, volume, pan, the sends and the knobs of the track\'s insert effects can be a target. Releasing the pad returns the knobs to their patch values.'],
 ['p','Recording automation: press Record and play, then move the pad, a synth knob or an insert-effect knob of the active track. The moves are written into the part under the playhead. If no part is there, one is created and grows bar by bar. Moving over existing automation overwrites it, and holding the pad still keeps writing the same value. CURVE sets whether new lanes are SMOOTH or HOLD.'],
-['p','Playback: automation moves a live copy of the knob and leaves the patch alone; Stop restores the patch values. Before a part\'s first point the lane holds that value, and after the last point it holds the last value. Smooth lanes glide the filter cutoffs continuously. Changing an insert slot\'s effect type clears that slot\'s lanes.'],
+['p','Playback: automation moves a live copy of the knob and leaves the patch alone; Stop restores the patch values. Before a part\'s first point the lane holds that value, and after the last point it holds the last value. Changing an insert slot\'s effect type clears that slot\'s lanes.'],
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],
 
 ['h','Songs and saving'],

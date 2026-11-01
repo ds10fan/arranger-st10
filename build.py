@@ -10,6 +10,6 @@ assert '</script' not in eng and '</script' not in src('manual.js')
 names = [json.loads(m) for m in re.findall(r'names:(\[.*?\]),fx:', src('midiverb_fx.js'))]
 app = app.replace('@@MANUAL@@', src('manual.js')).replace('@@ENGINE@@', eng).replace('@@MVNAMES@@', json.dumps(names))
 assert '@@' not in app
-out = os.path.join(here, '..', 'arranger-st.html')
+out = os.path.join(here, 'arranger-st.html')
 open(out, 'w', encoding='utf-8').write(app)
 print(os.path.normpath(out), len(app), 'bytes')

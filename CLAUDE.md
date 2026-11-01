@@ -6,7 +6,7 @@ and KAOSS-pad automation.
 
 ## Shipping form
 
-The app is distributed as ONE self-contained file: `../arranger-st.html` (i.e. `/home/user/arranger-st.html`).
+The app is distributed as ONE self-contained file: `arranger-st.html` in this folder (also copied to `/home/user/arranger-st.html` for publishing).
 Never split it into several files or add runtime fetches; everything (engine, tables,
 Midiverb programs, patch library, manual) is inlined by the build.
 
