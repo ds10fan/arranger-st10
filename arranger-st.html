@@ -1955,7 +1955,9 @@ function drawEdit(){
     // bars grow from the lane's default value: the floor for velocity and start, the middle for pitch and pan
     const [,,mn,mx,def]=NL,yv=v=>VY+VH-1-Math.round((v-mn)/(mx-mn)*(VH-2)),y0=yv(S.lane==='vel'?mn:def);
     dotH(GX,yv(def),W-GX,4);
-    if(S.mx>=GX&&S.my>=VY-2&&S.my<TBY){const hn=p.notes.find(n=>Math.abs(GX+n.t*ppt-S.mx)<=3);
+    if(S.laneNote||(S.mx>=GX&&S.my>=VY-2&&S.my<TBY)){
+      let hn=S.laneNote;
+      if(!hn){let best=7;for(const n of p.notes){const dx=Math.abs(GX+n.t*ppt-S.mx);if(dx<best&&(!S.selSet.size||isSel(n))){best=dx;hn=n;}}}
       if(hn){const v=noteVal(hn,S.lane),dn=S.tracks[p.track].drums;
         const txt=S.lane==='pt'&&dn?(v>0?'+':'')+v+' st = '+nname(clamp(dn[hn.p].note+v,0,127)):S.lane==='pn'?pfmt(34,v):String(v);
         clr(W-4-tw(txt,14)-8,VY,tw(txt,14)+8,13,WH);T(txt,W-8,VY+6,B,'right',14);}}
@@ -2404,8 +2406,8 @@ function editDown(x,y,e,dbl){
     const NL=NOTE_LANES[S.lane];
     if(NL){
       const [,,mn,mx,,f]=NL,set=(x2,y2)=>{const v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
-        for(const n of p.notes){const nx=Math.round(GX+n.t*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;}}};
-      set(x,y);S.drag={move:set,up:songChanged};return;}
+        for(const n of p.notes){const nx=Math.round(GX+n.t*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;S.laneNote=n;}}};
+      set(x,y);S.drag={move:set,up:()=>{S.laneNote=null;songChanged();dirty=true;}};return;}
     const id=+S.lane,mn=PD(p.track,id)[2],mx=PD(p.track,id)[3];if(PD(p.track,id)[6])return;
     const ln=()=>p.auto[id]||(p.auto[id]={m:S.padMode,pts:[]});
     if(S.tool==='eraser'){const er=x2=>{const L=p.auto[id];if(!L)return;const t=(x2-GX)/ppt;const before=L.pts.length;L.pts=L.pts.filter(pt=>Math.abs(pt.t-t)>q()/2);if(L.pts.length!==before&&!snap){snap=true;}};snapshot();er(x);S.drag={move:er};return;}
