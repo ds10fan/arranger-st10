@@ -993,7 +993,7 @@ const MANUAL=[
 ['k','SEND A  SEND B  PAN','Post-fader sends and the DS-10 linear pan. Double-click resets.'],
 ['k','Fader','Drag; double-click for 100. A meter runs beside it.'],
 ['k','SHAPER','The DS-10 master stage: about 2x gain that saturates smoothly near full scale.'],
-['p','Set bus effects fully wet (DRY/WET 127), because the dry signal already reaches the master. Inserts run in series, so delay into reverb is insert 1 and insert 2 of the same strip. The volume curve is the DS-10\'s: 100 is about -4 dB, and 127 is 0 dB.'],
+['p','Effects added to a bus slot start fully wet (DRY/WET 127), because the dry signal already reaches the master; keep them that way. Inserts run in series, so delay into reverb is insert 1 and insert 2 of the same strip. The volume curve is the DS-10\'s: 100 is about -4 dB, and 127 is 0 dB.'],
 
 ['h','Effects'],
 ['p','The Effect window edits one slot. The arrows step through all the slots, and the type buttons replace the effect. ON / BYPASSED switches the effect in or out.'],
@@ -1083,6 +1083,8 @@ const FXDEF={
   dist:{name:'DISTORTION',short:'DST',p:[['drive','DRIVE',0,127,64],['tone','TONE',0,127,90],['level','LEVEL',0,127,80],['mix','DRY/WET',0,127,127]]}};
 const FXTYPES=['ds10','mverb','tape','dist'];
 function mkFx(type,over){const d=FXDEF[type],p={};d.p.forEach(x=>p[x[0]]=x[4]);return {type,on:true,p:Object.assign(p,over||{})};}
+// a new effect for slot w: on a send bus it starts fully wet, because the dry signal already reaches the master
+function newFx(w,type){return mkFx(type,w.s==='b'?{mix:127}:null);}
 function progMax(fx){return fx.p.dev===2?99:63;}
 function progName(fx){const n=MV_NAMES[fx.p.dev]||[];const i=clamp(fx.p.prog,0,n.length-1);return (fx.p.dev===2?i:i+1)+' '+(n[i]||'');}
 
@@ -2065,7 +2067,7 @@ function stripFx(w,slot,x,y,wid){
   else T('—',x+wid/2,y+7,B,'center');
   const sel=S.fxSel.w.s===w.s&&S.fxSel.w.i===w.i&&S.fxSel.slot===slot;if(sel){clr(x-2,y+2,1,10,B);clr(x+wid+1,y+2,1,10,B);}
   reg(x,y,wid,14,{down:()=>{S.fxSel={w:{...w},slot};S.popup={x,y:y+15,items:[
-    ...FXTYPES.map(t=>({l:(fx&&fx.type===t?'√ ':'  ')+FXDEF[t].name,a:()=>{setFx(w,slot,mkFx(t));}})),{l:'-'},
+    ...FXTYPES.map(t=>({l:(fx&&fx.type===t?'√ ':'  ')+FXDEF[t].name,a:()=>{setFx(w,slot,newFx(w,t));}})),{l:'-'},
     {l:'  Edit…',k:'F5',a:()=>{if(fx){S.fxSel={w:{...w},slot};setView('fx');}}},
     {l:fx&&!fx.on?'  Switch On':'  Bypass',a:()=>{if(fx)setFxP(w,slot,'on',fx.on?0:1);}},{l:'  Remove',a:()=>setFx(w,slot,null)}]};},
     hint:['Insert slot '+(slot+1),'Click to choose an effect, bypass it, or open its editor.','']});
@@ -2131,7 +2133,7 @@ function drawFx(){
   reg(22,40,16,14,{down:()=>{S.fxSel=all[((w.s==='d'?slot:idx)+1)%all.length];dirty=true;},hint:['Next slot','','']});
   T(slotLabel(w,slot),44,47);
   FXTYPES.forEach((t,i)=>{const x=W-4-(4-i)*56,on=fx&&fx.type===t;box(x,40,54,14,on?B:WH);T(FXDEF[t].short,x+27,47,on?WH:B,'center');
-    reg(x,40,54,14,{down:()=>{if(!on)setFx(w,slot,mkFx(t));},hint:[FXDEF[t].name,'Puts a '+FXDEF[t].name.toLowerCase()+' in this slot with default settings.','']});});
+    reg(x,40,54,14,{down:()=>{if(!on)setFx(w,slot,newFx(w,t));},hint:[FXDEF[t].name,'Puts a '+FXDEF[t].name.toLowerCase()+' in this slot with default settings.','']});});
   if(!fx){T('This slot is empty.',W/2,150,B,'center',20);T('Pick an effect type above.',W/2,176,B,'center');return;}
   const d=FXDEF[fx.type];
   T(d.name,12,76,B,'left',32);

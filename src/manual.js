@@ -121,7 +121,7 @@ const MANUAL=[
 ['k','SEND A  SEND B  PAN','Post-fader sends and the DS-10 linear pan. Double-click resets.'],
 ['k','Fader','Drag; double-click for 100. A meter runs beside it.'],
 ['k','SHAPER','The DS-10 master stage: about 2x gain that saturates smoothly near full scale.'],
-['p','Set bus effects fully wet (DRY/WET 127), because the dry signal already reaches the master. Inserts run in series, so delay into reverb is insert 1 and insert 2 of the same strip. The volume curve is the DS-10\'s: 100 is about -4 dB, and 127 is 0 dB.'],
+['p','Effects added to a bus slot start fully wet (DRY/WET 127), because the dry signal already reaches the master; keep them that way. Inserts run in series, so delay into reverb is insert 1 and insert 2 of the same strip. The volume curve is the DS-10\'s: 100 is about -4 dB, and 127 is 0 dB.'],
 
 ['h','Effects'],
 ['p','The Effect window edits one slot. The arrows step through all the slots, and the type buttons replace the effect. ON / BYPASSED switches the effect in or out.'],
