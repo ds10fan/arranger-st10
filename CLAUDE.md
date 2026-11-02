@@ -27,6 +27,10 @@ on first run, gitignored – replace them to use your own certificate):
 - `src/engine.js` – AudioWorklet engine (DS-10 voice port, filters, effects, mixer). It is
   embedded as a `<script type="text/plain">` and loaded via blob:/data: URL.
 - `src/manual.js` – the in-app manual (Desk > Manual, F9).
+- `native/` – the Linux desktop app (Rust): the page in a WebKitGTK window, `engine.js` in V8 on the
+  native audio thread, VST3 instrument tracks. See `native/README.md`. Build with `nix build` from
+  the root (`flake.nix`); it embeds the built `arranger-st.html`, so run `python3 build.py` first
+  when building with cargo. `engine.js` must keep working in both hosts (worklet and `native/src/js.rs`).
 - `src/ds10_tables.js`, `src/midiverb_fx.js` – generated data; regenerate with `tools/`
   (needs the upstream repos ds10emu and midiverb_emulator cloned locally; paths are at the top of each script).
 

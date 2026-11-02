@@ -38,7 +38,7 @@ const MANUAL=[
 ['p','The computer keyboard is a piano with two rows, like VCV Rack\'s QWERTY MIDI driver. Z to , is the lower octave, and Q to P is the upper one. The keys are read by physical position, so QWERTZ and AZERTY keyboards play the same notes. Hold Shift to play at velocity 127; otherwise notes play at velocity 100.'],
 ['k','- and =','Keyboard octave down and up. The current base note is shown in Options.'],
 ['k','Options > QWERTY Input','Turn it off to free the letter keys. A, P, E, S, G and M then pick the pointer, pencil, eraser, scissors, glue and mute tools.'],
-['k','Options > Web MIDI Input','Listens to every connected MIDI keyboard. The claude.ai viewer may block MIDI. To use a real keyboard, open the HTML file locally in Chromium.'],
+['k','Options > Web MIDI Input','Listens to every connected MIDI keyboard. The claude.ai viewer may block MIDI. To use a real keyboard, open the HTML file locally in Chromium. The desktop app has no MIDI input: its web view has no Web MIDI.'],
 ['p','Notes always go to the active track. In Key Edit, the active track is the track of the part you are editing.'],
 
 ['h','Arrange window'],
@@ -120,6 +120,13 @@ const MANUAL=[
 ['p','Playing drums: the computer keys play drums 1-8 from the bottom-left key (Z, S, X, D, C, V, G, B, then again from H). MIDI keyboards play drum 1 on C1 (note 36), then up. A drum cuts off its own previous hit, as on the DS-10.'],
 ['p','Drum parts in Key Edit show 8 rows, one per drum, named at the left (click a name to hear it). The M box beside each name mutes that drum in this part only: its hits turn grey and stay silent, while other parts keep playing it. The mutes are saved with the part and go with it when it is copied or split; Ctrl+Z undoes a mute. A note\'s length ends the sample with a short fade, so short notes make short drums. Velocity sets the volume. The lane under the grid also offers per-hit lanes: PITCH (-24 to +24 semitones), PAN, and START, which skips into the sample. Drag across the bars to set them; with notes selected only those change, with none selected any hit under the pointer. The dotted line is the default. Pointing at a hit shows its value; on the PITCH lane also the note it sounds (NOTE plus PITCH). With several notes selected, only those change.'],
 
+['h','VST instruments (desktop app)'],
+['p','In the Arranger ST desktop app (native/ in the sources, Linux) a track can play a VST3 instrument plugin instead of the DS-10 voice: click VST at the top right of the Synth window (F3). In the browser, VST tracks stay silent and their plugin cannot be changed, but a song that has them loads and keeps them.'],
+['k','PLUGIN','Lists the VST3 instruments found in ~/.vst3 (and its subfolders), /usr/lib/vst3, /usr/local/lib/vst3 and the folders in the VST3_PATH environment variable. Click one to put it on the track. RESCAN searches again, for plugins installed while the app runs.'],
+['k','EDITOR','Opens the plugin\'s own window. Click again, or close that window, to hide it.'],
+['p','The plugin gets the track\'s notes with their velocities and the song tempo. Its stereo output then runs through the track\'s mixer strip: inserts, fader, pan (as balance), mute and solo, and sends A and B. Notes stay as they are when you switch between SYNTH and VST, and the DS-10 patch is kept. Synth-knob automation does not apply to a VST track; automation of the strip and the inserts does.'],
+['p','The plugin\'s settings (its whole state, as the plugin saves it) are stored inside the song: in the autosave and in saved .json files. Opening the song loads the plugin again with them. If the plugin is missing, the Synth window says why it was not loaded, and the song keeps its settings.'],
+
 ['h','Mixer window'],
 ['p','Signal flow of a track: voices > highpass > pan > insert 1 > insert 2 > fader > mute and solo. From there it goes to the master and, post-fader, through SEND A and SEND B to the two buses. Each bus runs its two inserts, then its RETURN level, into the master. The master runs its two inserts, its volume and the optional DS-10 shaper.'],
 ['k','Track name','Click to make the track active.'],
@@ -144,14 +151,16 @@ const MANUAL=[
 
 ['h','Latency'],
 ['p','From a key press to sound takes the browser\'s processing, one 128-sample audio block, up to one 2 ms DS-10 control frame, and the operating system\'s audio output. The last part is usually the largest. Options > Audio Latency shows what your system reports.'],
+['p','In the desktop app the engine runs in the audio callback of PipeWire, PulseAudio, JACK or ALSA (the first that works; ARRANGER_AUDIO=pipewire, pulseaudio, jack or alsa picks one). Its latency is the audio system\'s buffer, which pw-top shows for PipeWire.'],
 ['k','Record Latency Compensation','On by default (Options). While recording, notes, their lengths and pad or knob moves are placed where the music you heard was, not where the engine was rendering. That removes the lag of the audio output from recordings.'],
 ['p','Lowering the system latency on Linux with PipeWire: check the current buffer size with pw-top (the QUANT column). For a session, run pw-metadata -n settings 0 clock.force-quantum 128, and set it back with 0. Permanently, put context.properties = { default.clock.quantum = 128 default.clock.min-quantum = 64 } into ~/.config/pipewire/pipewire.conf.d/10-lowlatency.conf, and pulse.properties = { pulse.min.req = 128/48000 pulse.min.quantum = 128/48000 } into ~/.config/pipewire/pipewire-pulse.conf.d/10-lowlatency.conf, then run systemctl --user restart pipewire pipewire-pulse. Browsers talk to PipeWire through its PulseAudio layer, so starting the browser with PULSE_LATENCY_MSEC=3 also lowers its buffer. Smaller values need a faster machine: crackles mean go back up (256 is a safe middle).'],
 
 ['h','Songs and saving'],
 ['p','The song saves itself in this browser a moment after every change; the status line shows "saved". This includes tracks, patches, the mixer, effects, parts, notes, automation, tempo, locators and pad settings. Browser storage belongs to this browser only.'],
 ['k','File > Rename Song…','Type a new name and press Enter. You can also click the song name in the Arrange title bar.'],
-['k','File > Save JSON…  Ctrl+S','Writes the song as a .json file named after the song.'],
+['k','File > Save JSON…  Ctrl+S','Writes the song as a .json file named after the song. The desktop app asks where to save it.'],
 ['k','File > Open JSON…','Loads a song saved that way.'],
+['p','The desktop app keeps its autosave in ~/.local/share/arranger-st, separate from any browser.'],
 ['k','File > New Song','Starts an empty song with eight init patches.'],
 ['k','File > Load Demo Song','Loads the demo, built from patches in the ds10emu example saves.'],
 ['k','Edit > Rename Track…','Renames the active track. You can also click the track name in the Synth window.'],

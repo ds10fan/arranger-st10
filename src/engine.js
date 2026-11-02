@@ -363,6 +363,8 @@ class Track {
     for (let i = 0; i < 16; i++) this.sv.push({ on: false, age: 0 });
     // defs: how each drum is made; dirty: changed since its sample was recorded; lr: the live recording in progress
     this.defs = []; this.dirty = []; this.lrs = []; this.eng = null;
+    // VST tracks (desktop app only): the host renders the instrument into xl/xr before each block; xn = held notes
+    this.ext = false; this.xl = null; this.xr = null; this.xn = 0;
     for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i]);
   }
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
@@ -771,7 +773,7 @@ class Engine {
       tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); });
       tr.mute = t.mute ? 1 : 0; tr.solo = t.solo ? 1 : 0;
       tr.ins = (t.ins || [null, null]).map(mkFx);
-      tr.setKind(t.kind === 'drum'); tr.interp = t.interp ?? 1;
+      tr.ext = t.kind === 'vst'; tr.setKind(t.kind === 'drum'); tr.interp = t.interp ?? 1;
       if (tr.drum) this.renderKit(i, t.drums || []);
     });
     c.buses.forEach((b, i) => { this.bus[i].ins = (b.ins || []).map(mkFx); this.bus[i].g = volGain(b.ret); });
@@ -794,7 +796,7 @@ class Engine {
         for (const e of m.ev) { e.f = e.time > 0 ? Math.round(e.time * SR) : 0; this.q.push(e); }
         this.qs = true; break;
       case 'nv': this.tr[m.tr].setNv(m.n); break;
-      case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
+      case 'kind': this.tr[m.tr].ext = m.kind === 'vst'; this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
       case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
       case 'interp': this.tr[m.tr].interp = m.v; break;
@@ -803,7 +805,7 @@ class Engine {
       case 'fxp': { const x = this.slot(m.w)[m.slot]; if (x) { if (m.k === 'on') x.on = !!m.v; else x.set(m.k, m.v); } break; }
       case 'bus': this.bus[m.i].g = volGain(m.ret); break;
       case 'mst': this.mst.g = volGain(m.vol); this.mst.shp = m.shp ? 1 : 0; break;
-      case 'panic': this.q = []; for (const t of this.tr) { t.allOff(); for (const v of t.vs) { v.on = false; v.lvl = v.lvT = v.lvd = 0; } } break;
+      case 'panic': this.xoff = true; this.q = []; for (const t of this.tr) { t.allOff(); for (const v of t.vs) { v.on = false; v.lvl = v.lvT = v.lvd = 0; } } break;
     }
   }
   apply(e) {
@@ -817,8 +819,25 @@ class Engine {
       case 'alloff': for (const tr of this.tr) tr.allOff(); break;
     }
   }
+  // takes this block's notes for VST tracks out of the queue and lets the host render those tracks:
+  // ev = [track, kind (1 on, 0 off, 2 all off), pitch, velocity, frame offset] per event
+  extBlock(n, f0) {
+    const q = this.q, end = f0 + n, ev = [];
+    if (this.xoff) { this.xoff = false; this.tr.forEach((t, i) => { if (t.ext) { ev.push(i, 2, 0, 0, 0); t.xn = 0; } }); }
+    let keep = null;
+    for (let i = 0; i < q.length && q[i].f < end; i++) {
+      const e = q[i], t = this.tr[e.tr], off = Math.max(0, e.f - f0);
+      if (e.k === 'alloff') { this.tr.forEach((t, j) => { if (t.ext) { ev.push(j, 2, 0, 0, off); t.xn = 0; } }); continue; }
+      if (!t || !t.ext || (e.k !== 'on' && e.k !== 'off')) continue;
+      if (e.k === 'on') { ev.push(e.tr, 1, e.p, e.v, off); t.xn++; } else { ev.push(e.tr, 0, e.p, 0, off); t.xn = Math.max(0, t.xn - 1); }
+      (keep || (keep = new Set())).add(e);
+    }
+    if (keep) this.q = q.filter(e => !keep.has(e));
+    this.extHook(n, ev, this.tempo || 120);
+  }
   render(L, R, n, f0) {
     if (this.qs) { this.q.sort((a, b) => a.f - b.f); this.qs = false; }
+    if (this.extHook) this.extBlock(n, f0);
     const q = this.q; let qi = 0;
     const tr = this.tr, bus = this.bus, mst = this.mst;
     for (let i = 0; i < n; i++) {
@@ -833,7 +852,8 @@ class Engine {
       for (let t = 0; t < 8; t++) {
         const T_ = tr[t];
         let l, r;
-        if (T_.drum) { T_.stereo(); l = T_.sl * T_.pl * 2; r = T_.sr * T_.pr * 2; }   // pan acts as balance on the stereo samples
+        if (T_.ext) { if (T_.xl) { l = T_.xl[i] * T_.pl * 2; r = T_.xr[i] * T_.pr * 2; } else l = r = 0; }
+        else if (T_.drum) { T_.stereo(); l = T_.sl * T_.pl * 2; r = T_.sr * T_.pr * 2; }   // pan acts as balance on the stereo samples
         else { const m = T_.sample(); l = m * T_.pl; r = m * T_.pr; }
         for (let s = 0; s < 2; s++) { const x = T_.ins[s]; if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; } }
         const audible = !T_.mute && (!this.solo || T_.solo);
@@ -865,7 +885,7 @@ class Engine {
     this.mcnt += n;
     if (this.mcnt >= 2048 && this.post) {
       this.mcnt = 0;
-      this.post({ t: 'm', tr: tr.map(t => t.peak), l: this.ml, r: this.mr, v: tr.map(t => t.drum ? t.sv.reduce((s, v) => s + (v.on && !v.rel ? 1 : 0), 0) : t.vs.reduce((s, v) => s + (v.gate ? 1 : 0), 0)) });
+      this.post({ t: 'm', tr: tr.map(t => t.peak), l: this.ml, r: this.mr, v: tr.map(t => t.ext ? t.xn : t.drum ? t.sv.reduce((s, v) => s + (v.on && !v.rel ? 1 : 0), 0) : t.vs.reduce((s, v) => s + (v.gate ? 1 : 0), 0)) });
       for (const t of tr) t.peak = 0; this.ml = this.mr = 0;
     }
   }

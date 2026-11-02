@@ -73,7 +73,7 @@ const NP=P.length,NA=NP+16,INIT_K=P.map(p=>p[4]).concat(new Array(16).fill(0));
 /* ids NP..NA-1 are the knobs of a track's two insert slots: NP + slot*8 + n, n in the effect's own control order.
    PD() describes any id for a given track, so lanes, the pad and recording treat them like synth knobs. */
 function PD(ti,id){
-  if(id<33&&isDrumT(ti))return ['—','(synth knob)',0,127,0,null,true];
+  if(id<33&&(isDrumT(ti)||isVstT(ti)))return ['—','(synth knob)',0,127,0,null,true];
   if(id<NP)return P[id];
   const slot=(id-NP)>>3,j=(id-NP)&7,fx=S.tracks[ti]&&S.tracks[ti].ins[slot],d=fx&&FXDEF[fx.type],pp=d&&d.p[j];
   if(!pp)return ['—','INS'+(slot+1)+' —',0,127,0,null,true];
@@ -114,12 +114,14 @@ function selOnly(n){S.selSet=new Set(n?[n]:[]);S.selNote=n||null;S.ptSel=new Set
 const selList=()=>[...S.selSet];
 let noteClip=null;
 
-function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1};}
+function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1,vst:null};}
 /* drum tracks: a kit of 8 drums. Each drum is a DS-10 patch (knobs 0-30 + highpass 31-32), a HOLD time
    and two effects, recorded by the engine into a 2 s sample. Notes on a drum track carry the drum in p (0-7)
    and optional pt (pitch, semitones), pn (pan 0-127) and st (sample start 0-127). */
 const NDRUM=8,DRUM_INIT_HOLD=40;
 const isDrumT=ti=>!!(S.tracks[ti]&&S.tracks[ti].kind==='drum');
+/* VST tracks (desktop app only): t.vst = {path, cid, name, vendor, st, ct}; st/ct are the plugin's saved state (base64) */
+const isVstT=ti=>!!(S.tracks[ti]&&S.tracks[ti].kind==='vst');
 function mkDrum(name,k31,hold,note){return {name,k:(k31||INIT_K.slice(0,31)).slice(0,31).concat([0,0]),hold:hold??DRUM_INIT_HOLD,note:note??60,ins:[null,null],wave:null};}
 const DRUM_NOTE_MIN=12,DRUM_NOTE_MAX=108;
 const holdMs=k=>Math.round(10*Math.pow(200,k/127));
@@ -197,16 +199,18 @@ function newSong(){
 }
 function songObj(){
   return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,padX:S.padX,padY:S.padY,padMode:S.padMode,
-    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,ins:d.ins})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
+    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,...(t.vst?{vst:t.vst}:{}),drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,ins:d.ins})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
     buses:S.buses,master:S.master,
     parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,...(p.dmute?{dmute:p.dmute.map(Boolean)}:{}),notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
 }
+function cleanVst(v){if(!v||typeof v!=='object'||typeof v.path!=='string'||typeof v.cid!=='string')return null;
+  const str=x=>typeof x==='string'?x:null;return {path:v.path,cid:v.cid,name:String(v.name||'VST').slice(0,40),vendor:String(v.vendor||'').slice(0,40),st:str(v.st),ct:str(v.ct)};}
 function cleanAuto(a){const o={};if(a&&typeof a==='object')for(const k in a){const id=+k,ln=a[k];if(id>=0&&id<NA&&ln&&Array.isArray(ln.pts))o[id]={m:ln.m==='h'?'h':'s',pts:ln.pts.filter(x=>x&&isFinite(x.t)&&isFinite(x.v)).map(x=>({t:x.t|0,v:id<NP?clamp(Math.round(x.v),P[id][2],P[id][3]):Math.round(x.v)})).sort((a,b)=>a.t-b.t)};}return o;}
 function loadSong(o){
   if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST song');
   const fx=f=>f&&FXDEF[f.type]?{type:f.type,on:f.on!==false,p:Object.assign(mkFx(f.type).p,f.p||{})}:null;
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
-    (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);
+    (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'||t.kind==='vst'?t.kind:'synth';tr.vst=cleanVst(t.vst);tr.interp=clamp(t.interp??1,0,2);
     if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);return m;});
     if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];return tr;});
   while(S.tracks.length<8)S.tracks.push(mkTrack('Track '+(S.tracks.length+1),{},1));
@@ -236,13 +240,16 @@ const LS_KEY='arranger-st.song.v2';
 let saveTimer=null;
 let saveState='';
 function songChanged(){clearTimeout(saveTimer);saveState='saving…';dirty=true;saveTimer=setTimeout(autosave,900);}
-function autosave(){
+async function autosave(){
+  if(NATIVE)await refreshVst();
   try{localStorage.setItem(LS_KEY,JSON.stringify(songObj()));saveState='saved';}
   catch(e){saveState='not saved: storage off';}
   dirty=true;
 }
 async function saveJSON(){
+  if(NATIVE)await refreshVst();
   const data=JSON.stringify(songObj());const filename=(S.songName||'song').replace(/[^\w-]+/g,'_')+'.json';
+  if(NATIVE){const r=await natCall({t:'save',name:filename,data});if(r.file)flashMsg('Saved '+r.file);else if(r.err!=='cancelled')dialog(['The song could not be saved.',String(r.err||'').slice(0,34)]);return;}
   try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
     if(dl){await dl.save({filename,data});flashMsg('Saved '+filename);return;}}
   catch(e){if(e&&e.code==='declined'){flashMsg('Save cancelled');return;}}
@@ -258,7 +265,31 @@ $('#fileIn').addEventListener('change',e=>{
 
 /* ---------- audio engine bridge ---------- */
 let ac=null,node=null,ready=false,starting=null;
+/* desktop app (native/): the engine runs on the native audio thread and the page talks to it over wry's IPC.
+   natAC stands in for the AudioContext: its clock follows the audio frames the app reports (t:'clk'). */
+const NATIVE=!!(window.ipc&&window.ipc.postMessage);
+const nat=o=>window.ipc.postMessage(JSON.stringify(o));
+let natOff=null,natLat=0,natSR=48000,natT=0,natId=0;const natWait={};
+const natAC={get currentTime(){if(natOff==null)return 0;natT=Math.max(natT,performance.now()/1000+natOff);return natT;},
+  get outputLatency(){return natLat;},baseLatency:0,get sampleRate(){return natSR;},state:'running',resume(){}};
+function natCall(o){return new Promise(res=>{const id=++natId;natWait[id]=res;nat({...o,id});});}
+window.__nat=list=>{for(const m of list){
+  if(m.t==='clk'){const off=m.f/m.sr-performance.now()/1000;natOff=natOff==null?off:Math.max(off,natOff-0.0005);natLat=m.lat||0;natSR=m.sr;continue;}
+  if(m.t==='eng'){onEngine(m.m);continue;}
+  if(m.t==='vst-dirty'){songChanged();continue;}
+  if(m.t==='vst-edit'){vstEd[m.tr]=!!m.open;if(m.err)dialog(['The plugin editor could not open:',String(m.err).slice(0,40)]);dirty=true;}
+  if(m.t==='vst-loaded'){const t=S.tracks[m.tr];if(t&&t.kind==='vst'){t.vstErr=m.ok?null:String(m.err||'failed');if(m.ok)vstEd[m.tr]=false;dirty=true;}}
+  if(m.t==='err')console.error('engine:',m.msg);
+  if(m.id&&natWait[m.id]){natWait[m.id](m);delete natWait[m.id];}}};
+const vstLoaded=new Array(8).fill(null),vstEd=new Array(8).fill(false);let vstList=null;
+// loads, swaps or removes the plugin of each VST track so the app matches the song
+function syncVsts(){if(!NATIVE||!ready)return;S.tracks.forEach((t,ti)=>{const want=t.kind==='vst'&&t.vst?t.vst:null;if(vstLoaded[ti]===want)return;vstLoaded[ti]=want;vstEd[ti]=false;
+  if(want)nat({t:'vst-load',tr:ti,path:want.path,cid:want.cid,st:want.st,ct:want.ct});else nat({t:'vst-unload',tr:ti});});}
+// copies each plugin's current state into the song (before saving)
+async function refreshVst(){for(let ti=0;ti<8;ti++){const t=S.tracks[ti];if(!(t.kind==='vst'&&t.vst&&vstLoaded[ti]===t.vst))continue;
+  const r=await natCall({t:'vst-state',tr:ti});if(r.st&&vstLoaded[ti]===t.vst){t.vst.st=r.st;t.vst.ct=r.ct||null;}}}
 function ensureAudio(){
+  if(NATIVE){if(!ac){ac=natAC;node={port:{postMessage:m=>nat({t:'eng',m})}};ready=true;sendCfg();}return Promise.resolve();}
   if(ac){if(ac.state==='suspended')ac.resume();return starting||Promise.resolve();}
   try{ac=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});}catch(e){return Promise.resolve();}
   starting=(async()=>{
@@ -277,7 +308,7 @@ function ensureAudio(){
 const post=m=>{if(ready)node.port.postMessage(m);};
 const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,ins:d.ins});
 function cfgObj(){return {tempo:S.tempo,tracks:S.tracks.map(t=>({k:t.lv,nv:t.nv,mute:t.mute,solo:t.solo,ins:t.ins,kind:t.kind,interp:t.interp,drums:t.drums&&t.drums.map(drumDef)})),buses:S.buses.map(b=>({ret:b.ret,ins:b.ins})),master:S.master};}
-function sendCfg(){S.tracks.forEach(syncFx);post({t:'cfg',c:cfgObj()});}
+function sendCfg(){S.tracks.forEach(syncFx);post({t:'cfg',c:cfgObj()});syncVsts();}
 const meters={tr:new Array(8).fill(0),l:0,r:0,v:new Array(8).fill(0)};
 function onEngine(m){if(m.t==='dw'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){const dr=t.drums[m.d];dr.wave=m.w;dr.dirty=false;dr.recording=false;dirty=true;}return;}
   if(m.t==='drec'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){t.drums[m.d].recording=true;dirty=true;}return;}
@@ -301,15 +332,21 @@ const drumTimers={};
 function drumChanged(ti,d){const dr=S.tracks[ti].drums[d];dr.dirty=true;post({t:'drumdef',tr:ti,d,def:drumDef(dr)});songChanged();dirty=true;}
 function flushDrum(ti,d){const t=S.tracks[ti],dr=t&&t.drums&&t.drums[d];if(dr&&dr.dirty)post({t:'drum',tr:ti,d,def:drumDef(dr)});}
 function redrum(ti,d){const k=ti+':'+d;clearTimeout(drumTimers[k]);drumTimers[k]=setTimeout(()=>{const dr=S.tracks[ti].drums&&S.tracks[ti].drums[d];if(dr)post({t:'drum',tr:ti,d,def:drumDef(dr)});},120);songChanged();dirty=true;}
+const KIND_NAME={synth:'a synth',drum:'a drum kit',vst:'a VST instrument'};
 function setKind(ti,kind){
   const t=S.tracks[ti];if(t.kind===kind)return;
-  dialog(kind==='drum'?['Turn T'+(ti+1)+' '+t.name+' into a drum kit?','','Its notes become drum hits:','C, C#, D … pick drums 1-8.','Ctrl+Z restores the notes.']:['Turn T'+(ti+1)+' '+t.name+' back into a synth?','','The kit is kept in the song file but','drum hits become notes from C3 up.'],
-    [{l:'Cancel'},{l:kind==='drum'?'Drum kit':'Synth',def:true,a:()=>{
+  if(kind==='vst'&&!NATIVE)return dialog(['VST instruments need the desktop app','(native/ in the Arranger ST sources).','In the browser a VST track is silent.']);
+  const fromDrum=t.kind==='drum',toDrum=kind==='drum';
+  dialog(['Turn T'+(ti+1)+' '+t.name+' into '+KIND_NAME[kind]+'?',''].concat(toDrum?['Its notes become drum hits:','C, C#, D … pick drums 1-8.','Ctrl+Z restores the notes.']:fromDrum?['The kit is kept in the song file but','drum hits become notes from C3 up.']:
+      kind==='vst'?['The DS-10 patch is kept in the song.','Volume, pan, sends and inserts','apply to the plugin\'s output.']:['The plugin and its sound are kept','in the song file.']),
+    [{l:'Cancel'},{l:{synth:'Synth',drum:'Drum kit',vst:'VST'}[kind],def:true,a:()=>{
       snapshot();allOff();
-      for(const pt of S.parts)if(pt.track===ti)for(const n of pt.notes)n.p=kind==='drum'?((n.p%NDRUM)+NDRUM)%NDRUM:60+n.p;
-      t.kind=kind;if(kind==='drum'&&!t.drums)t.drums=defaultKit();
+      if(fromDrum||toDrum)for(const pt of S.parts)if(pt.track===ti)for(const n of pt.notes)n.p=toDrum?((n.p%NDRUM)+NDRUM)%NDRUM:60+n.p;
+      t.kind=kind;if(toDrum&&!t.drums)t.drums=defaultKit();
       for(const pt of S.parts)if(pt.track===ti)for(const id in pt.auto)if(PD(ti,+id)[6])delete pt.auto[id];
-      post({t:'kind',tr:ti,kind,drums:t.drums&&t.drums.map(drumDef)});songChanged();dirty=true;}}]);
+      post({t:'kind',tr:ti,kind,drums:t.drums&&t.drums.map(drumDef)});syncVsts();
+      if(kind==='vst'&&!t.vst){setView('syn');S.vstPick=true;openVstPick();}
+      songChanged();dirty=true;}}]);
 }
 const INTERP=['LIN','CUBIC','SINC'];
 function setInterp(ti,v){S.tracks[ti].interp=v;post({t:'interp',tr:ti,v});songChanged();dirty=true;}
@@ -481,7 +518,7 @@ function openEdit(p){
   if(!TOOLS_EDIT.includes(S.tool))S.tool='pointer';
   dirty=true;
 }
-function setView(v){S.presetPick=false;
+function setView(v){S.presetPick=false;S.vstPick=false;
   {const was=drumCtx();if(was&&v!=='drum'&&!(v==='fx'&&S.fxSel.w.s==='d'))flushDrum(was.tr,was.d);}S.padPick=null;if(S.step&&v!=='edit')exitStep();if(v==='edit')return openEdit();S.view=v;S.tool=v==='arr'?S.arrTool:S.tool;if(v!=='edit'&&v!=='arr')S.tool=S.arrTool;S.menu=S.popup=S.toolbox=null;dirty=true;}
 // Key Edit, nothing selected: Up/Down open the part on the next track above/below that overlaps this part (else the nearest one)
 function editTrackStep(d){
@@ -650,7 +687,7 @@ document.addEventListener('keydown',e=>{
     case 'NumpadMultiply':handled();rec();break;
     case 'Slash':case 'NumpadDivide':handled();toggleCycle();break;
     case 'Home':case 'NumpadDecimal':handled();rtz();break;
-    case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick||S.padPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;S.padPick=null;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
+    case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick||S.vstPick||S.padPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;S.vstPick=false;S.padPick=null;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
     case 'Tab':handled();nextTool(e.shiftKey?-1:1);break;
     case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
     case 'ArrowLeft':case 'ArrowRight':{handled();const d=c==='ArrowLeft'?-1:1;
@@ -887,7 +924,7 @@ function drawArrange(){
     if(act){for(let k=0;k<7;k++)vl(4+k,y+11+k,14-2*k,WH);}
     const flag=(x,on,ch)=>{if(on){clr(x-6,y+9,12,16,fg);T(ch,x,y+17,act?B:WH,'center');}else T('·',x,y+17,fg,'center');};
     flag(20,tr.mute,'M');flag(35,tr.solo,'S');
-    T(tr.kind==='drum'?'D':tr.nv===1?'m':String(tr.nv),52,y+17,fg,'center');
+    T(tr.kind==='drum'?'D':tr.kind==='vst'?'V':tr.nv===1?'m':String(tr.nv),52,y+17,fg,'center');
     T(tr.name,66,y+17,fg);
     const g=gate[i]>0||meters.v[i]>0;clr(146,y+13,8,8,fg);if(!g)clr(147,y+14,6,6,act?B:WH);
     hl(0,y+TRH-1,W);
@@ -1033,9 +1070,9 @@ function paramCell(T_,id,x,y,w){
   else knobCell(x,y,w,p[0],v,p[2],p[3],p[4],set,hintFor(id),pfmt(id,v));
 }
 const NVOPTS=[1,2,3,4,6,8];
-function kindSwitch(ti,x){const t=S.tracks[ti];[['SYNTH','synth'],['DRUM','drum']].forEach(([l,k],i)=>{const bx=x+i*40,on=t.kind===k;box(bx,40,38,14,on?B:WH);T(l,bx+19,47,on?WH:B,'center',14);
-  reg(bx,40,38,14,{down:()=>setKind(ti,k),hint:['Track type','SYNTH plays one DS-10 voice. DRUM makes the track a kit of 8 drums, each recorded from its own DS-10 voice and effects into a 2-second sample.','']});});}
-function drawSynth(){if(isDrumT(S.active))return drawKit(S.active);drawPatch(synthTarget(S.active));}
+function kindSwitch(ti,x){const t=S.tracks[ti];let bx=x;[['SYNTH','synth',36],['DRUM','drum',32],['VST','vst',26]].forEach(([l,k,w])=>{const on=t.kind===k,x0=bx;box(x0,40,w,14,on?B:WH);T(l,x0+w/2,47,on?WH:B,'center',14);
+  reg(x0,40,w,14,{down:()=>setKind(ti,k),hint:['Track type','SYNTH plays one DS-10 voice. DRUM makes the track a kit of 8 drums, each recorded from its own DS-10 voice and effects into a 2-second sample. VST plays a VST3 instrument plugin (desktop app only).','']});bx+=w+2;});}
+function drawSynth(){if(isDrumT(S.active))return drawKit(S.active);if(isVstT(S.active))return drawVst(S.active);drawPatch(synthTarget(S.active));}
 function drawKit(ti){
   const t=S.tracks[ti];
   clr(0,38,W,TBY-38,WH);hl(0,55,W);
@@ -1045,7 +1082,7 @@ function drawKit(ti){
   T('INTERP',300,47,B,'left',14);
   INTERP.forEach((l,i)=>{const bx=346+i*44,on=(t.interp??1)===i;box(bx,40,42,14,on?B:WH);T(l,bx+21,47,on?WH:B,'center',14);
     reg(bx,40,42,14,{down:()=>setInterp(ti,i),hint:['Sample interpolation: '+l,['Linear: cheapest, with a gritty top when pitched.','Cubic (4-point Hermite): smoother, still aliases when pitched far up.','Windowed sinc: band-limited, clean when pitched up, uses the most CPU.'][i],'']});});
-  kindSwitch(ti,W-82);
+  kindSwitch(ti,W-100);
   for(let d=0;d<NDRUM;d++){const dr=t.drums[d],y=60+d*34;
     box(4,y,22,28);T(String(d+1),15,y+14,B,'center');
     T(dr.name,32,y+9);reg(30,y+1,76,15,{down:()=>renameDrum(ti,d),hint:['Drum name','Click to rename this drum.','']});
@@ -1055,6 +1092,42 @@ function drawKit(ti){
     box(W-60,y+4,54,20);T('EDIT',W-33,y+14,B,'center');
     reg(W-60,y+4,54,20,{down:()=>openDrumEd(ti,d),hint:['Edit drum '+(d+1),'Stops playback and opens the drum editor: its DS-10 voice, HOLD and two effects. Every change re-records the 2-second sample.','']});
     hl(0,y+31,W);}
+}
+function openVstPick(rescan){if(!NATIVE)return;if(rescan||!vstList){vstList=rescan?null:vstList;natCall({t:'vst-list',rescan:!!rescan}).then(r=>{vstList=r.list||[];dirty=true;});}}
+function chooseVst(ti,p){const t=S.tracks[ti];allOff();
+  t.vst={path:p.path,cid:p.cid,name:p.name,vendor:p.vendor,st:null,ct:null};t.vstErr=null;S.vstPick=false;
+  if(/^Track \d$/.test(t.name))t.name=p.name.slice(0,12);
+  syncVsts();flashMsg('Loading '+p.name+' into T'+(ti+1));songChanged();dirty=true;}
+function drawVst(ti){
+  const t=S.tracks[ti],v=t.vst;
+  clr(0,38,W,TBY-38,WH);hl(0,55,W);
+  box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>setActive(ti-1),hint:['Previous track','','↑']});
+  box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
+  T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);reg(42,40,tw('T'+(ti+1)+' '+t.name.toUpperCase())+6,14,{down:()=>renameTrack(ti),hint:['Track name','Click to rename this track.','']});
+  kindSwitch(ti,W-100);
+  const btn=(x,w,l,on,f,h)=>{box(x,40,w,14,on?B:WH);T(l,x+w/2,47,on?WH:B,'center');reg(x,40,w,14,{down:f,hint:h});};
+  if(NATIVE)btn(240,64,'PLUGIN',!!S.vstPick,()=>{S.vstPick=!S.vstPick;if(S.vstPick)openVstPick();dirty=true;},['Choose plugin','Lists the VST3 instruments found in ~/.vst3, /usr/lib/vst3, /usr/local/lib/vst3 and $VST3_PATH. Click one to put it on this track.','']);
+  if(NATIVE&&v&&!t.vstErr)btn(308,64,'EDITOR',vstEd[ti],()=>nat({t:'vst-edit',tr:ti}),['Plugin editor','Opens the plugin\'s own window (click again or close the window to hide it). What you change there is saved with the song.','']);
+  if(S.vstPick){
+    clr(0,56,W,TBY-56,WH);hl(0,56,W);
+    reg(0,56,W,TBY-56,{down:()=>{S.vstPick=false;dirty=true;},hint:['VST3 instruments','Click an instrument to load it, or click elsewhere to close.','Esc']});
+    T('VST3 INSTRUMENTS',6,66,B,'left',14);
+    box(W-70,59,64,14);T('RESCAN',W-38,66,B,'center',14);reg(W-70,59,64,14,{down:()=>openVstPick(true),hint:['Rescan','Searches the plugin folders again, for plugins installed while the app was running.','']});
+    if(!vstList){T('scanning…',W/2,150,B,'center');return;}
+    const list=vstList.filter(p=>p.instrument);
+    if(!list.length){['No VST3 instruments found.','','Install them into ~/.vst3 (or /usr/lib/vst3,','/usr/local/lib/vst3), or set VST3_PATH, then RESCAN.'].forEach((l,i)=>T(l,W/2,120+i*16,B,'center'));return;}
+    list.slice(0,16).forEach((p,i)=>{const y=76+i*16,on=v&&v.path===p.path&&v.cid===p.cid;if(on)clr(1,y,W-2,16,B);
+      T(p.name,8,y+8,on?WH:B);T(p.vendor,260,y+8,on?WH:B);T(p.path.replace(/^.*\//,''),W-8,y+8,on?WH:B,'right',13);
+      reg(1,y,W-2,16,{down:()=>chooseVst(ti,p),hint:[p.name,p.vendor+' · '+p.path,'']});});
+    return;}
+  let y=80;
+  if(!NATIVE){['VST instruments play only in the Arranger ST desktop app','(native/ in the sources). In the browser this track is silent.'].forEach((l,i)=>T(l,W/2,y+i*16,B,'center'));y+=48;}
+  box(20,y,W-40,62);
+  if(v){T(v.name,34,y+20,B,'left',28);T(v.vendor+(t.vstErr?'':'  ·  '+v.path.replace(/^.*\//,'')),34,y+46,B,'left',14);}
+  else T('No instrument yet: click PLUGIN to choose one.',W/2,y+31,B,'center');
+  y+=78;
+  if(t.vstErr){clr(20,y,W-40,18,B);T('NOT LOADED: '+t.vstErr,W/2,y+9,WH,'center',14);y+=28;}
+  ['The plugin\'s stereo output goes through this track\'s mixer strip: volume, pan,','sends A and B and the two inserts work as on any track, and so does automation','of them. The plugin\'s own settings are saved inside the song (Save, autosave).'].forEach((l,i)=>T(l,20,y+i*16,B,'left',14));
 }
 function drawWave(w,x,y,ww,h,label){box(x,y,ww,h);if(label){clr(x+1,y+1,ww-2,h-2,label==='RECORDING'?B:P25);clr(x+ww/2-tw(label,13)/2-3,y+h/2-6,tw(label,13)+6,12,label==='RECORDING'?B:WH);T(label,x+ww/2,y+h/2,label==='RECORDING'?WH:B,'center',13);return;}
   if(!w){T('recording…',x+ww/2,y+h/2,B,'center',14);return;}
@@ -1084,7 +1157,7 @@ function drawPatch(T_){
   }
   const bx=[[240,'PRESET',()=>{S.presetPick=!S.presetPick;},'Patch library','Browse the DS-10 factory set and 502 patches from the ds10emu song saves.'],[300,'INIT',initPatch,'Init patch','Resets all synth knobs to the DS-10 init patch.'],[352,'COPY',copyPatch,'Copy patch','Copies this track\'s synth knobs.'],[404,'PASTE',pastePatch,'Paste patch','Pastes copied knobs onto this track.']];
   for(const [x,l,f,h1,h2] of bx){const on=l==='PRESET'&&S.presetPick,bw=l==='PRESET'?56:48;box(x,40,bw,14,on?B:WH);T(l,x+bw/2,47,on?WH:B,'center');reg(x,40,bw,14,{down:f,hint:[h1,h2,'']});}
-  if(!dr){kindSwitch(ti,W-82);const recOn=S.rec&&S.playing;if(recOn){clr(456,40,96,14,B);T('REC AUTOMATION',504,47,WH,'center',14);}}
+  if(!dr){kindSwitch(ti,W-100);const recOn=S.rec&&S.playing;if(recOn){clr(456,40,78,14,B);T('REC AUTO',495,47,WH,'center',14);}}
   for(let c=0;c<6;c++){const [title,ids]=SYN_COLS[c],x=c*cw+1;
     clr(x,57,cw-3,11,B);T(title,x+(cw-3)/2,62,WH,'center',14);
     (dr&&c===5?[31,32,'hold','wave']:ids).forEach((id,r)=>{const y=70+r*44;
@@ -1338,7 +1411,7 @@ function render(){
   drawMenuBar();
   if(S.view==='edit'){const p=part(S.editPart);let vt='';if(p&&S.ezoom){const V=eView(p),a=Math.floor((p.start+V.s)/BAR)+1;vt='  view '+S.ezoom+(S.ezoom>1?' bars':' bar')+' from '+a;}
     drawTitle('KEY EDIT  '+(p?p.name+'  bars '+(p.start/BAR+1)+'-'+((p.start+p.len)/BAR)+vt:''),true);drawEdit();}
-  else if(S.view==='syn'){drawTitle(isDrumT(S.active)?'SYNTH  DRUM KIT':'SYNTH  DS-10 VOICE',true);drawSynth();}
+  else if(S.view==='syn'){drawTitle(isDrumT(S.active)?'SYNTH  DRUM KIT':isVstT(S.active)?'SYNTH  VST INSTRUMENT':'SYNTH  DS-10 VOICE',true);drawSynth();}
   else if(S.view==='drum'&&S.drumEd){drawTitle('DRUM EDIT  T'+(S.drumEd.tr+1)+'  DRUM '+(S.drumEd.d+1),true);drawPatch(drumTarget(S.drumEd.tr,S.drumEd.d));}
   else if(S.view==='mix'){drawTitle('MIXER',true);drawMixer();}
   else if(S.view==='fx'){drawTitle('EFFECT',true);drawFx();}
@@ -1445,7 +1518,7 @@ function arrDown(x,y,e,dbl){
   if(x<TLX){
     if(x>=14&&x<27){S.tracks[ti].mute=!S.tracks[ti].mute;sendMute(ti);}
     else if(x>=29&&x<42){S.tracks[ti].solo=!S.tracks[ti].solo;sendMute(ti);}
-    else if(x>=45&&x<60){const t=S.tracks[ti];if(t.kind!=='drum')setNv(ti,NVOPTS[(NVOPTS.indexOf(t.nv)+1)%NVOPTS.length]);}
+    else if(x>=45&&x<60){const t=S.tracks[ti];if(t.kind==='synth')setNv(ti,NVOPTS[(NVOPTS.indexOf(t.nv)+1)%NVOPTS.length]);}
     else{setActive(ti);if(dbl)setView('syn');}
     return;}
   const tk=xToTick(x),p=partAtTick(ti,tk);
@@ -1762,12 +1835,12 @@ function frame(){
   if(dirty){dirty=false;render();}
   requestAnimationFrame(frame);
 }
-window.__ast={S,get ac(){return ac},get ready(){return ready},meters};
+window.__ast={S,get ac(){return ac},get ready(){return ready},meters,get vstList(){return vstList},vstLoaded,vstEd,fn:{setKind,chooseVst,dialogAnswer,refreshVst,openVstPick,setView,setActive,togglePlay,autosave,saveJSON}};
 (function boot(){
   let ok=false;
   try{const s=localStorage.getItem(LS_KEY);if(s){loadSong(JSON.parse(s));ok=true;}}catch(e){ok=false;}
   if(!ok)loadDemo();
-  buildKb();fit();
+  buildKb();fit();if(NATIVE)ensureAudio();
   (document.fonts?document.fonts.load('16px VT323'):Promise.resolve()).catch(()=>{}).then(()=>{dirty=true;requestAnimationFrame(frame);});
 })();
 })();

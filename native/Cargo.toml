@@ -1,0 +1,21 @@
+[package]
+name = "arranger-st"
+version = "0.1.0"
+edition = "2021"
+description = "Arranger ST as a Linux desktop app with native audio and VST3 instrument tracks"
+
+[dependencies]
+wry = "0.57"
+tao = "0.37"
+v8 = "152"
+cpal = { version = "0.18", features = ["pipewire", "pulseaudio", "jack", "realtime"] }
+rtrb = "0.4"
+glib = "0.18"
+gtk = "0.18"
+http = "1"
+vst3 = "0.3"
+libloading = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+raw-window-handle = "0.6"
