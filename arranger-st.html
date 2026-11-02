@@ -1047,7 +1047,8 @@ const MANUAL=[
 ['k','VOICES','M is mono with legato and portamento. 2 to 8 make the track polyphonic.'],
 ['k','VOLUME','Track volume, the same as the mixer fader.'],
 ['p','Patch panel: MG is the LFO, with its rate (FREQ) and FREE or BPM sync. A BPM-synced MG restarts when play starts. Each of PITCH, VCO1, VCO2, CUTOFF and VCA has a depth knob and a source box. Click the box to choose SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate. VCO2 on a pitch destination gives FM, on CUTOFF filter FM, and on VCA ring modulation.'],
-['p','PRESET opens the patch library: the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
+['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
+['p','USER patches are kept in this browser (localStorage), not in the song. In USER, + SAVE CURRENT stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
 
 ['h','Drums'],
 ['p','Any track can be a drum kit instead of a synth: click DRUM at the top right of the Synth window (F3). A kit has 8 drums. Each drum is recorded, like on the DS-10, from its own DS-10 voice, highpass and two effects into a 2-second stereo sample at C3. From then on the track plays samples, so drums cost almost nothing to play back. The song file stores how each drum is made, and the samples are recorded again when a song loads.'],
@@ -1796,9 +1797,20 @@ const CUR={
 function drawBm(c,x,y,center){
   const b=c.b;let ox=x-c.h[0],oy=y-c.h[1];
   if(center){ox=Math.round(x-b[0].length/2);oy=Math.round(y-b.length/2);}
-  ctx.fillStyle=WH;
-  b.forEach((r,j)=>[...r].forEach((ch,i)=>{if(ch!==' ')clr(ox+i-1,oy+j-1,3,3,WH);}));
-  b.forEach((r,j)=>[...r].forEach((ch,i)=>{if(ch==='#')clr(ox+i,oy+j,1,1,B);else if(ch==='.')clr(ox+i,oy+j,1,1,WH);}));
+  const m=c.m||(c.m=bmMask(b));
+  m.forEach((r,j)=>r.forEach((v,i)=>{if(v)clr(ox+i-1,oy+j-1,1,1,v===1?B:WH);}));
+}
+// cursor mask: black pixels, white where enclosed or touching black (a 1px outline); everything else stays transparent
+function bmMask(b){
+  const h=b.length+2,w=Math.max(...b.map(r=>r.length))+2,at=(i,j)=>(b[j-1]||'')[i-1]||' ';
+  const out=[...Array(h)].map(()=>new Array(w).fill(false)),st=[[0,0]];out[0][0]=true;
+  while(st.length){const [i,j]=st.pop();for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const x=i+di,y=j+dj;
+    if(x>=0&&y>=0&&x<w&&y<h&&!out[y][x]&&at(x,y)!=='#'){out[y][x]=true;st.push([x,y]);}}}
+  return [...Array(h)].map((_,j)=>[...Array(w)].map((_,i)=>{
+    if(at(i,j)==='#')return 1;
+    if(!out[j][i])return 2;
+    for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(at(i+di,j+dj)==='#')return 2;
+    return 0;}));
 }
 
 const tickToX=t=>TLX+(t/BAR-S.scroll)*BARPX;
@@ -2173,21 +2185,49 @@ function drawPatch(T_){
   if(S.presetPick){
     clr(0,56,W,TBY-56,WH);hl(0,56,W);
     reg(0,56,W,TBY-56,{down:()=>{S.presetPick=false;},hint:['Patch library','Click a patch to load it, or click elsewhere to close.','Esc']});
-    const LW=200,RH=15,vis=Math.floor((TBY-76)/RH);
-    S.pbScroll=clamp(S.pbScroll||0,0,Math.max(0,LIB.length-vis));
-    T('SOURCE  '+LIB.length,6,66,B,'left',14);vl(LW,57,TBY-57);
-    reg(0,58,LW,TBY-58,{down:()=>{},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIB.length-vis));dirty=true;},hint:['Sources','The DS-10 factory set, the saved patch banks, then every song in the six ds10emu saves. Scroll the list.','']});
-    for(let r=0;r<vis;r++){const gi=S.pbScroll+r;if(gi>=LIB.length)break;const y=74+r*RH,on=gi===(S.pbSrc||0);
-      if(on)clr(1,y,LW-2,RH,B);T(LIB[gi][0].replace('/',' / '),6,y+RH/2,on?WH:B,'left',14);T(String(LIB[gi][1].length),LW-6,y+RH/2,on?WH:B,'right',14);
-      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIB.length-vis));dirty=true;},hint:['Source',LIB[gi][0]+': '+LIB[gi][1].length+' patches. Click to list them.','']});}
+    const LIBG=libGroups(),LW=200,RH=15,vis=Math.floor((TBY-76)/RH);
+    S.pbScroll=clamp(S.pbScroll||0,0,Math.max(0,LIBG.length-vis));
+    if(S.pbSrc==null||S.pbSrc>=LIBG.length)S.pbSrc=userPatches.length?0:1;
+    T('SOURCE  '+LIBG.length,6,66,B,'left',14);vl(LW,57,TBY-57);
+    reg(0,58,LW,TBY-58,{down:()=>{},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Sources','USER (your saved patches), the DS-10 factory set, the saved patch banks, then every song in the six ds10emu saves. Scroll the list.','']});
+    for(let r=0;r<vis;r++){const gi=S.pbScroll+r;if(gi>=LIBG.length)break;const y=74+r*RH,on=gi===S.pbSrc;
+      if(on)clr(1,y,LW-2,RH,B);T(LIBG[gi][0].replace('/',' / '),6,y+RH/2,on?WH:B,'left',14);T(String(LIBG[gi][1].length),LW-6,y+RH/2,on?WH:B,'right',14);
+      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;S.pgScroll=0;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Source',gi===0?'Your own patches, kept in this browser. Click to list them; SAVE stores the current patch here.':LIBG[gi][0]+': '+LIBG[gi][1].length+' patches. Click to list them.','']});}
     if(S.pbScroll>0)T('▲ more',LW/2,TBY-2-RH*vis-2,B,'center',13);
-    const g=LIB[S.pbSrc||0];T(g[0]+'  ·  click to load into '+(dr?'drum '+(T_.d+1):'T'+(ti+1)),LW+8,66,B,'left',14);
-    g[1].forEach(([n,dr,k],i)=>{const cx=LW+6+(i%3)*144,cy=74+Math.floor(i/3)*31;if(cy>TBY-30)return;
+    const user=S.pbSrc===0,g=LIBG[S.pbSrc];T((user?'USER':g[0])+'  ·  click to load into '+(dr?'drum '+(T_.d+1):'T'+(ti+1)),LW+8,66,B,'left',14);
+    const tiles=(user?[null]:[]).concat(g[1]),rows=Math.ceil(tiles.length/3),vrows=Math.floor((TBY-74)/31);
+    S.pgScroll=clamp(S.pgScroll||0,0,Math.max(0,rows-vrows));
+    reg(LW+1,58,W-LW-1,TBY-58,{down:()=>{},wheel:d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;},hint:['Patches','Click a patch to load it. Scroll for more.','']});
+    if(S.pgScroll>0)T('▲ more',W-8,66,B,'right',13);
+    if(rows-S.pgScroll>vrows)T('▼ more',W-8,TBY-6,B,'right',13);
+    tiles.forEach((tile,i)=>{const r=Math.floor(i/3)-S.pgScroll;if(r<0||r>=vrows)return;const cx=LW+6+(i%3)*144,cy=74+r*31;
+      const wheel=d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;};
+      if(!tile){box(cx,cy,140,28);T('+ SAVE CURRENT',cx+70,cy+14,B,'center');
+        reg(cx,cy,140,28,{down:()=>savePatchAs(T_),wheel,hint:['Save patch','Stores the current patch (31 synth knobs and the highpass) as a user patch in this browser. Saving under an existing name asks before replacing it.','']});return;}
+      const [n,isDr,k]=tile;
       const same=k.every((v,j)=>T_.k[j]===v);box(cx,cy,140,28,same?B:WH);T(n,cx+6,cy+14,same?WH:B,'left',n.length>12?14:16);
-      if(dr){clr(cx+122,cy+4,14,12,same?WH:B);T('D',cx+129,cy+10,same?B:WH,'center',13);}
-      reg(cx,cy,140,28,{down:()=>loadPreset(T_,g[0],n,k),hint:[n+(dr?' (drum)':''),'From '+g[0]+'. Loads the 31 synth knobs; the mixer strip stays. '+(dr?'DS-10 drums play at note 60 (C3).':''),'']});});
+      if(isDr){clr(cx+(user?104:122),cy+4,14,12,same?WH:B);T('D',cx+(user?111:129),cy+10,same?B:WH,'center',13);}
+      reg(cx,cy,140,28,{down:()=>loadPreset(T_,user?'USER':g[0],n,k),wheel,hint:[n+(isDr?' (drum)':''),'From '+(user?'your user patches':g[0])+'. Loads the synth knobs'+(user?' and the highpass':'')+'; the mixer strip stays. '+(isDr&&!user?'DS-10 drums play at note 60 (C3).':''),'']});
+      if(user){const xi=user?userPatches.indexOf(tile):-1;box(cx+122,cy+4,14,14,same?WH:WH);T('x',cx+129,cy+10,B,'center',14);
+        reg(cx+122,cy+4,14,14,{down:()=>deleteUserPatch(xi),wheel,hint:['Delete user patch','Removes '+n+' from your user patches (asks first).','']});}
+    });
   }
 }
+/* user patches: kept in this browser's localStorage, shown as the USER source of the patch library */
+const UP_KEY='arranger-st.patches';
+let userPatches=[];try{userPatches=JSON.parse(localStorage.getItem(UP_KEY)||'[]');}catch(e){userPatches=[];}
+function saveUserPatches(){try{localStorage.setItem(UP_KEY,JSON.stringify(userPatches));}catch(e){flashMsg('Could not save: browser storage unavailable');}}
+function libGroups(){return [['USER',userPatches]].concat(LIB);}
+function savePatchAs(T_){
+  const def=T_.dr?T_.dr.name:S.tracks[T_.ti].name;
+  askText('Save patch as',def,12,name=>{name=name.toUpperCase();
+    const k=T_.k.slice(0,33),i=userPatches.findIndex(p=>p[0]===name),put=()=>{
+      const e=[name,T_.dr?1:0,k];if(i>=0)userPatches[i]=e;else userPatches.push(e);
+      saveUserPatches();S.pbSrc=0;S.presetPick=true;flashMsg('Saved patch '+name);dirty=true;};
+    if(i>=0)dialog(['A user patch called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:put}]);else put();});
+}
+function deleteUserPatch(i){const n=userPatches[i][0];
+  dialog(['Delete the user patch',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{userPatches.splice(i,1);saveUserPatches();S.presetPick=true;flashMsg('Deleted patch '+n);dirty=true;}}]);}
 function loadPreset(T_,src,n,k){
   const ti=T_.ti,t=S.tracks[ti];
   k.forEach((v,id)=>T_.set(id,v));
