@@ -317,6 +317,7 @@ function sincRead(A, i, f, n, rate) {
   for (let j = i - half + 1; j <= i + half; j++) { if (j < 0 || j >= n) continue; acc += A[j] * kern((j - i - f) * c); }
   return acc * c;
 }
+const LIVE_AHEAD = 4 * SINC_N + 4;   // samples a live drum recording is rendered ahead of its read position (widest sinc reach)
 const DRUM_FADE = 1 / (0.005 * SR);   // 5 ms release when a drum note ends or is choked
 const holdSec = k => 0.01 * Math.pow(200, k / 127);   // drum HOLD knob: 10 ms .. 2 s
 
@@ -358,23 +359,86 @@ class Track {
     // drum tracks play rendered samples instead of the voices: kit[d] = {L, R}, sv = sample voices
     this.drum = false; this.kit = []; this.sv = []; this.sl = 0; this.sr = 0; this.interp = 1;
     for (let i = 0; i < 16; i++) this.sv.push({ on: false, age: 0 });
+    // defs: how each drum is made; dirty: changed since its sample was recorded; lr: the live recording in progress
+    this.defs = []; this.dirty = []; this.lrs = []; this.eng = null;
     for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i]);
   }
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
+  // a drum edited since its last recording is played live from its voice and effects and recorded as it plays
+  setDef(d, def) {
+    const old = this.defs[d]; this.defs[d] = def; this.dirty[d] = true;
+    const lr = this.liveOf(d); if (!lr) return;
+    for (let id = 0; id < 31; id++) if (!old || old.k[id] !== def.k[id]) lr.v.knob(id, def.k[id]);
+    lr.hp.set(def.k[31] || 0, def.k[32] || 0);
+    lr.hold = Math.round(holdSec(def.hold) * SR);
+    for (let s = 0; s < 2; s++) {
+      const a = (def.ins || [])[s], o = old && (old.ins || [])[s], cur = lr.fx[s];
+      if (!a) { lr.fx[s] = null; continue; }
+      if (!cur || cur.type_ !== a.type) { lr.fx[s] = mkFx(a); if (lr.fx[s] && lr.fx[s].setTempo) lr.fx[s].setTempo(Math.round(this.eng.tempo)); continue; }
+      cur.on = a.on !== false;
+      for (const k in a.p) if (!o || !o.p || o.p[k] !== a.p[k]) cur.set(k, a.p[k]);
+    }
+  }
+  liveOf(d) { for (const x of this.lrs) if (x.d === d && !x.stale) return x; return null; }
+  // the hit plays the recording through an ordinary sample voice (pitch, pan, start, interpolation);
+  // the recording is rendered just ahead of where that voice reads, so a lower pitch renders slower
+  startLive(d, v) {
+    const def = this.defs[d], tempo = this.eng ? this.eng.tempo : 120;
+    const vo = new Voice(); vo.setBpm(tempo);
+    for (let id = 0; id < 31; id++) vo.knob(id, def.k[id]);
+    const hp = new HP4(); hp.set(def.k[31] || 0, def.k[32] || 0);
+    const fx = [0, 1].map(s => mkFx((def.ins || [])[s]));
+    for (const x of fx) if (x && x.setTempo) x.setTempo(Math.round(tempo));
+    vo.resetLfo(); vo.rt = 1; vo.noteOn(def.note || 60, 127);
+    const old = this.liveOf(d); if (old) old.stale = true;   // a new hit starts a new recording; the old one only feeds its fading voice
+    const N = 2 * SR;
+    const lr = { d, v: vo, hp, fx, L: new Float32Array(N), R: new Float32Array(N), pos: 0, hold: Math.round(holdSec(def.hold) * SR), fc: 0, sv: v, stale: false };
+    v.lr = lr; this.lrs.push(lr);
+    if (this.eng && this.eng.post) this.eng.post({ t: 'drec', tr: this.eng.tr.indexOf(this), d });
+    return { L: lr.L, R: lr.R };
+  }
+  liveStep(lr) {
+    if (lr.pos === lr.hold) lr.v.noteOff();
+    if (--lr.fc <= 0) { lr.fc += FR; lr.v.frame(); for (const x of lr.fx) if (x && x.on && x.frame) x.frame(); }
+    let l = lr.hp.p(lr.v.on ? lr.v.sample() : 0), r = l;
+    for (const x of lr.fx) if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; }
+    lr.L[lr.pos] = l; lr.R[lr.pos] = r; lr.pos++;
+    if (lr.pos < lr.L.length) return;
+    const N = lr.L.length, fl = Math.round(0.02 * SR);
+    for (let i = 0; i < fl; i++) { const k = i / fl; lr.L[N - 1 - i] *= k; lr.R[N - 1 - i] *= k; }
+    this.lrs.splice(this.lrs.indexOf(lr), 1);
+    if (lr.sv.lr === lr) lr.sv.lr = null;
+    if (lr.stale) return;
+    this.kit[lr.d] = { L: lr.L, R: lr.R }; this.dirty[lr.d] = false;
+    if (this.eng && this.eng.post) this.eng.post({ t: 'dw', tr: this.eng.tr.indexOf(this), d: lr.d, w: wavePeaks(this.kit[lr.d], 160) });
+  }
+  // render each recording up to just past where its voice reads next; once the voice is gone, carry on in real time
+  liveRun() {
+    for (const lr of this.lrs.slice()) {
+      const v = lr.sv, alive = v.on && v.lr === lr;
+      if (!alive && lr.stale) { this.lrs.splice(this.lrs.indexOf(lr), 1); continue; }
+      const need = alive ? Math.min(lr.L.length, Math.floor(v.pos + v.rate) + LIVE_AHEAD) : lr.pos + 1;
+      while (lr.pos < need && this.lrs.includes(lr)) this.liveStep(lr);
+    }
+  }
   drumOn(e) {
-    const smp = this.kit[e.p]; if (!smp) return;
+    const live = this.dirty[e.p] && this.defs[e.p];
+    if (!live && !this.kit[e.p]) return;
     for (const v of this.sv) if (v.on && v.d === e.p) v.rel = true;            // a drum chokes itself, like a DS-10 drum part
     let v = this.sv.find(x => !x.on);
     if (!v) v = this.sv.reduce((a, b) => (a.age < b.age ? a : b));
     const pn = (e.pn === undefined ? 64 : e.pn) * 258 / 32767;
+    v.lr = null;
+    const smp = live ? this.startLive(e.p, v) : this.kit[e.p];
     v.on = true; v.d = e.p; v.L = smp.L; v.R = smp.R; v.n = smp.L.length; v.pos = (e.st || 0) / 128 * v.n;
     v.rate = Math.pow(2, (e.pt || 0) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC; v.id = e.id;
   }
   // a note-off releases only the hit its note-on started (by id); without an id, every hit of that drum
-  drumOff(p, id) { for (const v of this.sv) if (v.on && v.d === p && (id === undefined || v.id === id)) v.rel = true; }
+  drumOff(p, id) { for (const v of this.sv) if (v.on && v.d === p && (id === undefined || v.id === id)) v.rel = true; }   // a live recording carries on to its 2 s; HOLD ends its note
   stereo() {
     let l = 0, r = 0;
+    if (this.lrs.length) this.liveRun();
     for (const v of this.sv) {
       if (!v.on) continue;
       const i = v.pos | 0;
@@ -683,7 +747,7 @@ function mkFx(d) {
 /* ---------------- engine ---------------- */
 class Engine {
   constructor() {
-    this.tr = []; for (let i = 0; i < 8; i++) this.tr.push(new Track());
+    this.tr = []; for (let i = 0; i < 8; i++) { const t = new Track(); t.eng = this; this.tr.push(t); }
     this.bus = [{ ins: [null, null], g: volGain(100) }, { ins: [null, null], g: volGain(100) }];
     this.mst = { ins: [null, null], g: volGain(100), shp: 0 };
     this.q = []; this.qs = false; this.fcnt = 0; this.tempo = 120; this.solo = false;
@@ -714,7 +778,10 @@ class Engine {
   }
   renderKit(ti, drums) { drums.forEach((d, j) => this.renderOne(ti, j, d)); }
   renderOne(ti, j, d) {
-    const tr = this.tr[ti]; tr.kit[j] = d ? renderDrum(d, this.tempo || 120) : null;
+    const tr = this.tr[ti];
+    if (tr.liveOf(j)) { if (d) tr.setDef(j, d); return; }   // a live recording of this drum finishes it instead
+    tr.defs[j] = d; tr.dirty[j] = false;
+    tr.kit[j] = d ? renderDrum(d, this.tempo || 120) : null;
     if (this.post) this.post({ t: 'dw', tr: ti, d: j, w: tr.kit[j] ? wavePeaks(tr.kit[j], 160) : null });
   }
   updSolo() { this.solo = this.tr.some(t => t.solo); }
@@ -727,6 +794,7 @@ class Engine {
       case 'nv': this.tr[m.tr].setNv(m.n); break;
       case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
+      case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
       case 'interp': this.tr[m.tr].interp = m.v; break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;
       case 'fx': { const s = this.slot(m.w); s[m.slot] = mkFx(m.fx); if (s[m.slot] && s[m.slot].setTempo) s[m.slot].setTempo(Math.round(this.tempo)); break; }

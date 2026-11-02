@@ -359,6 +359,7 @@ function sincRead(A, i, f, n, rate) {
   for (let j = i - half + 1; j <= i + half; j++) { if (j < 0 || j >= n) continue; acc += A[j] * kern((j - i - f) * c); }
   return acc * c;
 }
+const LIVE_AHEAD = 4 * SINC_N + 4;   // samples a live drum recording is rendered ahead of its read position (widest sinc reach)
 const DRUM_FADE = 1 / (0.005 * SR);   // 5 ms release when a drum note ends or is choked
 const holdSec = k => 0.01 * Math.pow(200, k / 127);   // drum HOLD knob: 10 ms .. 2 s
 
@@ -400,23 +401,86 @@ class Track {
     // drum tracks play rendered samples instead of the voices: kit[d] = {L, R}, sv = sample voices
     this.drum = false; this.kit = []; this.sv = []; this.sl = 0; this.sr = 0; this.interp = 1;
     for (let i = 0; i < 16; i++) this.sv.push({ on: false, age: 0 });
+    // defs: how each drum is made; dirty: changed since its sample was recorded; lr: the live recording in progress
+    this.defs = []; this.dirty = []; this.lrs = []; this.eng = null;
     for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i]);
   }
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
+  // a drum edited since its last recording is played live from its voice and effects and recorded as it plays
+  setDef(d, def) {
+    const old = this.defs[d]; this.defs[d] = def; this.dirty[d] = true;
+    const lr = this.liveOf(d); if (!lr) return;
+    for (let id = 0; id < 31; id++) if (!old || old.k[id] !== def.k[id]) lr.v.knob(id, def.k[id]);
+    lr.hp.set(def.k[31] || 0, def.k[32] || 0);
+    lr.hold = Math.round(holdSec(def.hold) * SR);
+    for (let s = 0; s < 2; s++) {
+      const a = (def.ins || [])[s], o = old && (old.ins || [])[s], cur = lr.fx[s];
+      if (!a) { lr.fx[s] = null; continue; }
+      if (!cur || cur.type_ !== a.type) { lr.fx[s] = mkFx(a); if (lr.fx[s] && lr.fx[s].setTempo) lr.fx[s].setTempo(Math.round(this.eng.tempo)); continue; }
+      cur.on = a.on !== false;
+      for (const k in a.p) if (!o || !o.p || o.p[k] !== a.p[k]) cur.set(k, a.p[k]);
+    }
+  }
+  liveOf(d) { for (const x of this.lrs) if (x.d === d && !x.stale) return x; return null; }
+  // the hit plays the recording through an ordinary sample voice (pitch, pan, start, interpolation);
+  // the recording is rendered just ahead of where that voice reads, so a lower pitch renders slower
+  startLive(d, v) {
+    const def = this.defs[d], tempo = this.eng ? this.eng.tempo : 120;
+    const vo = new Voice(); vo.setBpm(tempo);
+    for (let id = 0; id < 31; id++) vo.knob(id, def.k[id]);
+    const hp = new HP4(); hp.set(def.k[31] || 0, def.k[32] || 0);
+    const fx = [0, 1].map(s => mkFx((def.ins || [])[s]));
+    for (const x of fx) if (x && x.setTempo) x.setTempo(Math.round(tempo));
+    vo.resetLfo(); vo.rt = 1; vo.noteOn(def.note || 60, 127);
+    const old = this.liveOf(d); if (old) old.stale = true;   // a new hit starts a new recording; the old one only feeds its fading voice
+    const N = 2 * SR;
+    const lr = { d, v: vo, hp, fx, L: new Float32Array(N), R: new Float32Array(N), pos: 0, hold: Math.round(holdSec(def.hold) * SR), fc: 0, sv: v, stale: false };
+    v.lr = lr; this.lrs.push(lr);
+    if (this.eng && this.eng.post) this.eng.post({ t: 'drec', tr: this.eng.tr.indexOf(this), d });
+    return { L: lr.L, R: lr.R };
+  }
+  liveStep(lr) {
+    if (lr.pos === lr.hold) lr.v.noteOff();
+    if (--lr.fc <= 0) { lr.fc += FR; lr.v.frame(); for (const x of lr.fx) if (x && x.on && x.frame) x.frame(); }
+    let l = lr.hp.p(lr.v.on ? lr.v.sample() : 0), r = l;
+    for (const x of lr.fx) if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; }
+    lr.L[lr.pos] = l; lr.R[lr.pos] = r; lr.pos++;
+    if (lr.pos < lr.L.length) return;
+    const N = lr.L.length, fl = Math.round(0.02 * SR);
+    for (let i = 0; i < fl; i++) { const k = i / fl; lr.L[N - 1 - i] *= k; lr.R[N - 1 - i] *= k; }
+    this.lrs.splice(this.lrs.indexOf(lr), 1);
+    if (lr.sv.lr === lr) lr.sv.lr = null;
+    if (lr.stale) return;
+    this.kit[lr.d] = { L: lr.L, R: lr.R }; this.dirty[lr.d] = false;
+    if (this.eng && this.eng.post) this.eng.post({ t: 'dw', tr: this.eng.tr.indexOf(this), d: lr.d, w: wavePeaks(this.kit[lr.d], 160) });
+  }
+  // render each recording up to just past where its voice reads next; once the voice is gone, carry on in real time
+  liveRun() {
+    for (const lr of this.lrs.slice()) {
+      const v = lr.sv, alive = v.on && v.lr === lr;
+      if (!alive && lr.stale) { this.lrs.splice(this.lrs.indexOf(lr), 1); continue; }
+      const need = alive ? Math.min(lr.L.length, Math.floor(v.pos + v.rate) + LIVE_AHEAD) : lr.pos + 1;
+      while (lr.pos < need && this.lrs.includes(lr)) this.liveStep(lr);
+    }
+  }
   drumOn(e) {
-    const smp = this.kit[e.p]; if (!smp) return;
+    const live = this.dirty[e.p] && this.defs[e.p];
+    if (!live && !this.kit[e.p]) return;
     for (const v of this.sv) if (v.on && v.d === e.p) v.rel = true;            // a drum chokes itself, like a DS-10 drum part
     let v = this.sv.find(x => !x.on);
     if (!v) v = this.sv.reduce((a, b) => (a.age < b.age ? a : b));
     const pn = (e.pn === undefined ? 64 : e.pn) * 258 / 32767;
+    v.lr = null;
+    const smp = live ? this.startLive(e.p, v) : this.kit[e.p];
     v.on = true; v.d = e.p; v.L = smp.L; v.R = smp.R; v.n = smp.L.length; v.pos = (e.st || 0) / 128 * v.n;
     v.rate = Math.pow(2, (e.pt || 0) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC; v.id = e.id;
   }
   // a note-off releases only the hit its note-on started (by id); without an id, every hit of that drum
-  drumOff(p, id) { for (const v of this.sv) if (v.on && v.d === p && (id === undefined || v.id === id)) v.rel = true; }
+  drumOff(p, id) { for (const v of this.sv) if (v.on && v.d === p && (id === undefined || v.id === id)) v.rel = true; }   // a live recording carries on to its 2 s; HOLD ends its note
   stereo() {
     let l = 0, r = 0;
+    if (this.lrs.length) this.liveRun();
     for (const v of this.sv) {
       if (!v.on) continue;
       const i = v.pos | 0;
@@ -725,7 +789,7 @@ function mkFx(d) {
 /* ---------------- engine ---------------- */
 class Engine {
   constructor() {
-    this.tr = []; for (let i = 0; i < 8; i++) this.tr.push(new Track());
+    this.tr = []; for (let i = 0; i < 8; i++) { const t = new Track(); t.eng = this; this.tr.push(t); }
     this.bus = [{ ins: [null, null], g: volGain(100) }, { ins: [null, null], g: volGain(100) }];
     this.mst = { ins: [null, null], g: volGain(100), shp: 0 };
     this.q = []; this.qs = false; this.fcnt = 0; this.tempo = 120; this.solo = false;
@@ -756,7 +820,10 @@ class Engine {
   }
   renderKit(ti, drums) { drums.forEach((d, j) => this.renderOne(ti, j, d)); }
   renderOne(ti, j, d) {
-    const tr = this.tr[ti]; tr.kit[j] = d ? renderDrum(d, this.tempo || 120) : null;
+    const tr = this.tr[ti];
+    if (tr.liveOf(j)) { if (d) tr.setDef(j, d); return; }   // a live recording of this drum finishes it instead
+    tr.defs[j] = d; tr.dirty[j] = false;
+    tr.kit[j] = d ? renderDrum(d, this.tempo || 120) : null;
     if (this.post) this.post({ t: 'dw', tr: ti, d: j, w: tr.kit[j] ? wavePeaks(tr.kit[j], 160) : null });
   }
   updSolo() { this.solo = this.tr.some(t => t.solo); }
@@ -769,6 +836,7 @@ class Engine {
       case 'nv': this.tr[m.tr].setNv(m.n); break;
       case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
+      case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
       case 'interp': this.tr[m.tr].interp = m.v; break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;
       case 'fx': { const s = this.slot(m.w); s[m.slot] = mkFx(m.fx); if (s[m.slot] && s[m.slot].setTempo) s[m.slot].setTempo(Math.round(this.tempo)); break; }
@@ -988,7 +1056,7 @@ const MANUAL=[
 ['k','NOTE','The note the drum\'s voice is recorded at, shown in the kit and in the drum editor\'s top bar. C3 is the DS-10\'s own. To put the kick on G4, set its NOTE to G4: the voice is recorded there, so nothing is resampled and the envelope keeps its timing. Scroll or drag (Shift: octaves); double-click for C3.'],
 ['k','INTERP','How the samples are played between their recorded points. LIN is linear and cheapest, with a gritty top when pitched. CUBIC (4-point Hermite) is smoother. SINC is band-limited and stays clean when drums are pitched far up, but uses the most CPU.'],
 ['k','EDIT','Stops playback and opens the drum editor.'],
-['p','Drum editor: the same layout as the Synth window, working on one drum. The OUTPUT column holds the drum\'s highpass, HOLD (how long the note is held while recording, 10 ms to 2 s) and the recorded SAMPLE. Every change records the sample again a moment later. Keys and a MIDI keyboard play the drum\'s sample pitched: Q (the upper row\'s C) or MIDI C3 is its recorded NOTE. This also works while the Effect window shows one of the drum\'s slots. The arrows at the top left step through the drums. FX 1 and FX 2 work like mixer slots; Edit… opens the Effect window for that drum, and its closer box returns here. PRESET loads any library patch into the drum (D marks the DS-10\'s own drum patches). DONE or Esc goes back to the kit.'],
+['p','Drum editor: the same layout as the Synth window, working on one drum. The OUTPUT column holds the drum\'s highpass, HOLD (how long the note is held while recording, 10 ms to 2 s) and the recorded SAMPLE. A change does not re-record the sample by itself: the drum is marked NOT RECORDED, and the next hit (a key, or a click on the sample) plays the drum live from its voice and effects and records those 2 seconds. Turn knobs while it plays and the movement is heard and recorded too; HOLD, not the key, ends the recorded note. The hit is heard like any sample hit: at its pitch, pan and start. The recording is always made at the drum\'s NOTE, so a hit an octave lower renders it at half speed (and knob moves land twice as slowly in the sample). When the 2 seconds are over, the recording is the drum\'s sample. A drum still not recorded when you leave it (DONE, Esc, another drum or window) is recorded as it is then. Keys and a MIDI keyboard play the drum\'s sample pitched: Q (the upper row\'s C) or MIDI C3 is its recorded NOTE. This also works while the Effect window shows one of the drum\'s slots. The arrows at the top left step through the drums. FX 1 and FX 2 work like mixer slots; Edit… opens the Effect window for that drum, and its closer box returns here. PRESET loads any library patch into the drum (D marks the DS-10\'s own drum patches). DONE or Esc goes back to the kit.'],
 ['p','Playing drums: the computer keys play drums 1-8 from the bottom-left key (Z, S, X, D, C, V, G, B, then again from H). MIDI keyboards play drum 1 on C1 (note 36), then up. A drum cuts off its own previous hit, as on the DS-10.'],
 ['p','Drum parts in Key Edit show 8 rows, one per drum, named at the left (click a name to hear it). The M box beside each name mutes that drum in this part only: its hits turn grey and stay silent, while other parts keep playing it. The mutes are saved with the part and go with it when it is copied or split; Ctrl+Z undoes a mute. A note\'s length ends the sample with a short fade, so short notes make short drums. Velocity sets the volume. The lane under the grid also offers per-hit lanes: PITCH (-24 to +24 semitones), PAN, and START, which skips into the sample. Drag across the bars to set them; with notes selected only those change, with none selected any hit under the pointer. The dotted line is the default. Pointing at a hit shows its value; on the PITCH lane also the note it sounds (NOTE plus PITCH). With several notes selected, only those change.'],
 
@@ -1281,7 +1349,8 @@ const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,ins:d.ins});
 function cfgObj(){return {tempo:S.tempo,tracks:S.tracks.map(t=>({k:t.lv,nv:t.nv,mute:t.mute,solo:t.solo,ins:t.ins,kind:t.kind,interp:t.interp,drums:t.drums&&t.drums.map(drumDef)})),buses:S.buses.map(b=>({ret:b.ret,ins:b.ins})),master:S.master};}
 function sendCfg(){S.tracks.forEach(syncFx);post({t:'cfg',c:cfgObj()});}
 const meters={tr:new Array(8).fill(0),l:0,r:0,v:new Array(8).fill(0)};
-function onEngine(m){if(m.t==='dw'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){t.drums[m.d].wave=m.w;dirty=true;}return;}
+function onEngine(m){if(m.t==='dw'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){const dr=t.drums[m.d];dr.wave=m.w;dr.dirty=false;dr.recording=false;dirty=true;}return;}
+  if(m.t==='drec'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){t.drums[m.d].recording=true;dirty=true;}return;}
   if(m.t==='m'){for(let i=0;i<8;i++){meters.tr[i]=Math.max(m.tr[i],meters.tr[i]*0.6);meters.v[i]=m.v[i];}meters.l=Math.max(m.l,meters.l*0.6);meters.r=Math.max(m.r,meters.r*0.6);}}
 
 /* parameter changes. `perm` writes the patch; otherwise only the live value moves (automation, pad) */
@@ -1298,6 +1367,9 @@ function restoreLive(){
   S.tracks.forEach((t,ti)=>{const ev=[];t.k.forEach((v,id)=>{if(t.lv[id]!==v){t.lv[id]=v;ev.push({time:0,k:'knob',tr:ti,id,v});}});if(ev.length)post({t:'ev',ev});});
 }
 const drumTimers={};
+// an edited drum is only marked: its next hit records it live (see the engine's startLive); leaving it renders it offline
+function drumChanged(ti,d){const dr=S.tracks[ti].drums[d];dr.dirty=true;post({t:'drumdef',tr:ti,d,def:drumDef(dr)});songChanged();dirty=true;}
+function flushDrum(ti,d){const t=S.tracks[ti],dr=t&&t.drums&&t.drums[d];if(dr&&dr.dirty)post({t:'drum',tr:ti,d,def:drumDef(dr)});}
 function redrum(ti,d){const k=ti+':'+d;clearTimeout(drumTimers[k]);drumTimers[k]=setTimeout(()=>{const dr=S.tracks[ti].drums&&S.tracks[ti].drums[d];if(dr)post({t:'drum',tr:ti,d,def:drumDef(dr)});},120);songChanged();dirty=true;}
 function setKind(ti,kind){
   const t=S.tracks[ti];if(t.kind===kind)return;
@@ -1315,7 +1387,7 @@ function setNv(ti,n){S.tracks[ti].nv=n;post({t:'nv',tr:ti,n});songChanged();dirt
 function sendMute(ti){const t=S.tracks[ti];post({t:'mute',tr:ti,m:t.mute,s:t.solo});songChanged();}
 function slotsOf(w){return w.s==='d'?S.tracks[w.i].drums[w.d].ins:w.s==='t'?S.tracks[w.i].ins:w.s==='b'?S.buses[w.i].ins:S.master.ins;}
 function setFx(w,slot,fx){
-  if(w.s==='d'){slotsOf(w)[slot]=fx;redrum(w.i,w.d);return;}
+  if(w.s==='d'){slotsOf(w)[slot]=fx;drumChanged(w.i,w.d);return;}
   if(w.s==='t'){
     // a new effect in the slot means the slot's lanes no longer point at the same knobs
     const t=S.tracks[w.i],old=t.ins[slot],ids=[];for(let j=0;j<8;j++)ids.push(NP+slot*8+j);
@@ -1325,7 +1397,7 @@ function setFx(w,slot,fx){
   post({t:'fx',w,slot,fx});songChanged();dirty=true;
 }
 function setFxP(w,slot,k,v){const fx=slotsOf(w)[slot];if(!fx)return;
-  if(w.s==='d'){if(k==='on')fx.on=!!v;else fx.p[k]=v;redrum(w.i,w.d);return;}
+  if(w.s==='d'){if(k==='on')fx.on=!!v;else fx.p[k]=v;drumChanged(w.i,w.d);return;}
   if(w.s==='t'&&k!=='on')return setParam(w.i,fxId(slot,k,fx),v,true);if(k==='on')fx.on=!!v;else fx.p[k]=v;post({t:'fxp',w,slot,k,v});songChanged();dirty=true;}
 
 /* metronome: short blips straight to the output */
@@ -1479,7 +1551,8 @@ function openEdit(p){
   if(!TOOLS_EDIT.includes(S.tool))S.tool='pointer';
   dirty=true;
 }
-function setView(v){S.presetPick=false;S.padPick=null;if(S.step&&v!=='edit')exitStep();if(v==='edit')return openEdit();S.view=v;S.tool=v==='arr'?S.arrTool:S.tool;if(v!=='edit'&&v!=='arr')S.tool=S.arrTool;S.menu=S.popup=S.toolbox=null;dirty=true;}
+function setView(v){S.presetPick=false;
+  {const was=drumCtx();if(was&&v!=='drum'&&!(v==='fx'&&S.fxSel.w.s==='d'))flushDrum(was.tr,was.d);}S.padPick=null;if(S.step&&v!=='edit')exitStep();if(v==='edit')return openEdit();S.view=v;S.tool=v==='arr'?S.arrTool:S.tool;if(v!=='edit'&&v!=='arr')S.tool=S.arrTool;S.menu=S.popup=S.toolbox=null;dirty=true;}
 // Key Edit, nothing selected: Up/Down open the part on the next track above/below that overlaps this part (else the nearest one)
 function editTrackStep(d){
   const p=part(S.editPart);if(!p)return;const V=eView(p),abs=p.start+V.s;
@@ -2011,7 +2084,7 @@ const HINTS={0:'Shifts both oscillators by octaves.',1:'How far the EG bends the
 function hintFor(id){return [P[id][1],(HINTS[id]||'Patch-row depth: how much the source below moves this destination.')+(P[id][2]<0?' Bipolar: centre is 0.':'')+' Drag, scroll, double-click to reset. While recording, moves become automation.',''];}
 function synthTarget(ti){const t=S.tracks[ti];return {ti,drum:false,k:t.k,get:id=>t.lv[id],set:(id,v)=>setParam(ti,id,v,true)};}
 function drumTarget(ti,d){const dr=S.tracks[ti].drums[d];return {ti,drum:true,d,dr,k:dr.k,get:id=>dr.k[id],
-  set:(id,v)=>{v=clamp(Math.round(v),P[id][2],P[id][3]);if(dr.k[id]===v)return;dr.k[id]=v;redrum(ti,d);}};}
+  set:(id,v)=>{v=clamp(Math.round(v),P[id][2],P[id][3]);if(dr.k[id]===v)return;dr.k[id]=v;drumChanged(ti,d);}};}
 function curTarget(){return S.view==='drum'&&S.drumEd?drumTarget(S.drumEd.tr,S.drumEd.d):synthTarget(S.active);}
 function paramCell(T_,id,x,y,w){
   const v=T_.get(id),p=P[id],set=nv=>T_.set(id,nv);
@@ -2036,18 +2109,19 @@ function drawKit(ti){
     box(4,y,22,28);T(String(d+1),15,y+14,B,'center');
     T(dr.name,32,y+9);reg(30,y+1,76,15,{down:()=>renameDrum(ti,d),hint:['Drum name','Click to rename this drum.','']});
     T('HOLD '+holdMs(dr.hold)+'ms',32,y+22,B,'left',13);noteField(ti,d,478,y+16,92);
-    drawWave(dr.wave,110,y,360,28);reg(110,y,360,28,{down:()=>audition(d,110),hint:['Drum '+(d+1)+' '+dr.name,'Click to hear the recorded sample.','']});
+    drawWave(dr.recording||dr.dirty?null:dr.wave,110,y,360,28,dr.recording?'RECORDING':dr.dirty?'NOT RECORDED':null);reg(110,y,360,28,{down:()=>audition(d,110),hint:['Drum '+(d+1)+' '+dr.name,'Click to hear the recorded sample.','']});
     T(dr.ins.filter(Boolean).map(f=>FXDEF[f.type].short+(f.on?'':'(off)')).join(' ')||'no FX',478,y+7,B,'left',13);
     box(W-60,y+4,54,20);T('EDIT',W-33,y+14,B,'center');
     reg(W-60,y+4,54,20,{down:()=>openDrumEd(ti,d),hint:['Edit drum '+(d+1),'Stops playback and opens the drum editor: its DS-10 voice, HOLD and two effects. Every change re-records the 2-second sample.','']});
     hl(0,y+31,W);}
 }
-function drawWave(w,x,y,ww,h){box(x,y,ww,h);if(!w){T('recording…',x+ww/2,y+h/2,B,'center',14);return;}
+function drawWave(w,x,y,ww,h,label){box(x,y,ww,h);if(label){clr(x+1,y+1,ww-2,h-2,label==='RECORDING'?B:P25);clr(x+ww/2-tw(label,13)/2-3,y+h/2-6,tw(label,13)+6,12,label==='RECORDING'?B:WH);T(label,x+ww/2,y+h/2,label==='RECORDING'?WH:B,'center',13);return;}
+  if(!w){T('recording…',x+ww/2,y+h/2,B,'center',14);return;}
   const mid=y+h/2,m=Math.max(0.05,...w);for(let i=0;i<ww-2;i++){const a=w[Math.floor(i*w.length/(ww-2))]/m*(h/2-2);if(a>=0.5)clr(x+1+i,mid-a,1,Math.max(1,2*a),B);}
   hl(x+1,mid,ww-2);}
 function noteField(ti,d,x,y,w,f){const dr=S.tracks[ti].drums[d];
   T('NOTE',x,y+7,B,'left',f||13);box(x+tw('NOTE',f||13)+4,y,w-tw('NOTE',f||13)-4,14);T(nname(dr.note),x+tw('NOTE',f||13)+4+(w-tw('NOTE',f||13)-4)/2,y+7,B,'center',f||13);
-  let acc=0;const set=v=>{v=clamp(Math.round(v),DRUM_NOTE_MIN,DRUM_NOTE_MAX);if(v!==dr.note){dr.note=v;redrum(ti,d);}};
+  let acc=0;const set=v=>{v=clamp(Math.round(v),DRUM_NOTE_MIN,DRUM_NOTE_MAX);if(v!==dr.note){dr.note=v;drumChanged(ti,d);}};
   reg(x,y,w,14,{drag:(dd,e)=>{acc+=dd;const st=Math.trunc(acc/6);if(st){acc-=st*6;set(dr.note+st*(e.shiftKey?12:1));}},wheel:(dd,e)=>set(dr.note-dd*(e.shiftKey?12:1)),dbl:()=>set(60),cur:'vert',
     hint:['Drum note','The note the drum\'s voice is recorded at. C3 is the DS-10\'s own; G4 records it 19 semitones up. Scroll or drag (Shift: octaves), double-click for C3. Per-hit PITCH shifts from here.','']});}
 function renameDrum(ti,d){const dr=S.tracks[ti].drums[d];askText('Name of drum '+(d+1),dr.name,8,v=>{dr.name=v;songChanged();});}
@@ -2056,8 +2130,8 @@ function drawPatch(T_){
   clr(0,38,W,18,WH);hl(0,55,W);
   if(dr){
     const d=T_.d;
-    box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>{S.drumEd.d=(d+NDRUM-1)%NDRUM;dirty=true;},hint:['Previous drum','','']});
-    box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>{S.drumEd.d=(d+1)%NDRUM;dirty=true;},hint:['Next drum','','']});
+    box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>{flushDrum(ti,d);S.drumEd.d=(d+NDRUM-1)%NDRUM;dirty=true;},hint:['Previous drum','','']});
+    box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>{flushDrum(ti,d);S.drumEd.d=(d+1)%NDRUM;dirty=true;},hint:['Next drum','','']});
     T((d+1)+' '+dr.name,44,47);reg(42,40,tw((d+1)+' '+dr.name)+6,14,{down:()=>renameDrum(ti,d),hint:['Drum name','Click to rename this drum.','']});
     noteField(ti,d,140,40,94,14);
     stripFx({s:'d',i:ti,d},0,458,40,50);stripFx({s:'d',i:ti,d},1,512,40,50);
@@ -2074,8 +2148,9 @@ function drawPatch(T_){
     clr(x,57,cw-3,11,B);T(title,x+(cw-3)/2,62,WH,'center',14);
     (dr&&c===5?[31,32,'hold','wave']:ids).forEach((id,r)=>{const y=70+r*44;
       if(id==null)return;
-      if(id==='hold'){knobCell(x,y,cw-4,'HOLD',dr.hold,0,127,DRUM_INIT_HOLD,v=>{dr.hold=clamp(Math.round(v),0,127);redrum(ti,T_.d);},['Hold','How long the note is held while the drum is recorded, 10 ms to 2 s. The release follows.',''],holdMs(dr.hold)+'ms');return;}
-      if(id==='wave'){T('SAMPLE',x+4,y+7);drawWave(dr.wave,x+4,y+14,cw-10,26);reg(x+4,y+14,cw-10,26,{down:()=>audition(T_.d,110),hint:['Recorded sample','2 seconds, re-recorded after every change. Click to hear it; the keys play it pitched (Q = original pitch).','']});return;}
+      if(id==='hold'){knobCell(x,y,cw-4,'HOLD',dr.hold,0,127,DRUM_INIT_HOLD,v=>{dr.hold=clamp(Math.round(v),0,127);drumChanged(ti,T_.d);},['Hold','How long the note is held while the drum is recorded, 10 ms to 2 s. The release follows.',''],holdMs(dr.hold)+'ms');return;}
+      if(id==='wave'){T('SAMPLE',x+4,y+7);drawWave(dr.recording||dr.dirty?null:dr.wave,x+4,y+14,cw-10,26,dr.recording?'RECORDING':dr.dirty?'PLAY TO REC':null);
+        reg(x+4,y+14,cw-10,26,{down:()=>audition(T_.d,110),hint:['Sample',dr.dirty?'Changed since it was recorded. The next hit (a key, or click here) plays the drum live and records it; turn knobs while it plays and that is recorded too. Leaving the drum records it as it is now.':'2 seconds, recorded from the voice and effects. Click to hear it; the keys play it pitched (Q = its NOTE).','']});return;}
       if(id==='nv'){T('VOICES',x+4,y+7);const n=t.nv;
         NVOPTS.forEach((o,i)=>{const bx=x+4+i*16,on=o===n;box(bx,y+17,15,18,on?B:WH);T(o===1?'M':String(o),bx+7,y+26,on?WH:B,'center');
           reg(bx,y+15,16,22,{down:()=>setNv(ti,o),hint:['Voices','M is mono with legato and portamento, like the DS-10. 2 to 8 makes the track polyphonic.','']});});
@@ -2713,7 +2788,7 @@ function frame(){
     liveQ.sort((a,b)=>a.at-b.at);
     dirty=true;
   }
-  if(gate.some(g=>g>0)||S.step||S.input||held.size||performance.now()-S.inFlash<500||meters.l>0.001)dirty=true;
+  if(gate.some(g=>g>0)||S.step||S.input||held.size||S.view==='drum'||performance.now()-S.inFlash<500||meters.l>0.001)dirty=true;
   meters.l*=0.97;meters.r*=0.97;for(let i=0;i<8;i++)meters.tr[i]*=0.97;
   if(dirty){dirty=false;render();}
   requestAnimationFrame(frame);
