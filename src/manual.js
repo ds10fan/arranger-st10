@@ -98,7 +98,7 @@ const MANUAL=[
 ['k','PITCH (VCO2)','VCO2 detune, up to four octaves either way.'],
 ['k','SYNC','Hard-syncs VCO2 to VCO1.'],
 ['k','VCA','The amp follows the EG, or a fast GATE contour.'],
-['k','CUTOFF  PEAK','Filter cutoff and resonance. High peak values self-oscillate.'],
+['k','CUTOFF  PEAK','Filter cutoff and resonance. High peak values self-oscillate. In the ZDF voice CUTOFF alone sets the frequency (127 is about 5.5 kHz); on the DS-10, and in the EXACT voice, raising PEAK also raises the cutoff.'],
 ['k','EG INT (VCF)','How far the envelope moves the cutoff.'],
 ['k','TYPE','Lowpass, highpass or bandpass.'],
 ['k','ATTACK … RELEASE','The envelope.'],
