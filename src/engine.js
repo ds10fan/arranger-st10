@@ -280,6 +280,177 @@ class Voice {
   }
 }
 
+// ---- exact DS-10 voice (ds10emu port, integer, 32768 Hz) -------------------------------------
+// Same knobs and control logic as Voice, but the oscillators, Chamberlin filter, amp and every
+// per-frame ramp are the integer code of ds10emu (vco.c, vcf.c, amp.c, voice.c), started from the
+// constructor state in the ROM table. It renders at 32768 Hz in 64-sample frames; only its output
+// is resampled to the host rate.
+// exact ((int64)a * b) >> n for int32 a, b (the double product alone loses bits above 2^53)
+function mulsh(a, b, n) {
+  const bh = b >> 16, bl = b & 0xFFFF, p1 = a * bh, p0 = a * bl;
+  if (n >= 16) return Math.floor((p1 + Math.floor(p0 / 65536)) / Math.pow(2, n - 16));
+  return p1 * Math.pow(2, 16 - n) + Math.floor(p0 / Math.pow(2, n));
+}
+const x15 = (a, b) => mulsh(a, b, 15) | 0, x23 = (a, b) => mulsh(a, b, 23) | 0, x24 = (a, b) => mulsh(a, b, 24) | 0;
+const cl24 = v => v >= 0x1000000 ? 0xFFFFFF : v < -0xFFFFFF ? -0xFFFFFF : v;
+const RECIP_NUM = 0x007FFFFFFF000000n;
+const recip = inc => inc < 0x01000000 ? 0x7FFFFFFF : Number(RECIP_NUM / BigInt(inc >>> 0)) | 0;
+
+class VoiceX extends Voice {
+  constructor() {
+    super();
+    this.exact = true;
+    const f = T.voice_init; let i = 0;   // ds10_voice_state_load order
+    for (let k = 0; k < 5; k++) this.lo[k] = f[i++];
+    this.ld = f[i++]; this.linc = f[i++]; this.lu = f[i++]; this.lsr = f[i++];
+    this.st = f[i++]; this.rt = f[i++]; this.lv = f[i++]; this.ax = f[i++];
+    this.ea = f[i++]; this.ed = f[i++]; this.es = f[i++]; this.er = f[i++];
+    this.nT = f[i++]; this.nC = f[i++]; this.nR = f[i++]; this.nD = f[i++];
+    this.peg = f[i++]; for (let k = 0; k < 3; k++) this.pds[k] = f[i++];
+    this.oct12 = f[i++]; this.v2p = f[i++]; this.pinc1 = f[i++]; this.pinc2 = f[i++];
+    for (let k = 0; k < 3; k++) this.pls[k] = f[i++];
+    for (let k = 0; k < 3; k++) this.pes[k] = f[i++];
+    this.xm = f[i++]; this.ph1 = f[i++]; this.ph2 = f[i++]; this.inc1 = f[i++]; this.inc2 = f[i++];
+    this.sh1 = f[i++]; this.sh2 = f[i++]; this.w1 = f[i++]; this.w2 = f[i++]; this.vo1 = f[i++]; this.vo2 = f[i++];
+    this.n1 = f[i++]; this.n2 = f[i++]; this.sync = f[i++]; this.prev2 = f[i++]; this.hold2 = f[i++];
+    this.xm60 = f[i++]; this.xm64 = f[i++]; this.xm68 = f[i++]; this.xm6c = f[i++];
+    for (let k = 0; k < 3; k++) this.pin[k] = f[i++];
+    this.q = f[i++]; this.band = f[i++]; this.low = f[i++]; this.typ = f[i++];
+    this.ff = f[i++]; this.ffd = f[i++]; this.dmp = f[i++]; this.dmpd = f[i++];
+    this.fls = f[i++]; this.fes = f[i++]; this.fosc = f[i++]; this.praw = f[i++]; this.cut = f[i++]; this.coef = f[i++];
+    this.treq = f[i++]; this.feg = f[i++]; this.fin = f[i++]; this.fft = f[i++]; this.dmpt = f[i++];
+    this.dist = f[i++]; this.wet = f[i++]; this.lev = f[i++]; this.levd = f[i++]; this.clipped = f[i++];
+    this.dr1 = f[i++]; this.dr2 = f[i++]; this.als = f[i++]; this.aes = f[i++]; this.alk = f[i++]; this.ain = f[i++];
+    this.aeg = f[i++]; this.levt = f[i++]; this.lbpm = !!f[i++]; this.bpm = f[i++]; this.lknob = f[i++];
+    this.fc = 0; this.acc = 0; this.h0 = this.h1 = this.h2 = this.h3 = 0;
+  }
+  frame() {}          // the voice frames itself on its own 32768 Hz clock
+  dsFrame() {
+    // LFO and envelope: identical to Voice
+    const ou = this.lu;
+    this.ld = (this.ld - this.linc) | 0;
+    const saw = this.ld >> 7;
+    this.lu = (ou + this.linc) | 0;
+    const ramp = saw + (this.lu >> 7);
+    this.lsr = lfsr(this.lsr);
+    if (((ou ^ this.lu) >> 31) !== 0) this.lo[0] = this.lsr >> 7;
+    const fo = saw < 1 ? -saw : saw;
+    this.lo[1] = saw; this.lo[2] = ((fo << 1) + 1 - 0x01000000) | 0; this.lo[3] = (ramp + 0x01000000) >> 1;
+    switch (this.st) {
+      case 0:
+        this.ax += mulsh(0xB33333 - this.ax, 0x70, 7); if (this.ax > 0xB33333) this.ax = 0xB33333;
+        this.lv += x24(0x014CCCCD - this.lv, this.ea);
+        if (this.lv > 0xFFFFFF) { this.lv = 0xFFFFFF; this.st = 1; }
+        break;
+      case 1: this.lv += x24(this.ed, this.es - this.lv); if (this.lv < this.es) { this.lv = this.es; this.st = 2; } break;
+      case 2: this.lv = this.es; break;
+      case 3: this.ax = I(this.ax, 0x42) >> 7; this.lv = x24(this.lv, 0xFFFFFF - this.er); break;
+    }
+    const EO0 = this.lv, EO1 = this.ax, LO = this.lo, eo = s => s === 0 ? EO0 : s === 1 ? EO1 : 0;
+    // note control and pitch
+    this.nC = (this.nC + x15(this.nR, this.nT - this.nC)) | 0;
+    if (this.nD === 0) { if (this.nC < this.nT) this.nC = this.nT; } else if (this.nT < this.nC) this.nC = this.nT;
+    const D = T.depth, mt = (ds, l, e) => I(D[ds], (l + e) >> 9) >> 15;
+    const common = mt(this.pds[0], LO[this.pls[0]], eo(this.pes[0])) + (I(D[this.peg], EO0 >> 9) >> 15);
+    const base = this.nC + this.oct12 * 0x8000;
+    const pl = v => { if (v < 0) v = 0; else if (v > 0x3C0000) v = 0x3C0000; const i = v >> 15, fr = v & 0x7FFF, lo = T.pitch[i]; return (lo + x15(fr, T.pitch[i + 1] - lo)) | 0; };
+    const inc1 = pl((common + mt(this.pds[1], LO[this.pls[1]], eo(this.pes[1]))) * 0x30 + base);
+    const inc2 = pl((common + mt(this.pds[2], LO[this.pls[2]], eo(this.pes[2]))) * 0x30 + base + D[this.v2p] * 0x30);
+    // ds10_vco_update
+    this.inc1 = inc1; this.inc2 = inc2; this.sh1 = recip(inc1); this.sh2 = recip(inc2);
+    this.xm60 = this.pin[0]; this.xm68 = this.pin[1];
+    this.xm64 = mulsh(inc2, this.pin[0], 7) | 0; this.xm6c = mulsh(inc2, this.pin[2], 7) | 0;
+    // ds10_vcf_update
+    const MA = T.mod_a, MB = T.mod_b;
+    const mod = (I(MA[this.fin], (eo(this.fes) + LO[this.fls]) >> 9) >> 15) + (I(MA[this.feg], EO0 >> 9) >> 15)
+      + (I(MB[this.fin], I(this.fosc, this.prev2) >> 9) >> 15);
+    let v = mod * 0x7F + this.cut;
+    if (v < -0xB8000) v = -0xB8000; else if (v > 0x3F8000) v = 0x3F8000;
+    v += 0xB8000;
+    const ci = v >> 15, cf = v & 0x7FFF;
+    this.coef = (T.coef[ci] + x15(cf, T.coef[ci + 1] - T.coef[ci])) | 0;
+    let res = (this.coef - 1367566549) | 0; if (res < 1) res = 0;
+    const sq = mulsh(res, res, 31) | 0;
+    const damped = x24(this.praw >> 7, 0x1000000 - x24(sq >> 7, 0x01800000));
+    let tg = x24(0x1000000 - damped, 0x1000000 - (this.coef >> 8));
+    this.dmpd = (tg - this.dmpt) >> 6; this.dmp = this.dmpt; this.dmpt = tg;
+    tg = x24((damped >> 1) + 0x800000, this.coef >> 7);
+    this.ffd = (tg - this.fft) >> 6; this.ff = this.fft; this.fft = tg;
+    if (this.typ !== this.treq) { this.typ = this.treq; this.band = 0; this.low = 0; }
+    // ds10_amp_update
+    let shaped;
+    if (this.als === 4) shaped = 0x1000000;
+    else {
+      const l = LO[this.als], t = this.als === 3 ? x24(l, this.ain) : x24((l + 0xFFFFFF) >> 1, this.ain);
+      shaped = this.ain > 0 ? (t + 0xFFFFFF) - this.ain : t + 0xFFFFFF;
+    }
+    const scaled = x24(shaped, this.alk);
+    const operand = eo(this.aeg) + mulsh(this.ain, eo(this.aes), 24);
+    const target = mulsh(operand | 0, scaled, 24) | 0;
+    this.levd = (target - this.levt) >> 6; this.lev = this.levt; this.levt = target;
+    this.on = this.gate || !(this.st === 3 && this.lv < 4000 && Math.abs(this.levt) < 4000 && Math.abs(this.lev) < 4000);
+  }
+  dsSample() {
+    // ds10_vco_step
+    const old1 = this.ph1, old2 = this.ph2;
+    this.ph1 = (old1 - this.inc1) | 0; this.ph2 = (old2 - this.inc2) | 0;
+    switch (this.xm) {
+      case 1: { const g = this.xm60, t = I(g, I(this.prev2, g) >> 7); this.ph1 = (this.ph1 - (t >> 1)) | 0; this.ph2 = (this.ph2 - x24(this.prev2, this.xm64)) | 0; break; }
+      case 2: { const g = this.xm68, t = I(g, I(this.prev2, g) >> 7); this.ph1 = (this.ph1 - (t >> 1)) | 0; break; }
+      case 3: this.ph2 = (this.ph2 - x24(this.prev2, this.xm6c)) | 0; break;
+    }
+    if (this.sync === 1 && this.ph1 > old1) this.ph2 = 0x7FFFFFFF;
+    const wave = (w, ph, sh) => {
+      const p = ph >> 16;
+      if (w === 0) { const a = p <= 0 ? -p : p; return -32767 + (a << 1) + (I(p, 4259) >> 15); }
+      if (w === 1) { let s = I(p, sh >> 16) >> 8; if (s > 32767) s = 32767; else if (s < -32767) s = -32767; return p - s; }
+      const a = p <= 0 ? -p : p, prod = I(-32767 + (a << 1), sh >> 16);
+      if ((prod >> 8) < -32767) return -32767;
+      const o = prod >> 8; return o > 32767 ? 32767 : o;
+    };
+    let out1, out2;
+    if (this.w1 === 3) { this.n1 = lfsr(this.n1); out1 = this.n1 >> 16; } else out1 = wave(this.w1, this.ph1, this.sh1);
+    if (this.w2 === 3) { this.n2 = lfsr(this.n2); if (((this.ph2 ^ old2) >> 31) !== 0) this.hold2 = this.n2 >> 16; out2 = this.hold2; }
+    else out2 = wave(this.w2, this.ph2, this.sh2);
+    this.prev2 = out2 << 9;
+    const mix = (I(out1, this.vo1) + I(out2, this.vo2)) >> 15;
+    // ds10_vcf_step
+    let hp = I(mix, this.q) >> 6;
+    hp = cl24(hp - (this.low + x23(this.band, this.dmp)));
+    let out = mix << 9;
+    if (this.typ === 1) out = hp;
+    this.band = cl24(this.band + x23(hp, this.ff));
+    if (this.typ === 2) out = this.band;
+    this.low = cl24(this.low + x23(this.band, this.ff));
+    if (this.typ === 0) out = this.low;
+    this.ff = (this.ff + this.ffd) | 0; this.dmp = (this.dmp + this.dmpd) | 0;
+    const fin = out >> 9;
+    // ds10_amp_step
+    let clipped = I(fin, this.dr1) >> 11;
+    if (clipped < -32767) clipped = -32767; else if (clipped > 32767) clipped = 32767;
+    this.clipped = clipped;
+    let m = ((clipped >> 1) + (I(fin, this.dr2) >> 15)) >> 1;
+    let o = I(m, this.lev >> 9) >> 15;
+    if (this.dist !== 0) o = (I(I(this.prev2 >> 9, o) >> 15, this.wet) >> 15) + (I(o, 32767 - this.wet) >> 15);
+    if (o < -16383) o = -16383; else if (o > 16383) o = 16383;
+    let d = o << 1; if (d < -32767) d = -32767; else if (d > 32767) d = 32767;
+    this.lev = (this.lev + this.levd) | 0;
+    return d;
+  }
+  sample() {
+    this.acc += RT;
+    while (this.acc >= 1) {
+      this.acc -= 1;
+      if (this.fc === 0) { this.dsFrame(); this.fc = 64; }
+      this.fc--;
+      this.h0 = this.h1; this.h1 = this.h2; this.h2 = this.h3; this.h3 = this.dsSample() / 32768;
+    }
+    const f = this.acc, xm1 = this.h0, x0 = this.h1, x1 = this.h2, x2 = this.h3;
+    const c1 = 0.5 * (x1 - xm1), c2 = xm1 - 2.5 * x0 + 2 * x1 - 0.5 * x2, c3 = 0.5 * (x2 - xm1) + 1.5 * (x0 - x1);
+    return (((c3 * f + c2) * f + c1) * f + x0) * this.vg;
+  }
+}
+
 // 4-pole highpass: two TPT SVF sections, resonance on the second
 class HP4 {
   constructor() { this.a = [0, 0, 0, 0]; this.set(0, 0); }
@@ -325,8 +496,10 @@ const holdSec = k => 0.01 * Math.pow(200, k / 127);   // drum HOLD knob: 10 ms .
 
 // Record a drum the way the DS-10 does: its own voice, at its note (C3 = 60 by default), into a buffer - here 2 s
 // of stereo at host rate - through its highpass and its two effects.
+// a drum's voice: the ZDF voice, or with def.exact the ds10emu integer voice (which runs continuously, as on the DS)
+const drumVoice = d => d.exact ? new VoiceX() : new Voice();
 function renderDrum(d, tempo) {
-  const v = new Voice(); v.setBpm(tempo);
+  const v = drumVoice(d); v.setBpm(tempo);
   for (let id = 0; id < 31; id++) v.knob(id, d.k[id]);
   const hp = new HP4(); hp.set(d.k[31] || 0, d.k[32] || 0);
   const fx = (d.ins || []).map(mkFx).filter(x => x && x.on);
@@ -337,7 +510,7 @@ function renderDrum(d, tempo) {
   for (let i = 0; i < N; i++) {
     if (i === hold) v.noteOff();
     if (--fc <= 0) { fc += FR; v.frame(); for (const x of fx) if (x.frame) x.frame(); }
-    let x0 = hp.p(v.on ? v.sample() : 0), l = x0, r = x0;
+    let x0 = hp.p(v.on || v.exact ? v.sample() : 0), l = x0, r = x0;
     for (const x of fx) { x.proc(l, r); l = x.l; r = x.r; }
     L[i] = l; R[i] = r;
   }
@@ -365,6 +538,12 @@ class Track {
     this.defs = []; this.dirty = []; this.lrs = []; this.eng = null;
     for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i]);
   }
+  setExact(x, tempo) {
+    x = !!x; if (!!this.exact === x) return;
+    this.exact = x; this.stack = [];
+    this.vs = []; for (let i = 0; i < 8; i++) this.vs.push(x ? new VoiceX() : new Voice());
+    for (const vo of this.vs) { for (let id = 0; id < 31; id++) vo.knob(id, this.k[id]); vo.setBpm(tempo || 120); }
+  }
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
   // a drum edited since its last recording is played live from its voice and effects and recorded as it plays
@@ -387,7 +566,7 @@ class Track {
   // the recording is rendered just ahead of where that voice reads, so a lower pitch renders slower
   startLive(d, v) {
     const def = this.defs[d], tempo = this.eng ? this.eng.tempo : 120;
-    const vo = new Voice(); vo.setBpm(tempo);
+    const vo = drumVoice(def); vo.setBpm(tempo);
     for (let id = 0; id < 31; id++) vo.knob(id, def.k[id]);
     const hp = new HP4(); hp.set(def.k[31] || 0, def.k[32] || 0);
     const fx = [0, 1].map(s => mkFx((def.ins || [])[s]));
@@ -403,7 +582,7 @@ class Track {
   liveStep(lr) {
     if (lr.pos === lr.hold) lr.v.noteOff();
     if (--lr.fc <= 0) { lr.fc += FR; lr.v.frame(); for (const x of lr.fx) if (x && x.on && x.frame) x.frame(); }
-    let l = lr.hp.p(lr.v.on ? lr.v.sample() : 0), r = l;
+    let l = lr.hp.p(lr.v.on || lr.v.exact ? lr.v.sample() : 0), r = l;
     for (const x of lr.fx) if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; }
     lr.L[lr.pos] = l; lr.R[lr.pos] = r; lr.pos++;
     if (lr.pos < lr.L.length) return;
@@ -508,7 +687,8 @@ class Track {
   frame() { for (let i = 0; i < this.nv; i++) this.vs[i].frame(); for (let i = this.nv; i < 8; i++) if (this.vs[i].on) this.vs[i].frame(); }
   sample() {
     let m = 0;
-    for (let i = 0; i < 8; i++) { const vo = this.vs[i]; if (vo.on) m += vo.sample(); }
+    if (this.exact) { for (let i = 0; i < this.nv; i++) m += this.vs[i].sample(); }   // exact voices run continuously, as on the DS
+    else for (let i = 0; i < 8; i++) { const vo = this.vs[i]; if (vo.on) m += vo.sample(); }
     return this.hp.p(m);
   }
 }
@@ -768,7 +948,7 @@ class Engine {
   cfg(c) {
     c.tracks.forEach((t, i) => {
       const tr = this.tr[i]; if (!tr) return;
-      tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); });
+      tr.setExact(t.exact, this.tempo); tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); });
       tr.mute = t.mute ? 1 : 0; tr.solo = t.solo ? 1 : 0;
       tr.ins = (t.ins || [null, null]).map(mkFx);
       tr.setKind(t.kind === 'drum'); tr.interp = t.interp ?? 1;
@@ -798,6 +978,7 @@ class Engine {
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
       case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
       case 'interp': this.tr[m.tr].interp = m.v; break;
+      case 'exact': this.tr[m.tr].setExact(m.v, this.tempo); break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;
       case 'fx': { const s = this.slot(m.w); s[m.slot] = mkFx(m.fx); if (s[m.slot] && s[m.slot].setTempo) s[m.slot].setTempo(Math.round(this.tempo)); break; }
       case 'fxp': { const x = this.slot(m.w)[m.slot]; if (x) { if (m.k === 'on') x.on = !!m.v; else x.set(m.k, m.v); } break; }

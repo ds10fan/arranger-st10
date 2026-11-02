@@ -114,7 +114,7 @@ function selOnly(n){S.selSet=new Set(n?[n]:[]);S.selNote=n||null;S.ptSel=new Set
 const selList=()=>[...S.selSet];
 let noteClip=null;
 
-function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1};}
+function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1,exact:false};}
 /* drum tracks: a kit of 8 drums. Each drum is a DS-10 patch (knobs 0-30 + highpass 31-32), a HOLD time
    and two effects, recorded by the engine into a 2 s sample. Notes on a drum track carry the drum in p (0-7)
    and optional pt (pitch, semitones), pn (pan 0-127) and st (sample start 0-127). */
@@ -197,7 +197,7 @@ function newSong(){
 }
 function songObj(){
   return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,padX:S.padX,padY:S.padY,padMode:S.padMode,
-    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,ins:d.ins})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
+    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,ins:d.ins,...(d.exact?{exact:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
     buses:S.buses,master:S.master,
     parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,...(p.dmute?{dmute:p.dmute.map(Boolean)}:{}),notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
 }
@@ -206,8 +206,8 @@ function loadSong(o){
   if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST song');
   const fx=f=>f&&FXDEF[f.type]?{type:f.type,on:f.on!==false,p:Object.assign(mkFx(f.type).p,f.p||{})}:null;
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
-    (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);
-    if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);return m;});
+    (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);tr.exact=!!t.exact;
+    if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.exact=!!d.exact;return m;});
     if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];return tr;});
   while(S.tracks.length<8)S.tracks.push(mkTrack('Track '+(S.tracks.length+1),{},1));
   const bs=o.buses||[];S.buses=[0,1].map(i=>({name:i?'BUS B':'BUS A',ret:clamp((bs[i]||{}).ret??100,0,127),ins:[fx(((bs[i]||{}).ins||[])[0]),fx(((bs[i]||{}).ins||[])[1])]}));
@@ -275,8 +275,8 @@ function ensureAudio(){
   return starting;
 }
 const post=m=>{if(ready)node.port.postMessage(m);};
-const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,ins:d.ins});
-function cfgObj(){return {tempo:S.tempo,tracks:S.tracks.map(t=>({k:t.lv,nv:t.nv,mute:t.mute,solo:t.solo,ins:t.ins,kind:t.kind,interp:t.interp,drums:t.drums&&t.drums.map(drumDef)})),buses:S.buses.map(b=>({ret:b.ret,ins:b.ins})),master:S.master};}
+const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,ins:d.ins,exact:!!d.exact});
+function cfgObj(){return {tempo:S.tempo,tracks:S.tracks.map(t=>({k:t.lv,nv:t.nv,mute:t.mute,solo:t.solo,ins:t.ins,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(drumDef)})),buses:S.buses.map(b=>({ret:b.ret,ins:b.ins})),master:S.master};}
 function sendCfg(){S.tracks.forEach(syncFx);post({t:'cfg',c:cfgObj()});}
 const meters={tr:new Array(8).fill(0),l:0,r:0,v:new Array(8).fill(0)};
 function onEngine(m){if(m.t==='dw'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){const dr=t.drums[m.d];dr.wave=m.w;dr.dirty=false;dr.recording=false;dirty=true;}return;}
@@ -312,6 +312,7 @@ function setKind(ti,kind){
       post({t:'kind',tr:ti,kind,drums:t.drums&&t.drums.map(drumDef)});songChanged();dirty=true;}}]);
 }
 const INTERP=['LIN','CUBIC','SINC'];
+function setExact(ti,v){S.tracks[ti].exact=v;post({t:'exact',tr:ti,v});songChanged();dirty=true;flashMsg(v?'T'+(ti+1)+': exact DS-10 voice':'T'+(ti+1)+': ZDF voice');}
 function setInterp(ti,v){S.tracks[ti].interp=v;post({t:'interp',tr:ti,v});songChanged();dirty=true;}
 function setNv(ti,n){S.tracks[ti].nv=n;post({t:'nv',tr:ti,n});songChanged();dirty=true;}
 function sendMute(ti){const t=S.tracks[ti];post({t:'mute',tr:ti,m:t.mute,s:t.solo});songChanged();}
@@ -1084,7 +1085,9 @@ function drawPatch(T_){
   }
   const bx=[[240,'PRESET',()=>{S.presetPick=!S.presetPick;},'Patch library','Browse the DS-10 factory set and 502 patches from the ds10emu song saves.'],[300,'INIT',initPatch,'Init patch','Resets all synth knobs to the DS-10 init patch.'],[352,'COPY',copyPatch,'Copy patch','Copies this track\'s synth knobs.'],[404,'PASTE',pastePatch,'Paste patch','Pastes copied knobs onto this track.']];
   for(const [x,l,f,h1,h2] of bx){const on=l==='PRESET'&&S.presetPick,bw=l==='PRESET'?56:48;box(x,40,bw,14,on?B:WH);T(l,x+bw/2,47,on?WH:B,'center');reg(x,40,bw,14,{down:f,hint:[h1,h2,'']});}
-  if(!dr){kindSwitch(ti,W-82);const recOn=S.rec&&S.playing;if(recOn){clr(456,40,96,14,B);T('REC AUTOMATION',504,47,WH,'center',14);}}
+  if(!dr){kindSwitch(ti,W-82);const ex=!!t.exact;box(458,40,94,14,ex?B:WH);T(ex?'DS-10 EXACT':'ZDF VOICE',505,47,ex?WH:B,'center',14);
+    reg(458,40,94,14,{down:()=>setExact(ti,!ex),hint:['Voice engine',ex?'EXACT: the ds10emu integer voice (DS-10 oscillators, Chamberlin filter, amp, 32768 Hz, 64-sample frames), resampled to the output rate. Click for the ZDF voice.':'ZDF: polyBLEP oscillators and a zero-delay-feedback filter. Click for the exact DS-10 voice.','']});
+    const recOn=S.rec&&S.playing;if(recOn){clr(240,40,214,14,B);T('KNOBS RECORD AUTOMATION',347,47,WH,'center',14);}}
   for(let c=0;c<6;c++){const [title,ids]=SYN_COLS[c],x=c*cw+1;
     clr(x,57,cw-3,11,B);T(title,x+(cw-3)/2,62,WH,'center',14);
     (dr&&c===5?[31,32,'hold','wave']:ids).forEach((id,r)=>{const y=70+r*44;
@@ -1101,6 +1104,8 @@ function drawPatch(T_){
   }
   hl(0,247,W);clr(0,248,W,11,B);T('PATCH',8,253,WH,'left',14);
   T('SOURCE >  DESTINATION: DEPTH',W-8,253,WH,'right',14);
+  if(dr){const ex=!!dr.exact;clr(250,248,100,11,ex?WH:B);box(250,248,100,11,WH);T(ex?'DS-10 EXACT':'ZDF VOICE',300,253,ex?B:WH,'center',14);
+    reg(250,248,100,11,{down:()=>{dr.exact=!ex;drumChanged(ti,T_.d);flashMsg('Drum '+(T_.d+1)+(dr.exact?': exact DS-10 voice':': ZDF voice'));},hint:['Drum voice engine',(ex?'EXACT: this drum is recorded from the ds10emu integer voice.':'ZDF: this drum is recorded from the polyBLEP / ZDF voice.')+' Click to switch; the drum is recorded again on its next hit.','']});}
   PATCH_COLS.forEach(([title,dk,sk],c)=>{const x=c*cw+1;
     T(title,x+4,266);
     if(c===0){knobCell(x,268,cw-4,'',T_.get(24),0,127,50,nv=>T_.set(24,nv),hintFor(24));switchCell(x,298,cw-4,'',T_.get(25),['FREE','BPM'],v=>T_.set(25,v),hintFor(25));return;}

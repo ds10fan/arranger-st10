@@ -103,6 +103,7 @@ const MANUAL=[
 ['k','TYPE','Lowpass, highpass or bandpass.'],
 ['k','ATTACK … RELEASE','The envelope.'],
 ['k','HP CUT  HP RES','An extra 4-pole highpass after the voice. 0 turns it off.'],
+['k','ZDF VOICE / DS-10 EXACT','The button at the top right of the Synth window. ZDF is the voice described above. DS-10 EXACT runs the ds10emu integer voice instead: the DS-10\'s own oscillators (aliasing included), Chamberlin filter and amp, at 32768 Hz in 64-sample frames, starting from the DS-10\'s power-on state; only its output is resampled to your sound card\'s rate. Knobs, patches and automation work the same; notes start on the next 2 ms frame, as on the DS. Effects and the mixer are this app\'s either way. In the drum editor, the switch in the PATCH bar does the same for one drum: it sets which voice the drum is recorded from.'],
 ['k','VOICES','M is mono with legato and portamento. 2 to 8 make the track polyphonic.'],
 ['k','VOLUME','Track volume, the same as the mixer fader.'],
 ['p','Patch panel: MG is the LFO, with its rate (FREQ) and FREE or BPM sync. A BPM-synced MG restarts when play starts. Each of PITCH, VCO1, VCO2, CUTOFF and VCA has a depth knob and a source box. Click the box to choose SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate. VCO2 on a pitch destination gives FM, on CUTOFF filter FM, and on VCA ring modulation.'],
