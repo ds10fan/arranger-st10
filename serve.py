@@ -62,6 +62,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.path = "/arranger-st.html"
         return super().send_head()
 
+    def guess_type(self, path):
+        # the page has no <meta charset>; without this browsers fall back to a legacy encoding
+        return "text/html; charset=utf-8"
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
