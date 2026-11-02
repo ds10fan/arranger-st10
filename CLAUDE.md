@@ -15,6 +15,11 @@ Build after every change:
 
     python3 build.py
 
+Serve it over HTTPS (port 9988 by default; generates a self-signed `cert.pem`/`key.pem`
+on first run, gitignored – replace them to use your own certificate):
+
+    python3 serve.py [port]
+
 ## Layout
 
 - `src/app.html` – page, UI (canvas-drawn 640x400 GEM screen), sequencer, mixer model, saving.
