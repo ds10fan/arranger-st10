@@ -957,49 +957,32 @@ class FxTape {
   }
 }
 
-/* Distortion, three modes (DRIVE = 0..40 dB input gain, LEVEL = output gain, TONE depends on the mode):
+/* Distortion, two modes (DRIVE = 0..40 dB input gain, LEVEL = output gain, TONE depends on the mode):
    0 LP CLIP  y[n+1] = clip(a y[n] + x[n]), hard clip at +-1, a = TONE/127
-   1 CUBIC    band-pass (200 Hz..5 kHz at TONE, Q 0.7) into a cubic soft clipper 1.5(x - x^3/3), 10 Hz DC block
-   2 AMP+CAB  4x oversampled two-stage tube-style preamp, then a 4x12-style cabinet response
-              (TONE = mic position: speaker roll-off from 2.5 kHz off-axis to 7 kHz on-axis) */
-const OS = 4;
-const DIST_TRIM = [1, 1.2, 0.8];       // rough loudness match between the modes
+   1 CUBIC    band-pass (200 Hz..5 kHz at TONE, Q 0.7), then 8x oversampled: gain, cubic soft clipper
+              1.5(x - x^3/3) (hard limit at +-1); 10 Hz DC block after decimation */
+const OS = 8;
+const DIST_TRIM = [1, 1.2];       // rough loudness match between the modes
 class DistCh {
   constructor() {
     this.y = 0; this.bp = new Biquad(); this.dc = 0; this.dcA = 1 - Math.exp(-2 * Math.PI * 10 / SR);
-    // AMP+CAB: oversampling filters, preamp filters at OS*SR, cabinet at SR
-    const fo = Math.min(12000, 0.4 * SR);
+    const fo = Math.min(18000, 0.35 * SR);    // image / anti-alias filters at OS*SR
     this.up = new LP8(fo, SR * OS); this.dn = new LP8(fo, SR * OS);
-    this.tight = new Biquad(); this.tight.hp(SR * OS, 120, 0.7);   // trims the lows before the preamp
-    this.cpl = 0; this.cplA = 1 - Math.exp(-2 * Math.PI * 25 / (SR * OS));  // coupling-cap DC block between stages
-    this.cab = [new Biquad(), new Biquad(), new Biquad(), new Biquad(), new Biquad()];
-    this.cab[0].hp(SR, 85, 1.3);           // closed-back low-end resonance, nothing below
-    this.cab[1].peak(SR, 450, 1.0, -4);    // boxy mids scooped
-    this.cab[2].peak(SR, 2300, 1.6, 4);    // cone presence peak
   }
-  setTone(t) {
-    this.bp.bp(SR, 200 * Math.pow(25, t / 127), 0.7);
-    const fm = 2500 * Math.pow(2.8, t / 127);
-    this.cab[3].lp(SR, fm, 0.6); this.cab[4].lp(SR, fm * 1.15, 1.0);   // ~24 dB/oct speaker roll-off
-  }
-  amp(x, g) {
+  setTone(t) { this.bp.bp(SR, 200 * Math.pow(25, t / 127), 0.7); }
+  cubic(x, g) {
     let o = 0;
     for (let k = 0; k < OS; k++) {
-      let s = this.up.p(k === 0 ? x * OS : 0);           // zero-stuff + image filter
-      s = this.tight.p(s) * g;
-      s = Math.tanh(s + 0.3) - 0.2913;                  // stage 1: biased triode, asymmetric
-      this.cpl += this.cplA * (s - this.cpl); s -= this.cpl;
-      s = Math.tanh(2.5 * s);                            // stage 2
-      const d = this.dn.p(s); if (k === 0) o = d;         // anti-alias filter + decimate
+      let v = this.up.p(k === 0 ? x * OS : 0) * g;     // zero-stuff + image filter
+      if (v > 1) v = 1; else if (v < -1) v = -1;
+      v = 1.5 * (v - v * v * v / 3);
+      const d = this.dn.p(v); if (k === 0) o = d;       // anti-alias filter + decimate
     }
-    for (let i = 0; i < 5; i++) o = this.cab[i].p(o);
-    return o;
+    this.dc += this.dcA * (o - this.dc); return o - this.dc;   // output coupling cap
   }
   proc(x, mode, g, al) {
     if (mode === 0) { const y = al * this.y + x * g; return this.y = y > 1 ? 1 : y < -1 ? -1 : y; }
-    if (mode === 1) { let v = this.bp.p(x) * g; if (v > 1) v = 1; else if (v < -1) v = -1;
-      v = 1.5 * (v - v * v * v / 3); this.dc += this.dcA * (v - this.dc); return v - this.dc; }  // output coupling cap
-    return this.amp(x, g);
+    return this.cubic(this.bp.p(x), g);
   }
 }
 class FxDist {
@@ -1010,7 +993,7 @@ class FxDist {
     else if (k === 'tone') { this.al = v / 127; this.cl.setTone(v); this.cr.setTone(v); }
     else if (k === 'level') this.lv0 = (v / 127) * (v / 127) * 1.5;
     else if (k === 'mix') this.m = v / 127;
-    else if (k === 'mode') this.mode = Math.max(0, Math.min(2, v | 0));
+    else if (k === 'mode') this.mode = Math.max(0, Math.min(1, v | 0));
     this.lv = this.lv0 * DIST_TRIM[this.mode];
   }
   proc(l, r) {
@@ -1342,10 +1325,9 @@ const MANUAL=[
 ['k','DS-10 FX','One delay line with the DS-10\'s three mappings. DELAY: TIME (up to about 1 second, or note lengths with SYNC set to BPM), L/R RATIO shortens one side, FEEDBACK. CHORUS: a fixed short line swept by the LFO (LFO RATE, DEPTH). FLANGER: a very short line with a cubed sweep and bipolar FEEDBACK. DRY/WET uses the DS-10 law.'],
 ['k','MIDIVERB','The Alesis Midiverb, Midifex and Midiverb II programs, run at 24 kHz as on the hardware. MODEL picks the unit and PROGRAM the program (the name is shown below). FEEDBACK returns the output to the input.'],
 ['k','TAPE DELAY','A fixed tape length with variable speed. SPEED runs from 0.10x to 2.00x, and TAPE sets the length (the echo time at 1x). Changing the speed while echoes are on the tape bends their pitch.'],
-['k','DISTORTION','DRIVE (0 to 40 dB of input gain), TONE, LEVEL and DRY/WET; MODE picks one of three circuits, and TONE means something different in each:'],
+['k','DISTORTION','DRIVE (0 to 40 dB of input gain), TONE, LEVEL and DRY/WET; MODE picks one of two circuits, and TONE means something different in each:'],
 ['k','  LP CLIP','y[n+1] = clip(a y[n] + x[n]): a leaky integrator (a one-pole low-pass with a bass boost of up to 1/(1-a)) with a hard clip at +-1 inside its loop, so the filter state itself saturates. TONE is a, from 0 (a plain hard clipper) to 1 (a clipped integrator).'],
-['k','  CUBIC','A band-pass (centre 200 Hz to 5 kHz from TONE, wide Q) in front of a cubic soft clipper, y = 1.5(x - x^3/3). Removing lows and highs before clipping gives a mid-focused overdrive.'],
-['k','  AMP+CAB','A guitar-amp style chain. 4x oversampled preamp: low cut at 120 Hz, a biased (asymmetric) tanh stage, a coupling-cap DC block and a second tanh stage. Then a 4x12-style closed-back cabinet: resonant low cut at 85 Hz, a dip at 450 Hz, a presence peak at 2.3 kHz and a 24 dB/oct speaker roll-off. TONE is the mic position: 0 is off-axis (roll-off at 2.5 kHz), 127 on-axis (7 kHz). This mode uses noticeably more CPU.'],
+['k','  CUBIC','A band-pass (centre 200 Hz to 5 kHz from TONE, wide Q) in front of a cubic soft clipper, y = 1.5(x - x^3/3), run at 8x the sample rate so the clipping adds little aliasing. Removing lows and highs before clipping gives a mid-focused overdrive.'],
 ['k','RATE CRUSH','Sample-rate reduction (no bit reduction). The input is sampled and held at RATE, from 100 Hz (0) to 48 kHz; 127 switches it off. The rate glides smoothly, so it can be swept from the KAOSS pad. AA FILTER blends in a low-pass at 0.45 x RATE before the hold: 0 gives raw, metallic aliasing, 127 a dull old-sampler sound.'],
 
 ['h','KAOSS pad and automation'],
@@ -1431,11 +1413,11 @@ const FXDEF={
   ds10:{name:'DS-10 FX',short:'D10',p:[['type','TYPE',0,2,0,['DELAY','CHORUS','FLANGER']],['time','TIME',0,127,64],['ratio','L/R RATIO',-63,63,0],['lfo','LFO RATE',0,127,64],['depth','DEPTH',0,127,64],['sync','SYNC',0,1,0,['FREE','BPM']],['fb','FEEDBACK',-63,63,0],['mix','DRY/WET',0,127,64]]},
   mverb:{name:'MIDIVERB',short:'MVB',p:[['dev','MODEL',0,2,2,['MV I','FEX','MV II']],['prog','PROGRAM',0,99,15],['fb','FEEDBACK',0,127,0],['mix','DRY/WET',0,127,64]]},
   tape:{name:'TAPE DELAY',short:'TAP',p:[['speed','SPEED',0,127,60],['fb','FEEDBACK',0,127,89],['len','TAPE',0,3,2,['30 MS','100 MS','300 MS','1 SEC']],['mix','DRY/WET',0,127,64]]},
-  dist:{name:'DISTORTION',short:'DST',p:[['drive','DRIVE',0,127,64],['tone','TONE',0,127,90],['level','LEVEL',0,127,80],['mix','DRY/WET',0,127,127],['mode','MODE',0,2,1,['LP CLIP','CUBIC','AMP+CAB']]]},
+  dist:{name:'DISTORTION',short:'DST',p:[['drive','DRIVE',0,127,64],['tone','TONE',0,127,90],['level','LEVEL',0,127,80],['mix','DRY/WET',0,127,127],['mode','MODE',0,1,1,['LP CLIP','CUBIC']]]},
   crush:{name:'RATE CRUSH',short:'SRR',p:[['rate','RATE',0,127,64],['aa','AA FILTER',0,127,0],['mix','DRY/WET',0,127,127]]}};
 const hzTxt=h=>h>=1000?(h/1000).toFixed(h>=10000?1:2)+'k':String(Math.round(h));
 // what TONE means in each distortion mode (the engine uses the same formulas)
-const distTone=(m,v)=>m===0?'a='+(v/127).toFixed(2):hzTxt(m===1?200*Math.pow(25,v/127):2500*Math.pow(2.8,v/127));
+const distTone=(m,v)=>m===0?'a='+(v/127).toFixed(2):hzTxt(200*Math.pow(25,v/127));
 const crushHz=v=>v>=127?'OFF':(h=>h>=1000?(h/1000).toFixed(h>=10000?1:2)+'k':String(Math.round(h)))(100*Math.pow(480,v/127));
 const FXTYPES=['ds10','mverb','tape','dist','crush'];
 function mkFx(type,over){const d=FXDEF[type],p={};d.p.forEach(x=>p[x[0]]=x[4]);return {type,on:true,p:Object.assign(p,over||{})};}
@@ -1551,7 +1533,8 @@ function songObj(){
 function cleanAuto(a){const o={};if(a&&typeof a==='object')for(const k in a){const id=+k,ln=a[k];if(id>=0&&id<NA&&ln&&Array.isArray(ln.pts))o[id]={m:ln.m==='h'?'h':'s',pts:ln.pts.filter(x=>x&&isFinite(x.t)&&isFinite(x.v)).map(x=>({t:x.t|0,v:id<NP?clamp(Math.round(x.v),P[id][2],P[id][3]):Math.round(x.v)})).sort((a,b)=>a.t-b.t)};}return o;}
 function loadSong(o){
   if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST10 song');
-  const fx=f=>f&&FXDEF[f.type]?{type:f.type,on:f.on!==false,p:Object.assign(mkFx(f.type).p,f.p||{})}:null;
+  const fx=f=>{if(!f||!FXDEF[f.type])return null;const p=Object.assign(mkFx(f.type).p,f.p||{});
+    for(const pp of FXDEF[f.type].p)if(pp[5])p[pp[0]]=clamp(p[pp[0]],pp[2],pp[3]);return {type:f.type,on:f.on!==false,p};};
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
     (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);tr.exact=!!t.exact;
     if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.exact=!!d.exact;return m;});
@@ -2642,13 +2625,13 @@ function drawFx(){
   if(fx.type==='mverb'){box(8,250,W-16,40);T(progName(fx),W/2,270,B,'center',24);
     reg(8,250,W-16,40,{wheel:d=>setFxP(w,slot,'prog',clamp(fx.p.prog-d,0,progMax(fx))),hint:['Program','Scroll to step through the programs of this model.','']});}
   if(fx.type==='ds10')T(['Delay: TIME sets the echo, L/R RATIO shortens one side.','Chorus: fixed 7 ms line swept by the LFO.','Flanger: fixed short line, cubed LFO sweep, bipolar feedback.'][fx.p.type],W/2,322,B,'center');
-  if(fx.type==='dist')T(['LP CLIP: y = clip(a y + x), a = TONE, hard clip at +-1 inside the feedback loop.','CUBIC: band-pass at TONE, then a cubic soft clipper.','AMP+CAB: 4x oversampled two-stage preamp into a 4x12-style cabinet. TONE = mic position.'][fx.p.mode],W/2,322,B,'center');
+  if(fx.type==='dist')T(['LP CLIP: y = clip(a y + x), a = TONE, hard clip at +-1 inside the feedback loop.','CUBIC: band-pass at TONE, then an 8x oversampled cubic soft clipper.'][fx.p.mode],W/2,322,B,'center');
   if(fx.type==='crush')T('Sample-and-hold at RATE (Hz). AA FILTER low-passes the input first; 0 = raw aliasing.',W/2,322,B,'center');
   if(fx.type==='tape')T('Fixed tape, variable speed: change SPEED with echoes on the tape to bend their pitch.',W/2,322,B,'center');
 }
 const FXHINT={'ds10.time':'Delay time, up to about one second. With SYNC on, the knob picks a note length at the song tempo.','ds10.ratio':'Shortens the right (positive) or left (negative) echo.',
   'ds10.fb':'Feedback. Bipolar for the flanger.','ds10.mix':'DS-10 dry/wet law: 0 is dry, 127 fully wet.','mverb.dev':'Midiverb (1986), Midifex or Midiverb II.','mverb.prog':'Program number, as on the front panel of the unit.',
-  'mverb.fb':'Feeds the output back into the input, as in the VST version.','tape.speed':'Tape speed from 0.10x to 2.00x. Double-click for about 1x.','tape.len':'Tape length: the echo time at 1x speed.','dist.drive':'Input gain, 0 to 40 dB.','dist.tone':'LP CLIP: the feedback a (0 to 1). CUBIC: band-pass centre, 200 Hz to 5 kHz. AMP+CAB: mic position, speaker roll-off 2.5 to 7 kHz.','dist.mode':'LP CLIP: hard clip inside a feedback loop. CUBIC: band-pass into a cubic clipper. AMP+CAB: oversampled preamp and cabinet.','crush.rate':'Target sample rate, 100 Hz to 48 kHz. 127 switches the effect off.','crush.aa':'Anti-alias low-pass at 0.45 x RATE before the hold. 0 = raw (metallic aliasing), 127 = fully filtered.'};
+  'mverb.fb':'Feeds the output back into the input, as in the VST version.','tape.speed':'Tape speed from 0.10x to 2.00x. Double-click for about 1x.','tape.len':'Tape length: the echo time at 1x speed.','dist.drive':'Input gain, 0 to 40 dB.','dist.tone':'LP CLIP: the feedback a (0 to 1). CUBIC: band-pass centre, 200 Hz to 5 kHz.','dist.mode':'LP CLIP: hard clip inside a feedback loop. CUBIC: band-pass into an 8x oversampled cubic clipper.','crush.rate':'Target sample rate, 100 Hz to 48 kHz. 127 switches the effect off.','crush.aa':'Anti-alias low-pass at 0.45 x RATE before the hold. 0 = raw (metallic aliasing), 127 = fully filtered.'};
 
 /* ---------- transport bar ---------- */
 function icon(k,x,y,c){

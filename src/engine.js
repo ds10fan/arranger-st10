@@ -915,49 +915,32 @@ class FxTape {
   }
 }
 
-/* Distortion, three modes (DRIVE = 0..40 dB input gain, LEVEL = output gain, TONE depends on the mode):
+/* Distortion, two modes (DRIVE = 0..40 dB input gain, LEVEL = output gain, TONE depends on the mode):
    0 LP CLIP  y[n+1] = clip(a y[n] + x[n]), hard clip at +-1, a = TONE/127
-   1 CUBIC    band-pass (200 Hz..5 kHz at TONE, Q 0.7) into a cubic soft clipper 1.5(x - x^3/3), 10 Hz DC block
-   2 AMP+CAB  4x oversampled two-stage tube-style preamp, then a 4x12-style cabinet response
-              (TONE = mic position: speaker roll-off from 2.5 kHz off-axis to 7 kHz on-axis) */
-const OS = 4;
-const DIST_TRIM = [1, 1.2, 0.8];       // rough loudness match between the modes
+   1 CUBIC    band-pass (200 Hz..5 kHz at TONE, Q 0.7), then 8x oversampled: gain, cubic soft clipper
+              1.5(x - x^3/3) (hard limit at +-1); 10 Hz DC block after decimation */
+const OS = 8;
+const DIST_TRIM = [1, 1.2];       // rough loudness match between the modes
 class DistCh {
   constructor() {
     this.y = 0; this.bp = new Biquad(); this.dc = 0; this.dcA = 1 - Math.exp(-2 * Math.PI * 10 / SR);
-    // AMP+CAB: oversampling filters, preamp filters at OS*SR, cabinet at SR
-    const fo = Math.min(12000, 0.4 * SR);
+    const fo = Math.min(18000, 0.35 * SR);    // image / anti-alias filters at OS*SR
     this.up = new LP8(fo, SR * OS); this.dn = new LP8(fo, SR * OS);
-    this.tight = new Biquad(); this.tight.hp(SR * OS, 120, 0.7);   // trims the lows before the preamp
-    this.cpl = 0; this.cplA = 1 - Math.exp(-2 * Math.PI * 25 / (SR * OS));  // coupling-cap DC block between stages
-    this.cab = [new Biquad(), new Biquad(), new Biquad(), new Biquad(), new Biquad()];
-    this.cab[0].hp(SR, 85, 1.3);           // closed-back low-end resonance, nothing below
-    this.cab[1].peak(SR, 450, 1.0, -4);    // boxy mids scooped
-    this.cab[2].peak(SR, 2300, 1.6, 4);    // cone presence peak
   }
-  setTone(t) {
-    this.bp.bp(SR, 200 * Math.pow(25, t / 127), 0.7);
-    const fm = 2500 * Math.pow(2.8, t / 127);
-    this.cab[3].lp(SR, fm, 0.6); this.cab[4].lp(SR, fm * 1.15, 1.0);   // ~24 dB/oct speaker roll-off
-  }
-  amp(x, g) {
+  setTone(t) { this.bp.bp(SR, 200 * Math.pow(25, t / 127), 0.7); }
+  cubic(x, g) {
     let o = 0;
     for (let k = 0; k < OS; k++) {
-      let s = this.up.p(k === 0 ? x * OS : 0);           // zero-stuff + image filter
-      s = this.tight.p(s) * g;
-      s = Math.tanh(s + 0.3) - 0.2913;                  // stage 1: biased triode, asymmetric
-      this.cpl += this.cplA * (s - this.cpl); s -= this.cpl;
-      s = Math.tanh(2.5 * s);                            // stage 2
-      const d = this.dn.p(s); if (k === 0) o = d;         // anti-alias filter + decimate
+      let v = this.up.p(k === 0 ? x * OS : 0) * g;     // zero-stuff + image filter
+      if (v > 1) v = 1; else if (v < -1) v = -1;
+      v = 1.5 * (v - v * v * v / 3);
+      const d = this.dn.p(v); if (k === 0) o = d;       // anti-alias filter + decimate
     }
-    for (let i = 0; i < 5; i++) o = this.cab[i].p(o);
-    return o;
+    this.dc += this.dcA * (o - this.dc); return o - this.dc;   // output coupling cap
   }
   proc(x, mode, g, al) {
     if (mode === 0) { const y = al * this.y + x * g; return this.y = y > 1 ? 1 : y < -1 ? -1 : y; }
-    if (mode === 1) { let v = this.bp.p(x) * g; if (v > 1) v = 1; else if (v < -1) v = -1;
-      v = 1.5 * (v - v * v * v / 3); this.dc += this.dcA * (v - this.dc); return v - this.dc; }  // output coupling cap
-    return this.amp(x, g);
+    return this.cubic(this.bp.p(x), g);
   }
 }
 class FxDist {
@@ -968,7 +951,7 @@ class FxDist {
     else if (k === 'tone') { this.al = v / 127; this.cl.setTone(v); this.cr.setTone(v); }
     else if (k === 'level') this.lv0 = (v / 127) * (v / 127) * 1.5;
     else if (k === 'mix') this.m = v / 127;
-    else if (k === 'mode') this.mode = Math.max(0, Math.min(2, v | 0));
+    else if (k === 'mode') this.mode = Math.max(0, Math.min(1, v | 0));
     this.lv = this.lv0 * DIST_TRIM[this.mode];
   }
   proc(l, r) {
