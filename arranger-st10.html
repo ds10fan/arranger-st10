@@ -60,6 +60,7 @@ const clampi = (v, a, b) => v < a ? a : v > b ? b : v;
 
 const MOD_ROUTE = [[4, 2], [2, 2], [1, 2], [3, 2], [0, 2], [4, 0], [4, 2]];
 const NPARAM = 37;
+const ZDF_OCT = 2;              // ZDF voice cutoff relative to the DS-10 mapping (keep in sync with app.html)
 const INIT_K = [0,0,0,0,0,0,1,1,0,0,0,127,0,0,0,0,0,0,0,100,0,127,127,0,50,1,0,0,0,0,0, 0,0,100,64,0,0];
 
 function blep(t, dt) {
@@ -228,10 +229,11 @@ class Voice {
     const sq = fl(res * res / 2147483648);
     const damped = m24(this.praw >> 7, 0x1000000 - m24(sq >> 7, 0x01800000));
     const dT = m24(0x1000000 - damped, 0x1000000 - (coef >> 8));
-    // the DS-10 lets PEAK pull the frequency term up too; this voice takes the frequency as at PEAK 0, so CUTOFF alone sets it
+    // the DS-10 lets PEAK pull the frequency term up too; this voice takes the frequency as at PEAK 0, so CUTOFF alone sets it,
+    // one octave above the DS-10's (CUTOFF 127 is about 10.9 kHz instead of 5.5 kHz)
     const damped0 = m24(T.peak[0] >> 7, 0x1000000 - m24(sq >> 7, 0x01800000));
     const fT = m24((damped0 >> 1) + 0x800000, coef >> 7);
-    let fc = 32768 / Math.PI * Math.asin(Math.min(fT / 16777216, 1));
+    let fc = ZDF_OCT * 32768 / Math.PI * Math.asin(Math.min(fT / 16777216, 1));
     if (fc > SR * 0.45) fc = SR * 0.45; else if (fc < 8) fc = 8;
     const gT = Math.tan(Math.PI * fc / SR), kT = dT / 8388608;
     if (this.gT < 0) { this.gT = gT; this.kT = kT; }
@@ -1222,7 +1224,7 @@ const MANUAL=[
 ['k','PITCH (VCO2)','VCO2 detune, up to four octaves either way.'],
 ['k','SYNC','Hard-syncs VCO2 to VCO1.'],
 ['k','VCA','The amp follows the EG, or a fast GATE contour.'],
-['k','CUTOFF  PEAK','Filter cutoff and resonance. High peak values self-oscillate. In the ZDF voice CUTOFF alone sets the frequency (127 is about 5.5 kHz); on the DS-10, and in the EXACT voice, raising PEAK also raises the cutoff.'],
+['k','CUTOFF  PEAK','Filter cutoff and resonance. High peak values self-oscillate. In the ZDF voice CUTOFF alone sets the frequency, one octave above the DS-10 (64 is about 1.6 kHz, 127 about 10.9 kHz); on the DS-10, and in the EXACT voice, the cutoff is an octave lower (127 is about 5.5 kHz) and raising PEAK also raises it.'],
 ['k','EG INT (VCF)','How far the envelope moves the cutoff.'],
 ['k','TYPE','Lowpass, highpass or bandpass.'],
 ['k','ATTACK … RELEASE','The envelope.'],
@@ -1231,7 +1233,7 @@ const MANUAL=[
 ['k','VOICES','M is mono with legato and portamento. 2 to 8 make the track polyphonic.'],
 ['k','VOLUME','Track volume, the same as the mixer fader.'],
 ['p','Patch panel: MG is the LFO, with its rate (FREQ) and FREE or BPM sync. A BPM-synced MG restarts when play starts. Each of PITCH, VCO1, VCO2, CUTOFF and VCA has a depth knob and a source box. Click the box to choose SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate. VCO2 on a pitch destination gives FM, on CUTOFF filter FM, and on VCA ring modulation.'],
-['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets a higher CUTOFF so the filter sits where it did on the DS-10; the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
+['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets its CUTOFF changed so the filter sits where it did on the DS-10 (usually lower, since the ZDF voice is an octave higher; higher again with PEAK); the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
 ['p','USER patches are kept in this browser (localStorage), not in the song. In USER, + SAVE CURRENT stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. A patch saved from a ZDF voice is not legacy; one saved from a DS-10 EXACT voice is. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
 
 ['h','Drums'],
@@ -2400,7 +2402,7 @@ function drawPatch(T_){
       const bx=cx+(user?104:122),badge=(s,y)=>{clr(bx,y,14,12,same?WH:B);T(s,bx+7,y+6,same?B:WH,'center',13);};
       if(isDr&&leg){badge('D',cy+2);badge('L',cy+14);}else if(isDr)badge('D',cy+8);else if(leg)badge('L',cy+8);
       reg(cx,cy,140,28,{down:()=>loadPreset(T_,user?'USER':g[0],n,k,leg),wheel,hint:[n+(isDr?' (drum)':'')+(leg?' (legacy)':''),'From '+(user?'your user patches':g[0])+'. Loads the synth knobs'+(user?' and the highpass':'')+'; the mixer strip stays. '+(isDr&&!user?'DS-10 drums play at note 60 (C3). ':'')
-        +(leg?'Legacy: made for the DS-10 cutoff mapping'+(conv?(ck!==k[11]?'; loads with CUTOFF '+k[11]+' > '+ck+' so the ZDF voice sounds the same.':'; needs no conversion (PEAK 0).'):'; loads unchanged into this DS-10 EXACT voice.'):''),'']});
+        +(leg?'Legacy: made for the DS-10 cutoff mapping'+(conv?(ck!==k[11]?'; loads with CUTOFF '+k[11]+' > '+ck+' so the ZDF voice sounds the same.':'; needs no conversion.'):'; loads unchanged into this DS-10 EXACT voice.'):''),'']});
       if(user){const xi=user?userPatches.indexOf(tile):-1;box(cx+122,cy+4,14,14,same?WH:WH);T('x',cx+129,cy+10,B,'center',14);
         reg(cx+122,cy+4,14,14,{down:()=>deleteUserPatch(xi),wheel,hint:['Delete user patch','Removes '+n+' from your user patches (asks first).','']});}
     });
@@ -2424,10 +2426,12 @@ function vcfFreq(c,p){
   const sq=Math.floor(res*res/2147483648),damped=m24(VCF.peak[p]>>7,0x1000000-m24(sq>>7,0x01800000));
   return Math.asin(Math.min(m24((damped>>1)+0x800000,coef>>7)/16777216,1));
 }
-// the ZDF CUTOFF that gives the frequency a legacy patch had at CUTOFF c, PEAK p (PEAK sets the same resonance in both)
+// the ZDF CUTOFF that gives the frequency a legacy patch had at CUTOFF c, PEAK p (PEAK sets the same resonance in both).
+// The ZDF voice runs its cutoff ZDF_OCT times (one octave) above the DS-10 mapping (engine.js).
+const ZDF_OCT=2;
 function zdfCutoff(c,p){
-  if(!p)return c;const want=vcfFreq(c,p);let best=c,bd=Infinity;
-  for(let x=c;x<=127;x++){const f=vcfFreq(x,0),d=f>0&&want>0?Math.abs(Math.log(f/want)):Math.abs(f-want);if(d<bd){bd=d;best=x;}}
+  const want=vcfFreq(c,p);let best=c,bd=Infinity;
+  for(let x=0;x<=127;x++){const f=ZDF_OCT*vcfFreq(x,0),d=Math.abs(Math.log(f/want));if(d<bd){bd=d;best=x;}}
   return best;
 }
 function savePatchAs(T_){

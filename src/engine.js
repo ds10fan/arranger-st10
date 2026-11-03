@@ -18,6 +18,7 @@ const clampi = (v, a, b) => v < a ? a : v > b ? b : v;
 
 const MOD_ROUTE = [[4, 2], [2, 2], [1, 2], [3, 2], [0, 2], [4, 0], [4, 2]];
 const NPARAM = 37;
+const ZDF_OCT = 2;              // ZDF voice cutoff relative to the DS-10 mapping (keep in sync with app.html)
 const INIT_K = [0,0,0,0,0,0,1,1,0,0,0,127,0,0,0,0,0,0,0,100,0,127,127,0,50,1,0,0,0,0,0, 0,0,100,64,0,0];
 
 function blep(t, dt) {
@@ -186,10 +187,11 @@ class Voice {
     const sq = fl(res * res / 2147483648);
     const damped = m24(this.praw >> 7, 0x1000000 - m24(sq >> 7, 0x01800000));
     const dT = m24(0x1000000 - damped, 0x1000000 - (coef >> 8));
-    // the DS-10 lets PEAK pull the frequency term up too; this voice takes the frequency as at PEAK 0, so CUTOFF alone sets it
+    // the DS-10 lets PEAK pull the frequency term up too; this voice takes the frequency as at PEAK 0, so CUTOFF alone sets it,
+    // one octave above the DS-10's (CUTOFF 127 is about 10.9 kHz instead of 5.5 kHz)
     const damped0 = m24(T.peak[0] >> 7, 0x1000000 - m24(sq >> 7, 0x01800000));
     const fT = m24((damped0 >> 1) + 0x800000, coef >> 7);
-    let fc = 32768 / Math.PI * Math.asin(Math.min(fT / 16777216, 1));
+    let fc = ZDF_OCT * 32768 / Math.PI * Math.asin(Math.min(fT / 16777216, 1));
     if (fc > SR * 0.45) fc = SR * 0.45; else if (fc < 8) fc = 8;
     const gT = Math.tan(Math.PI * fc / SR), kT = dT / 8388608;
     if (this.gT < 0) { this.gT = gT; this.kT = kT; }

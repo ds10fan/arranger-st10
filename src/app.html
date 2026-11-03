@@ -1145,7 +1145,7 @@ function drawPatch(T_){
       const bx=cx+(user?104:122),badge=(s,y)=>{clr(bx,y,14,12,same?WH:B);T(s,bx+7,y+6,same?B:WH,'center',13);};
       if(isDr&&leg){badge('D',cy+2);badge('L',cy+14);}else if(isDr)badge('D',cy+8);else if(leg)badge('L',cy+8);
       reg(cx,cy,140,28,{down:()=>loadPreset(T_,user?'USER':g[0],n,k,leg),wheel,hint:[n+(isDr?' (drum)':'')+(leg?' (legacy)':''),'From '+(user?'your user patches':g[0])+'. Loads the synth knobs'+(user?' and the highpass':'')+'; the mixer strip stays. '+(isDr&&!user?'DS-10 drums play at note 60 (C3). ':'')
-        +(leg?'Legacy: made for the DS-10 cutoff mapping'+(conv?(ck!==k[11]?'; loads with CUTOFF '+k[11]+' > '+ck+' so the ZDF voice sounds the same.':'; needs no conversion (PEAK 0).'):'; loads unchanged into this DS-10 EXACT voice.'):''),'']});
+        +(leg?'Legacy: made for the DS-10 cutoff mapping'+(conv?(ck!==k[11]?'; loads with CUTOFF '+k[11]+' > '+ck+' so the ZDF voice sounds the same.':'; needs no conversion.'):'; loads unchanged into this DS-10 EXACT voice.'):''),'']});
       if(user){const xi=user?userPatches.indexOf(tile):-1;box(cx+122,cy+4,14,14,same?WH:WH);T('x',cx+129,cy+10,B,'center',14);
         reg(cx+122,cy+4,14,14,{down:()=>deleteUserPatch(xi),wheel,hint:['Delete user patch','Removes '+n+' from your user patches (asks first).','']});}
     });
@@ -1169,10 +1169,12 @@ function vcfFreq(c,p){
   const sq=Math.floor(res*res/2147483648),damped=m24(VCF.peak[p]>>7,0x1000000-m24(sq>>7,0x01800000));
   return Math.asin(Math.min(m24((damped>>1)+0x800000,coef>>7)/16777216,1));
 }
-// the ZDF CUTOFF that gives the frequency a legacy patch had at CUTOFF c, PEAK p (PEAK sets the same resonance in both)
+// the ZDF CUTOFF that gives the frequency a legacy patch had at CUTOFF c, PEAK p (PEAK sets the same resonance in both).
+// The ZDF voice runs its cutoff ZDF_OCT times (one octave) above the DS-10 mapping (engine.js).
+const ZDF_OCT=2;
 function zdfCutoff(c,p){
-  if(!p)return c;const want=vcfFreq(c,p);let best=c,bd=Infinity;
-  for(let x=c;x<=127;x++){const f=vcfFreq(x,0),d=f>0&&want>0?Math.abs(Math.log(f/want)):Math.abs(f-want);if(d<bd){bd=d;best=x;}}
+  const want=vcfFreq(c,p);let best=c,bd=Infinity;
+  for(let x=0;x<=127;x++){const f=ZDF_OCT*vcfFreq(x,0),d=Math.abs(Math.log(f/want));if(d<bd){bd=d;best=x;}}
   return best;
 }
 function savePatchAs(T_){
