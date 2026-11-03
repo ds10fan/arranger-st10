@@ -20,6 +20,10 @@ on first run, gitignored – replace them to use your own certificate):
 
     python3 serve.py [port]
 
+Publish to GitHub Pages (https://ds10fan.github.io/arranger-st10/) after building:
+
+    tools/publish_pages.sh
+
 ## Layout
 
 - `src/app.html` – page, UI (canvas-drawn 640x400 GEM screen), sequencer, mixer model, saving.
