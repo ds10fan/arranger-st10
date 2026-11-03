@@ -919,8 +919,31 @@ class FxDist {
   }
 }
 
-const FXC = { ds10: FxDS10, mverb: FxMverb, tape: FxTape, dist: FxDist };
-const FXKEYS = { ds10: ['type', 'time', 'ratio', 'lfo', 'depth', 'sync', 'fb', 'mix'], mverb: ['dev', 'prog', 'fb', 'mix'], tape: ['speed', 'fb', 'len', 'mix'], dist: ['drive', 'tone', 'level', 'mix'] };
+// sample-rate reducer: fractional-phase sample-and-hold at RATE (100 Hz .. 48 kHz, 127 = off),
+// optional 2-pole low-pass at 0.45 RATE before the hold (AA crossfades raw/filtered input)
+const crushHz = v => 100 * Math.pow(480, v / 127);
+class FxCrush {
+  constructor() { this.fl = new Biquad(); this.fr = new Biquad(); this.ph = 0; this.hl = 0; this.hr = 0; this.l = 0; this.r = 0;
+    this.set('rate', 64); this.set('aa', 0); this.set('mix', 127); }
+  set(k, v) {
+    if (k === 'rate') { this.off = v >= 127; const R = crushHz(v); this.step = Math.min(R / SR, 1);
+      const fc = Math.min(0.45 * R, 0.45 * SR); this.fl.lp(SR, fc, Math.SQRT1_2); this.fr.b0 = this.fl.b0; this.fr.b1 = this.fl.b1;
+      this.fr.b2 = this.fl.b2; this.fr.a1 = this.fl.a1; this.fr.a2 = this.fl.a2; }
+    else if (k === 'aa') this.aa = v / 127;
+    else if (k === 'mix') this.m = v / 127;
+  }
+  proc(l, r) {
+    if (this.off) { this.l = l; this.r = r; return; }
+    // the filters run every sample so they stay settled between grabs
+    const al = l + this.aa * (this.fl.p(l) - l), ar = r + this.aa * (this.fr.p(r) - r);
+    this.ph += this.step;
+    if (this.ph >= 1) { this.ph -= 1; this.hl = al; this.hr = ar; }
+    this.l = l + this.m * (this.hl - l); this.r = r + this.m * (this.hr - r);
+  }
+}
+
+const FXC = { ds10: FxDS10, mverb: FxMverb, tape: FxTape, dist: FxDist, crush: FxCrush };
+const FXKEYS = { ds10: ['type', 'time', 'ratio', 'lfo', 'depth', 'sync', 'fb', 'mix'], mverb: ['dev', 'prog', 'fb', 'mix'], tape: ['speed', 'fb', 'len', 'mix'], dist: ['drive', 'tone', 'level', 'mix'], crush: ['rate', 'aa', 'mix'] };
 function mkFx(d) {
   if (!d || !FXC[d.type]) return null;
   const fx = new FXC[d.type](); fx.type_ = d.type; fx.on = d.on !== false;

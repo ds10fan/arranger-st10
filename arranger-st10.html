@@ -961,8 +961,31 @@ class FxDist {
   }
 }
 
-const FXC = { ds10: FxDS10, mverb: FxMverb, tape: FxTape, dist: FxDist };
-const FXKEYS = { ds10: ['type', 'time', 'ratio', 'lfo', 'depth', 'sync', 'fb', 'mix'], mverb: ['dev', 'prog', 'fb', 'mix'], tape: ['speed', 'fb', 'len', 'mix'], dist: ['drive', 'tone', 'level', 'mix'] };
+// sample-rate reducer: fractional-phase sample-and-hold at RATE (100 Hz .. 48 kHz, 127 = off),
+// optional 2-pole low-pass at 0.45 RATE before the hold (AA crossfades raw/filtered input)
+const crushHz = v => 100 * Math.pow(480, v / 127);
+class FxCrush {
+  constructor() { this.fl = new Biquad(); this.fr = new Biquad(); this.ph = 0; this.hl = 0; this.hr = 0; this.l = 0; this.r = 0;
+    this.set('rate', 64); this.set('aa', 0); this.set('mix', 127); }
+  set(k, v) {
+    if (k === 'rate') { this.off = v >= 127; const R = crushHz(v); this.step = Math.min(R / SR, 1);
+      const fc = Math.min(0.45 * R, 0.45 * SR); this.fl.lp(SR, fc, Math.SQRT1_2); this.fr.b0 = this.fl.b0; this.fr.b1 = this.fl.b1;
+      this.fr.b2 = this.fl.b2; this.fr.a1 = this.fl.a1; this.fr.a2 = this.fl.a2; }
+    else if (k === 'aa') this.aa = v / 127;
+    else if (k === 'mix') this.m = v / 127;
+  }
+  proc(l, r) {
+    if (this.off) { this.l = l; this.r = r; return; }
+    // the filters run every sample so they stay settled between grabs
+    const al = l + this.aa * (this.fl.p(l) - l), ar = r + this.aa * (this.fr.p(r) - r);
+    this.ph += this.step;
+    if (this.ph >= 1) { this.ph -= 1; this.hl = al; this.hr = ar; }
+    this.l = l + this.m * (this.hl - l); this.r = r + this.m * (this.hr - r);
+  }
+}
+
+const FXC = { ds10: FxDS10, mverb: FxMverb, tape: FxTape, dist: FxDist, crush: FxCrush };
+const FXKEYS = { ds10: ['type', 'time', 'ratio', 'lfo', 'depth', 'sync', 'fb', 'mix'], mverb: ['dev', 'prog', 'fb', 'mix'], tape: ['speed', 'fb', 'len', 'mix'], dist: ['drive', 'tone', 'level', 'mix'], crush: ['rate', 'aa', 'mix'] };
 function mkFx(d) {
   if (!d || !FXC[d.type]) return null;
   const fx = new FXC[d.type](); fx.type_ = d.type; fx.on = d.on !== false;
@@ -1250,7 +1273,7 @@ const MANUAL=[
 ['h','Mixer window'],
 ['p','Signal flow of a track: voices > highpass > pan > insert 1 > insert 2 > fader > mute and solo. From there it goes to the master and, post-fader, through SEND A and SEND B to the two buses. Each bus runs its two inserts, then its RETURN level, into the master. The master runs its two inserts, its volume and the optional DS-10 shaper.'],
 ['k','Track name','Click to make the track active.'],
-['k','Insert slots','Click a slot to put DS-10 FX, Midiverb, Tape Delay or Distortion in it. The same menu bypasses, removes or edits the effect. Bypassed effects are drawn struck through.'],
+['k','Insert slots','Click a slot to put DS-10 FX, Midiverb, Tape Delay, Distortion or Rate Crush in it. The same menu bypasses, removes or edits the effect. Bypassed effects are drawn struck through.'],
 ['k','SEND A  SEND B  PAN','Post-fader sends and the DS-10 linear pan. Double-click resets.'],
 ['k','Fader','Drag; double-click for 100. A meter runs beside it.'],
 ['k','SHAPER','The DS-10 master stage: about 2x gain that saturates smoothly near full scale.'],
@@ -1262,6 +1285,7 @@ const MANUAL=[
 ['k','MIDIVERB','The Alesis Midiverb, Midifex and Midiverb II programs, run at 24 kHz as on the hardware. MODEL picks the unit and PROGRAM the program (the name is shown below). FEEDBACK returns the output to the input.'],
 ['k','TAPE DELAY','A fixed tape length with variable speed. SPEED runs from 0.10x to 2.00x, and TAPE sets the length (the echo time at 1x). Changing the speed while echoes are on the tape bends their pitch.'],
 ['k','DISTORTION','DRIVE (up to 40 dB) into a soft clipper, then TONE (low-pass) and LEVEL.'],
+['k','RATE CRUSH','Sample-rate reduction (no bit reduction). The input is sampled and held at RATE, from 100 Hz (0) to 48 kHz; 127 switches it off. The rate glides smoothly, so it can be swept from the KAOSS pad. AA FILTER blends in a low-pass at 0.45 x RATE before the hold: 0 gives raw, metallic aliasing, 127 a dull old-sampler sound.'],
 
 ['h','KAOSS pad and automation'],
 ['p','The pad moves two knobs of the active track at once: X left to right and Y bottom to top. Click a target\'s name to choose from every knob on one page: the synth columns, the patch depths and sources, the track strip and the knobs of both insert effects. The arrows and the scroll wheel step through them one by one. Any synth knob, the highpass, volume, pan, the sends and the knobs of the track\'s insert effects can be a target. Releasing the pad returns the knobs to their patch values.'],
@@ -1346,8 +1370,10 @@ const FXDEF={
   ds10:{name:'DS-10 FX',short:'D10',p:[['type','TYPE',0,2,0,['DELAY','CHORUS','FLANGER']],['time','TIME',0,127,64],['ratio','L/R RATIO',-63,63,0],['lfo','LFO RATE',0,127,64],['depth','DEPTH',0,127,64],['sync','SYNC',0,1,0,['FREE','BPM']],['fb','FEEDBACK',-63,63,0],['mix','DRY/WET',0,127,64]]},
   mverb:{name:'MIDIVERB',short:'MVB',p:[['dev','MODEL',0,2,2,['MV I','FEX','MV II']],['prog','PROGRAM',0,99,15],['fb','FEEDBACK',0,127,0],['mix','DRY/WET',0,127,64]]},
   tape:{name:'TAPE DELAY',short:'TAP',p:[['speed','SPEED',0,127,60],['fb','FEEDBACK',0,127,89],['len','TAPE',0,3,2,['30 MS','100 MS','300 MS','1 SEC']],['mix','DRY/WET',0,127,64]]},
-  dist:{name:'DISTORTION',short:'DST',p:[['drive','DRIVE',0,127,64],['tone','TONE',0,127,90],['level','LEVEL',0,127,80],['mix','DRY/WET',0,127,127]]}};
-const FXTYPES=['ds10','mverb','tape','dist'];
+  dist:{name:'DISTORTION',short:'DST',p:[['drive','DRIVE',0,127,64],['tone','TONE',0,127,90],['level','LEVEL',0,127,80],['mix','DRY/WET',0,127,127]]},
+  crush:{name:'RATE CRUSH',short:'SRR',p:[['rate','RATE',0,127,64],['aa','AA FILTER',0,127,0],['mix','DRY/WET',0,127,127]]}};
+const crushHz=v=>v>=127?'OFF':(h=>h>=1000?(h/1000).toFixed(h>=10000?1:2)+'k':String(Math.round(h)))(100*Math.pow(480,v/127));
+const FXTYPES=['ds10','mverb','tape','dist','crush'];
 function mkFx(type,over){const d=FXDEF[type],p={};d.p.forEach(x=>p[x[0]]=x[4]);return {type,on:true,p:Object.assign(p,over||{})};}
 // a new effect for slot w: on a send bus it starts fully wet, because the dry signal already reaches the master
 function newFx(w,type){return mkFx(type,w.s==='b'?{mix:127}:null);}
@@ -2048,7 +2074,7 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
   {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON},{l:'-'},{l:'Rename Song…',a:renameSong}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
   {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',a:locToPart}]},
@@ -2528,7 +2554,7 @@ function drawFx(){
   reg(4,40,16,14,{down:()=>{S.fxSel=all[((w.s==='d'?slot:idx)-1+all.length)%all.length];dirty=true;},hint:['Previous slot','','']});
   reg(22,40,16,14,{down:()=>{S.fxSel=all[((w.s==='d'?slot:idx)+1)%all.length];dirty=true;},hint:['Next slot','','']});
   T(slotLabel(w,slot),44,47);
-  FXTYPES.forEach((t,i)=>{const x=W-4-(4-i)*56,on=fx&&fx.type===t;box(x,40,54,14,on?B:WH);T(FXDEF[t].short,x+27,47,on?WH:B,'center');
+  FXTYPES.forEach((t,i)=>{const x=W-4-(FXTYPES.length-i)*56,on=fx&&fx.type===t;box(x,40,54,14,on?B:WH);T(FXDEF[t].short,x+27,47,on?WH:B,'center');
     reg(x,40,54,14,{down:()=>{if(!on)setFx(w,slot,newFx(w,t));},hint:[FXDEF[t].name,'Puts a '+FXDEF[t].name.toLowerCase()+' in this slot with default settings.','']});});
   if(!fx){T('This slot is empty.',W/2,150,B,'center',20);T('Pick an effect type above.',W/2,176,B,'center');return;}
   const d=FXDEF[fx.type];
@@ -2546,16 +2572,17 @@ function drawFx(){
     const max=k==='prog'?progMax(fx):max0,v=clamp(w.s==='t'?S.tracks[w.i].lv[fxId(slot,k,fx)]:fx.p[k],min,max);
     const hint=[d.name+' '+n,FXHINT[fx.type+'.'+k]||'Drag, scroll, double-click to reset.',''];
     if(opts)switchCell(x,y,cellW,n,v,opts,nv=>setFxP(w,slot,k,nv),hint);
-    else knobCell(x,y,cw-16,n,v,min,max,def,nv=>setFxP(w,slot,k,nv),hint,k==='prog'?String(fx.p.dev===2?v:v+1):fx.type==='tape'&&k==='speed'?(0.1+1.9*v/127).toFixed(2)+'x':(min<0&&v>0?'+'+v:String(v)),{big:true});
+    else knobCell(x,y,cw-16,n,v,min,max,def,nv=>setFxP(w,slot,k,nv),hint,k==='prog'?String(fx.p.dev===2?v:v+1):fx.type==='tape'&&k==='speed'?(0.1+1.9*v/127).toFixed(2)+'x':fx.type==='crush'&&k==='rate'?crushHz(v):(min<0&&v>0?'+'+v:String(v)),{big:true});
   });
   if(fx.type==='mverb'){box(8,250,W-16,40);T(progName(fx),W/2,270,B,'center',24);
     reg(8,250,W-16,40,{wheel:d=>setFxP(w,slot,'prog',clamp(fx.p.prog-d,0,progMax(fx))),hint:['Program','Scroll to step through the programs of this model.','']});}
   if(fx.type==='ds10')T(['Delay: TIME sets the echo, L/R RATIO shortens one side.','Chorus: fixed 7 ms line swept by the LFO.','Flanger: fixed short line, cubed LFO sweep, bipolar feedback.'][fx.p.type],W/2,322,B,'center');
+  if(fx.type==='crush')T('Sample-and-hold at RATE (Hz). AA FILTER low-passes the input first; 0 = raw aliasing.',W/2,322,B,'center');
   if(fx.type==='tape')T('Fixed tape, variable speed: change SPEED with echoes on the tape to bend their pitch.',W/2,322,B,'center');
 }
 const FXHINT={'ds10.time':'Delay time, up to about one second. With SYNC on, the knob picks a note length at the song tempo.','ds10.ratio':'Shortens the right (positive) or left (negative) echo.',
   'ds10.fb':'Feedback. Bipolar for the flanger.','ds10.mix':'DS-10 dry/wet law: 0 is dry, 127 fully wet.','mverb.dev':'Midiverb (1986), Midifex or Midiverb II.','mverb.prog':'Program number, as on the front panel of the unit.',
-  'mverb.fb':'Feeds the output back into the input, as in the VST version.','tape.speed':'Tape speed from 0.10x to 2.00x. Double-click for about 1x.','tape.len':'Tape length: the echo time at 1x speed.','dist.drive':'Gain into the soft clipper, up to 40 dB.','dist.tone':'Low-pass after the clipper.'};
+  'mverb.fb':'Feeds the output back into the input, as in the VST version.','tape.speed':'Tape speed from 0.10x to 2.00x. Double-click for about 1x.','tape.len':'Tape length: the echo time at 1x speed.','dist.drive':'Gain into the soft clipper, up to 40 dB.','dist.tone':'Low-pass after the clipper.','crush.rate':'Target sample rate, 100 Hz to 48 kHz. 127 switches the effect off.','crush.aa':'Anti-alias low-pass at 0.45 x RATE before the hold. 0 = raw (metallic aliasing), 127 = fully filtered.'};
 
 /* ---------- transport bar ---------- */
 function icon(k,x,y,c){

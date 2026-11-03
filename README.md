@@ -2,7 +2,7 @@
 
 A 1-bit, Atari-ST-style arrange sequencer in the browser. Eight tracks, each a DS-10 style
 synth or a DS-10 style drum kit, a mixer (2 inserts per strip, 2 send buses, master),
-DS-10 FX / Midiverb / tape delay / distortion, and KAOSS-pad automation.
+DS-10 FX / Midiverb / tape delay / distortion / rate crush, and KAOSS-pad automation.
 
 **Run it:** https://ds10fan.github.io/arranger-st10/
 

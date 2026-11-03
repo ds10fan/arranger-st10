@@ -2,7 +2,7 @@
 
 A 1-bit, Atari-ST-style arrange sequencer with eight tracks (DS-10 style synths or DS-10 style drum kits
 of rendered samples), a mixer
-(2 inserts per strip, 2 send buses, master), DS-10 FX / Midiverb / tape delay / distortion,
+(2 inserts per strip, 2 send buses, master), DS-10 FX / Midiverb / tape delay / distortion / rate crush,
 and KAOSS-pad automation.
 
 ## Shipping form

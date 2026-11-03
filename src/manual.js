@@ -124,7 +124,7 @@ const MANUAL=[
 ['h','Mixer window'],
 ['p','Signal flow of a track: voices > highpass > pan > insert 1 > insert 2 > fader > mute and solo. From there it goes to the master and, post-fader, through SEND A and SEND B to the two buses. Each bus runs its two inserts, then its RETURN level, into the master. The master runs its two inserts, its volume and the optional DS-10 shaper.'],
 ['k','Track name','Click to make the track active.'],
-['k','Insert slots','Click a slot to put DS-10 FX, Midiverb, Tape Delay or Distortion in it. The same menu bypasses, removes or edits the effect. Bypassed effects are drawn struck through.'],
+['k','Insert slots','Click a slot to put DS-10 FX, Midiverb, Tape Delay, Distortion or Rate Crush in it. The same menu bypasses, removes or edits the effect. Bypassed effects are drawn struck through.'],
 ['k','SEND A  SEND B  PAN','Post-fader sends and the DS-10 linear pan. Double-click resets.'],
 ['k','Fader','Drag; double-click for 100. A meter runs beside it.'],
 ['k','SHAPER','The DS-10 master stage: about 2x gain that saturates smoothly near full scale.'],
@@ -136,6 +136,7 @@ const MANUAL=[
 ['k','MIDIVERB','The Alesis Midiverb, Midifex and Midiverb II programs, run at 24 kHz as on the hardware. MODEL picks the unit and PROGRAM the program (the name is shown below). FEEDBACK returns the output to the input.'],
 ['k','TAPE DELAY','A fixed tape length with variable speed. SPEED runs from 0.10x to 2.00x, and TAPE sets the length (the echo time at 1x). Changing the speed while echoes are on the tape bends their pitch.'],
 ['k','DISTORTION','DRIVE (up to 40 dB) into a soft clipper, then TONE (low-pass) and LEVEL.'],
+['k','RATE CRUSH','Sample-rate reduction (no bit reduction). The input is sampled and held at RATE, from 100 Hz (0) to 48 kHz; 127 switches it off. The rate glides smoothly, so it can be swept from the KAOSS pad. AA FILTER blends in a low-pass at 0.45 x RATE before the hold: 0 gives raw, metallic aliasing, 127 a dull old-sampler sound.'],
 
 ['h','KAOSS pad and automation'],
 ['p','The pad moves two knobs of the active track at once: X left to right and Y bottom to top. Click a target\'s name to choose from every knob on one page: the synth columns, the patch depths and sources, the track strip and the knobs of both insert effects. The arrows and the scroll wheel step through them one by one. Any synth knob, the highpass, volume, pan, the sends and the knobs of the track\'s insert effects can be a target. Releasing the pad returns the knobs to their patch values.'],
