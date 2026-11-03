@@ -1684,7 +1684,8 @@ function chase(tick){
 function startPlay(){
   ensureAudio().then(()=>{
     if(!ac||!ready)return;
-    S.playing=true;schedTick=S.pos;schedTime=ac.currentTime+0.06;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
+    // every start is a new pass: notes recorded on an earlier pass (tagged fresh) must sound again
+    S.playing=true;passN++;schedTick=S.pos;schedTime=ac.currentTime+0.06;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
     for(const k in lastAuto)delete lastAuto[k];chase(S.pos);
     post({t:'ev',ev:[{time:schedTime-0.005,k:'play'}]});
     clearInterval(timer);timer=setInterval(sched,25);sched();dirty=true;
@@ -1692,7 +1693,7 @@ function startPlay(){
 }
 function relocate(t){
   S.pos=clamp(t,0,NBARS*BAR);
-  if(S.playing){clearInterval(timer);post({t:'ev',ev:[{time:0,k:'alloff'}]});schedTick=S.pos;schedTime=ac.currentTime+0.04;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
+  if(S.playing){clearInterval(timer);post({t:'ev',ev:[{time:0,k:'alloff'}]});passN++;schedTick=S.pos;schedTime=ac.currentTime+0.04;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
     for(const k in lastAuto)delete lastAuto[k];chase(S.pos);timer=setInterval(sched,25);}
   dirty=true;
 }
