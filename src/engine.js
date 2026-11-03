@@ -1,4 +1,4 @@
-// Arranger ST audio engine. Runs in the AudioWorkletGlobalScope; `T` (DS-10 ROM
+// Arranger ST10 audio engine. Runs in the AudioWorkletGlobalScope; `T` (DS-10 ROM
 // tables) and `MV_DEV` (Midiverb programs) are prepended at build time.
 //
 // The DS-10 voice is a port of ds10emu's reimplementation: control-rate logic
@@ -1053,7 +1053,7 @@ class Engine {
 }
 
 if (typeof registerProcessor !== 'undefined') {
-  registerProcessor('arranger-st', class extends AudioWorkletProcessor {
+  registerProcessor('arranger-st10', class extends AudioWorkletProcessor {
     constructor() {
       super();
       this.e = new Engine();

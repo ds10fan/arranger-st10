@@ -1,4 +1,4 @@
-# Arranger ST
+# Arranger ST10
 
 A 1-bit, Atari-ST-style arrange sequencer with eight tracks (DS-10 style synths or DS-10 style drum kits
 of rendered samples), a mixer
@@ -7,7 +7,7 @@ and KAOSS-pad automation.
 
 ## Shipping form
 
-The app is distributed as ONE self-contained file: `arranger-st.html` in this folder (also copied to `/home/user/arranger-st.html` for publishing).
+The app is distributed as ONE self-contained file: `arranger-st10.html` in this folder (also copied to `/home/user/arranger-st10.html` for publishing).
 Never split it into several files or add runtime fetches; everything (engine, tables,
 Midiverb programs, patch library, manual) is inlined by the build.
 

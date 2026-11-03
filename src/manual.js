@@ -1,10 +1,10 @@
-// Arranger ST manual, shown in the Manual window (Desk > Manual, F9).
+// Arranger ST10 manual, shown in the Manual window (Desk > Manual, F9).
 // Entries: ['h', heading] starts a section and appears in the contents,
 // ['p', text] is a paragraph, ['b', text] a bullet, ['k', key, text] a two-column row.
 // Keep this in step with the app: every user-visible function belongs here.
 const MANUAL=[
 ['h','Overview'],
-['p','Arranger ST is an arrange-window sequencer in the style of the Atari ST era. It has eight tracks, and each track plays a DS-10 style synth voice. Each track also has a mixer strip with two insert effects and two sends. The KAOSS pad and the knobs can record automation. Everything you do is saved in this browser as you work.'],
+['p','Arranger ST10 is an arrange-window sequencer in the style of the Atari ST era. It has eight tracks, and each track plays a DS-10 style synth voice. Each track also has a mixer strip with two insert effects and two sends. The KAOSS pad and the knobs can record automation. Everything you do is saved in this browser as you work.'],
 ['p','Click once anywhere to start the audio engine. Press Space to play the song. The letter keys play notes on the active track.'],
 
 ['h','Screen and windows'],

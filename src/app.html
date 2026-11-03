@@ -1,4 +1,4 @@
-<title>Arranger ST</title>
+<title>Arranger ST10</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +33,7 @@ body{font-family:var(--f-screen);margin:0;overflow:hidden}
 
 <div class="app">
   <canvas id="screen" width="640" height="400"></canvas>
-  <div class="status" id="status"><b id="hintT">ARRANGER ST</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="saveLbl"></em></div>
+  <div class="status" id="status"><b id="hintT">ARRANGER ST10</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="saveLbl"></em></div>
   <div class="kb" id="kb"></div>
   <input type="file" id="fileIn" accept=".json,application/json" hidden>
 </div>
@@ -203,7 +203,7 @@ function songObj(){
 }
 function cleanAuto(a){const o={};if(a&&typeof a==='object')for(const k in a){const id=+k,ln=a[k];if(id>=0&&id<NA&&ln&&Array.isArray(ln.pts))o[id]={m:ln.m==='h'?'h':'s',pts:ln.pts.filter(x=>x&&isFinite(x.t)&&isFinite(x.v)).map(x=>({t:x.t|0,v:id<NP?clamp(Math.round(x.v),P[id][2],P[id][3]):Math.round(x.v)})).sort((a,b)=>a.t-b.t)};}return o;}
 function loadSong(o){
-  if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST song');
+  if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST10 song');
   const fx=f=>f&&FXDEF[f.type]?{type:f.type,on:f.on!==false,p:Object.assign(mkFx(f.type).p,f.p||{})}:null;
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
     (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);tr.exact=!!t.exact;
@@ -253,7 +253,7 @@ function openJSON(){const f=$('#fileIn');f.value='';f.click();}
 $('#fileIn').addEventListener('change',e=>{
   const file=e.target.files[0];if(!file)return;
   file.text().then(t=>{snapshot();loadSong(JSON.parse(t));songChanged();flashMsg('Loaded '+file.name);})
-    .catch(err=>dialog(['That file is not an','Arranger ST song.',String(err.message||'').slice(0,34)]));
+    .catch(err=>dialog(['That file is not an','Arranger ST10 song.',String(err.message||'').slice(0,34)]));
 });
 
 /* ---------- audio engine bridge ---------- */
@@ -267,7 +267,7 @@ function ensureAudio(){
       // blob: works on https pages; a page opened from disk (file://) needs a data: URL
       try{await ac.audioWorklet.addModule(URL.createObjectURL(new Blob([src],{type:'application/javascript'})));}
       catch(e){await ac.audioWorklet.addModule('data:application/javascript;base64,'+btoa(unescape(encodeURIComponent(src))));}
-      node=new AudioWorkletNode(ac,'arranger-st',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
+      node=new AudioWorkletNode(ac,'arranger-st10',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});
       node.connect(ac.destination);node.port.onmessage=e=>onEngine(e.data);
       ready=true;sendCfg();
     }catch(err){dialog(['The audio engine could not start.','This browser needs AudioWorklet','support (Chrome, Firefox, Safari).']);}
@@ -791,7 +791,7 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST…',a:()=>dialog(['ARRANGER ST','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX and distortion.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
   {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON},{l:'-'},{l:'Rename Song…',a:renameSong}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
   {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',a:locToPart}]},
@@ -1704,7 +1704,7 @@ function drawManual(){
 /* ---------- status line ---------- */
 const hT=$('#hintT'),hD=$('#hintD'),hK=$('#hintK');
 let lastHint='',msgUntil=0;
-function showHint(t,d,k){if(performance.now()<msgUntil)return;const key=t+d+k;if(key===lastHint)return;lastHint=key;hT.textContent=t||'ARRANGER ST';hD.textContent=d;hK.textContent=k||'';hK.hidden=!k;}
+function showHint(t,d,k){if(performance.now()<msgUntil)return;const key=t+d+k;if(key===lastHint)return;lastHint=key;hT.textContent=t||'ARRANGER ST10';hD.textContent=d;hK.textContent=k||'';hK.hidden=!k;}
 function flashMsg(s){msgUntil=performance.now()+2400;lastHint='';hT.textContent='NOTE';hD.textContent=s;hK.hidden=true;}
 
 /* ---------- on-screen keyboard ---------- */

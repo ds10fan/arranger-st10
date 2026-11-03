@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve arranger-st.html over HTTPS with a self-signed certificate.
+"""Serve arranger-st10.html over HTTPS with a self-signed certificate.
 
 Usage:
     python3 serve.py [port]        # default port 9988
@@ -43,7 +43,7 @@ def ensure_cert():
             "openssl", "req", "-x509", "-newkey", "rsa:2048",
             "-keyout", KEY, "-out", CERT,
             "-days", "825", "-nodes",
-            "-subj", "/CN=arranger-st",
+            "-subj", "/CN=arranger-st10",
             "-addext", f"subjectAltName={san}",
         ],
         check=True,
@@ -56,10 +56,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def send_head(self):
         # only the single shipping file is served
-        if self.path.split("?")[0] not in ("/", "/index.html", "/arranger-st.html"):
+        if self.path.split("?")[0] not in ("/", "/index.html", "/arranger-st10.html"):
             self.send_error(404)
             return None
-        self.path = "/arranger-st.html"
+        self.path = "/arranger-st10.html"
         return super().send_head()
 
     def guess_type(self, path):
@@ -77,7 +77,7 @@ def main():
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.load_cert_chain(certfile=CERT, keyfile=KEY)
     httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
-    print(f"Serving arranger-st.html on https://localhost:{PORT}/")
+    print(f"Serving arranger-st10.html on https://localhost:{PORT}/")
     for ip in local_ips():
         print(f"  https://{ip}:{PORT}/")
     try:
