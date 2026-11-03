@@ -89,7 +89,7 @@ const FXDEF={
   ds10:{name:'DS-10 FX',short:'D10',p:[['type','TYPE',0,2,0,['DELAY','CHORUS','FLANGER']],['time','TIME',0,127,64],['ratio','L/R RATIO',-63,63,0],['lfo','LFO RATE',0,127,64],['depth','DEPTH',0,127,64],['sync','SYNC',0,1,0,['FREE','BPM']],['fb','FEEDBACK',-63,63,0],['mix','DRY/WET',0,127,64]]},
   mverb:{name:'MIDIVERB',short:'MVB',p:[['dev','MODEL',0,2,2,['MV I','FEX','MV II']],['prog','PROGRAM',0,99,15],['fb','FEEDBACK',0,127,0],['mix','DRY/WET',0,127,64]]},
   tape:{name:'TAPE DELAY',short:'TAP',p:[['speed','SPEED',0,127,60],['fb','FEEDBACK',0,127,89],['len','TAPE',0,3,2,['30 MS','100 MS','300 MS','1 SEC']],['mix','DRY/WET',0,127,64]]},
-  dist:{name:'DISTORTION',short:'DST',p:[['drive','DRIVE',0,127,64],['tone','TONE',0,127,90],['level','LEVEL',0,127,80],['mix','DRY/WET',0,127,127],['mode','MODE',0,2,1,['LP CLIP','CUBIC','AMP+CAB']]]},
+  dist:{name:'DISTORTION',short:'DST',p:[['drive','DRIVE',0,127,64],['tone','TONE',0,127,90],['level','LEVEL',0,127,80],['mix','DRY/WET',0,127,127],['mode','MODE',0,2,1,['LP CLIP','CUBIC','AMP+CAB']],['stages','STAGES',1,8,1]]},
   crush:{name:'RATE CRUSH',short:'SRR',p:[['rate','RATE',0,127,64],['aa','AA FILTER',0,127,0],['mix','DRY/WET',0,127,127]]}};
 const hzTxt=h=>h>=1000?(h/1000).toFixed(h>=10000?1:2)+'k':String(Math.round(h));
 // what TONE means in each distortion mode (the engine uses the same formulas)
@@ -1300,13 +1300,13 @@ function drawFx(){
   if(fx.type==='mverb'){box(8,250,W-16,40);T(progName(fx),W/2,270,B,'center',24);
     reg(8,250,W-16,40,{wheel:d=>setFxP(w,slot,'prog',clamp(fx.p.prog-d,0,progMax(fx))),hint:['Program','Scroll to step through the programs of this model.','']});}
   if(fx.type==='ds10')T(['Delay: TIME sets the echo, L/R RATIO shortens one side.','Chorus: fixed 7 ms line swept by the LFO.','Flanger: fixed short line, cubed LFO sweep, bipolar feedback.'][fx.p.type],W/2,322,B,'center');
-  if(fx.type==='dist')T(['LP CLIP: y = clip(y(1-a) + x a), a = TONE. Hard clip at +-1 inside the low-pass loop.','CUBIC: band-pass at TONE, then a cubic soft clipper.','AMP+CAB: 4x oversampled two-stage preamp into a 4x12-style cabinet. TONE = mic position.'][fx.p.mode],W/2,322,B,'center');
+  if(fx.type==='dist')T(['LP CLIP: y = clip(a y + x), a = TONE, hard clip at +-1. STAGES of them in series.','CUBIC: band-pass at TONE, then a cubic soft clipper.','AMP+CAB: 4x oversampled two-stage preamp into a 4x12-style cabinet. TONE = mic position.'][fx.p.mode],W/2,322,B,'center');
   if(fx.type==='crush')T('Sample-and-hold at RATE (Hz). AA FILTER low-passes the input first; 0 = raw aliasing.',W/2,322,B,'center');
   if(fx.type==='tape')T('Fixed tape, variable speed: change SPEED with echoes on the tape to bend their pitch.',W/2,322,B,'center');
 }
 const FXHINT={'ds10.time':'Delay time, up to about one second. With SYNC on, the knob picks a note length at the song tempo.','ds10.ratio':'Shortens the right (positive) or left (negative) echo.',
   'ds10.fb':'Feedback. Bipolar for the flanger.','ds10.mix':'DS-10 dry/wet law: 0 is dry, 127 fully wet.','mverb.dev':'Midiverb (1986), Midifex or Midiverb II.','mverb.prog':'Program number, as on the front panel of the unit.',
-  'mverb.fb':'Feeds the output back into the input, as in the VST version.','tape.speed':'Tape speed from 0.10x to 2.00x. Double-click for about 1x.','tape.len':'Tape length: the echo time at 1x speed.','dist.drive':'Input gain, 0 to 40 dB.','dist.tone':'LP CLIP: the coefficient a (0 to 1). CUBIC: band-pass centre, 200 Hz to 5 kHz. AMP+CAB: mic position, speaker roll-off 2.5 to 7 kHz.','dist.mode':'LP CLIP: hard clip inside a one-pole low-pass loop. CUBIC: band-pass into a cubic clipper. AMP+CAB: oversampled preamp and cabinet.','crush.rate':'Target sample rate, 100 Hz to 48 kHz. 127 switches the effect off.','crush.aa':'Anti-alias low-pass at 0.45 x RATE before the hold. 0 = raw (metallic aliasing), 127 = fully filtered.'};
+  'mverb.fb':'Feeds the output back into the input, as in the VST version.','tape.speed':'Tape speed from 0.10x to 2.00x. Double-click for about 1x.','tape.len':'Tape length: the echo time at 1x speed.','dist.drive':'Input gain, 0 to 40 dB.','dist.stages':'LP CLIP only: how many clip stages run in series, each feeding the next.','dist.tone':'LP CLIP: the feedback a (0 to 1). CUBIC: band-pass centre, 200 Hz to 5 kHz. AMP+CAB: mic position, speaker roll-off 2.5 to 7 kHz.','dist.mode':'LP CLIP: hard clip inside a feedback loop, 1 to 8 stages. CUBIC: band-pass into a cubic clipper. AMP+CAB: oversampled preamp and cabinet.','crush.rate':'Target sample rate, 100 Hz to 48 kHz. 127 switches the effect off.','crush.aa':'Anti-alias low-pass at 0.45 x RATE before the hold. 0 = raw (metallic aliasing), 127 = fully filtered.'};
 
 /* ---------- transport bar ---------- */
 function icon(k,x,y,c){
