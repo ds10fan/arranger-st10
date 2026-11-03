@@ -1231,8 +1231,8 @@ const MANUAL=[
 ['k','VOICES','M is mono with legato and portamento. 2 to 8 make the track polyphonic.'],
 ['k','VOLUME','Track volume, the same as the mixer fader.'],
 ['p','Patch panel: MG is the LFO, with its rate (FREQ) and FREE or BPM sync. A BPM-synced MG restarts when play starts. Each of PITCH, VCO1, VCO2, CUTOFF and VCA has a depth knob and a source box. Click the box to choose SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate. VCO2 on a pitch destination gives FM, on CUTOFF filter FM, and on VCA ring modulation.'],
-['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
-['p','USER patches are kept in this browser (localStorage), not in the song. In USER, + SAVE CURRENT stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
+['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets a higher CUTOFF so the filter sits where it did on the DS-10; the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
+['p','USER patches are kept in this browser (localStorage), not in the song. In USER, + SAVE CURRENT stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. A patch saved from a ZDF voice is not legacy; one saved from a DS-10 EXACT voice is. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
 
 ['h','Drums'],
 ['p','Any track can be a drum kit instead of a synth: click DRUM at the top right of the Synth window (F3). A kit has 8 drums. Each drum is recorded, like on the DS-10, from its own DS-10 voice, highpass and two effects into a 2-second stereo sample at C3. From then on the track plays samples, so drums cost almost nothing to play back. The song file stores how each drum is made, and the samples are recorded again when a song loads.'],
@@ -2338,7 +2338,7 @@ function drawPatch(T_){
   box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
   T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);reg(42,40,tw('T'+(ti+1)+' '+t.name.toUpperCase())+6,14,{down:()=>renameTrack(ti),hint:['Track name','Click to rename this track.','']});
   }
-  const bx=[[240,'PRESET',()=>{S.presetPick=!S.presetPick;},'Patch library','Browse the DS-10 factory set and 502 patches from the ds10emu song saves.'],[300,'INIT',initPatch,'Init patch','Resets all synth knobs to the DS-10 init patch.'],[352,'COPY',copyPatch,'Copy patch','Copies this track\'s synth knobs.'],[404,'PASTE',pastePatch,'Paste patch','Pastes copied knobs onto this track.']];
+  const bx=[[240,'PRESET',()=>{S.presetPick=!S.presetPick;},'Patch library','Browse the DS-10 factory set and 502 patches from the ds10emu song saves. Legacy patches (L) get their CUTOFF converted when loaded into a ZDF voice.'],[300,'INIT',initPatch,'Init patch','Resets all synth knobs to the DS-10 init patch.'],[352,'COPY',copyPatch,'Copy patch','Copies this track\'s synth knobs.'],[404,'PASTE',pastePatch,'Paste patch','Pastes copied knobs onto this track.']];
   for(const [x,l,f,h1,h2] of bx){const on=l==='PRESET'&&S.presetPick,bw=l==='PRESET'?56:48;box(x,40,bw,14,on?B:WH);T(l,x+bw/2,47,on?WH:B,'center');reg(x,40,bw,14,{down:f,hint:[h1,h2,'']});}
   if(!dr){kindSwitch(ti,W-82);const ex=!!t.exact;box(458,40,94,14,ex?B:WH);T(ex?'DS-10 EXACT':'ZDF VOICE',505,47,ex?WH:B,'center',14);
     reg(458,40,94,14,{down:()=>setExact(ti,!ex),hint:['Voice engine',ex?'EXACT: the ds10emu integer voice (DS-10 oscillators, Chamberlin filter, amp, 32768 Hz, 64-sample frames), resampled to the output rate. Click for the ZDF voice.':'ZDF: polyBLEP oscillators and a zero-delay-feedback filter. Click for the exact DS-10 voice.','']});
@@ -2393,10 +2393,14 @@ function drawPatch(T_){
       const wheel=d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;};
       if(!tile){box(cx,cy,140,28);T('+ SAVE CURRENT',cx+70,cy+14,B,'center');
         reg(cx,cy,140,28,{down:()=>savePatchAs(T_),wheel,hint:['Save patch','Stores the current patch (31 synth knobs and the highpass) as a user patch in this browser. Saving under an existing name asks before replacing it.','']});return;}
-      const [n,isDr,k]=tile;
-      const same=k.every((v,j)=>T_.k[j]===v);box(cx,cy,140,28,same?B:WH);T(n,cx+6,cy+14,same?WH:B,'left',n.length>12?14:16);
-      if(isDr){clr(cx+(user?104:122),cy+4,14,12,same?WH:B);T('D',cx+(user?111:129),cy+10,same?B:WH,'center',13);}
-      reg(cx,cy,140,28,{down:()=>loadPreset(T_,user?'USER':g[0],n,k),wheel,hint:[n+(isDr?' (drum)':''),'From '+(user?'your user patches':g[0])+'. Loads the synth knobs'+(user?' and the highpass':'')+'; the mixer strip stays. '+(isDr&&!user?'DS-10 drums play at note 60 (C3).':''),'']});
+      const [n,isDr,k]=tile,leg=isLegacy(tile,user),conv=leg&&!targetExact(T_);
+      const ck=conv?zdfCutoff(k[11],k[12]):k[11];
+      const same=k.every((v,j)=>T_.k[j]===(j===11?ck:v));box(cx,cy,140,28,same?B:WH);T(n,cx+6,cy+14,same?WH:B,'left',n.length>12?14:16);
+      // badges at the right edge: D (drum patch) above L (legacy); a lone badge is centred
+      const bx=cx+(user?104:122),badge=(s,y)=>{clr(bx,y,14,12,same?WH:B);T(s,bx+7,y+6,same?B:WH,'center',13);};
+      if(isDr&&leg){badge('D',cy+2);badge('L',cy+14);}else if(isDr)badge('D',cy+8);else if(leg)badge('L',cy+8);
+      reg(cx,cy,140,28,{down:()=>loadPreset(T_,user?'USER':g[0],n,k,leg),wheel,hint:[n+(isDr?' (drum)':'')+(leg?' (legacy)':''),'From '+(user?'your user patches':g[0])+'. Loads the synth knobs'+(user?' and the highpass':'')+'; the mixer strip stays. '+(isDr&&!user?'DS-10 drums play at note 60 (C3). ':'')
+        +(leg?'Legacy: made for the DS-10 cutoff mapping'+(conv?(ck!==k[11]?'; loads with CUTOFF '+k[11]+' > '+ck+' so the ZDF voice sounds the same.':'; needs no conversion (PEAK 0).'):'; loads unchanged into this DS-10 EXACT voice.'):''),'']});
       if(user){const xi=user?userPatches.indexOf(tile):-1;box(cx+122,cy+4,14,14,same?WH:WH);T('x',cx+129,cy+10,B,'center',14);
         reg(cx+122,cy+4,14,14,{down:()=>deleteUserPatch(xi),wheel,hint:['Delete user patch','Removes '+n+' from your user patches (asks first).','']});}
     });
@@ -2407,23 +2411,43 @@ const UP_KEY='arranger-st.patches';
 let userPatches=[];try{userPatches=JSON.parse(localStorage.getItem(UP_KEY)||'[]');}catch(e){userPatches=[];}
 function saveUserPatches(){try{localStorage.setItem(UP_KEY,JSON.stringify(userPatches));}catch(e){flashMsg('Could not save: browser storage unavailable');}}
 function libGroups(){return [['USER',userPatches]].concat(LIB);}
+/* Legacy patches were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff: every library patch,
+   user patches saved from a DS-10 EXACT voice, and user patches saved before the ZDF voice stopped doing that
+   (they carry no voice tag). A user patch saved from a ZDF voice is tagged 'zdf' (4th element). */
+const isLegacy=(tile,user)=>!user||tile[3]!=='zdf';
+const targetExact=T_=>T_.dr?!!T_.dr.exact:!!S.tracks[T_.ti].exact;
+// DS-10 VCF frequency term for CUTOFF c and PEAK p without modulation (engine.js Voice.frame, integer math)
+const VCF={"peak":[0,33682843,67099419,100249728,133133769,165751543,198103049,230188287,262007258,293559961,324846397,355866565,386620466,417108099,447329465,477284563,506973394,536395957,565552252,594442280,623066041,651423534,679514759,707339717,734898407,762190830,789216985,815976873,842470493,868697845,894658930,920353748,945782298,970944580,995840595,1020470343,1044833822,1068931035,1092761979,1116326657,1139625066,1162657208,1185423083,1207922690,1230156030,1252123102,1273823906,1295258443,1316426712,1337328714,1357964448,1378333915,1398437114,1418274046,1437844710,1457149107,1476187236,1494959097,1513464691,1531704017,1549677076,1567383868,1584824392,1601998648,1618906637,1635548358,1651923811,1668032997,1683875916,1699452567,1714762951,1729807066,1744584915,1759096496,1773341809,1787320855,1801033633,1814480144,1827660387,1840574363,1853222071,1865603511,1877718684,1889567590,1901150228,1912466598,1923516701,1934300536,1944818104,1955069404,1965054437,1974773202,1984225700,1993411930,2002331893,2010985588,2019373015,2027494175,2035349067,2042937692,2050260050,2057316139,2064105962,2070629516,2076886804,2082877823,2088602575,2094061060,2099253277,2104179226,2108838908,2113232323,2117359469,2121220349,2124814961,2128143305,2131205382,2134001191,2136530732,2138794006,2140791013,2142521752,2143986223,2145184427,2146116364,2146782033,2147181434,2147314568],"coef":[2123409,2249673,2383446,2525173,2675327,2834411,3002953,3181518,3370701,3571133,3783484,4008461,4246816,4499345,4766889,5050343,5350651,5668817,6005901,6363030,6741394,7142257,7566956,8016909,8493616,8998670,9533756,10100658,10701270,11337595,12011756,12726004,13482722,14284435,15133818,16033706,16987100,17997183,19067324,20201093,21402274,22674874,24023137,25451562,26964914,28568239,30266886,32066518,33973138,35993102,38133145,40400400,42802423,45347220,48043269,50899550,53925576,57131422,60527759,64125887,67937774,71976093,76254265,80786500,85587841,90674218,96062489,101770502,107817144,114222403,121007425,128194582,135807536,143871309,152412354,161458630,171039680,181186707,191932661,203312313,215362346,228121434,241630328,255931932,271071389,287096145,304056023,322003276,340992631,361081321,382329090,404798176,428553263,453661388,480191805,508215787,537806354,569037915,601985804,636725685,673332814,711881108,752442002,795083053,839866235,886845874,936066169,987558212,1041336439,1097394403,1155699781,1216188487,1278757771,1343258158,1409484092,1477163139,1545943597,1615380400,1684919210,1753878656,1821430768,1837986209,1854375049,1870579189,1886579739,1902357000,1917890437,1933158656,1948139385,1962809446,1977144736,1991120204,2004709830,2017886601,2030622493,2042888450,2054654367,2065889070,2076560300,2086634699,2096077796,2104853994,2112926564,2120257632,2126808180,2132538042,2137405902,2141369305,2144384658,2146407249,2147391259,1092638790]};
+function vcfFreq(c,p){
+  const m24=(a,b)=>Math.floor(a*b/16777216),coef=VCF.coef[c+23];
+  let res=coef-1367566549;if(res<1)res=0;
+  const sq=Math.floor(res*res/2147483648),damped=m24(VCF.peak[p]>>7,0x1000000-m24(sq>>7,0x01800000));
+  return Math.asin(Math.min(m24((damped>>1)+0x800000,coef>>7)/16777216,1));
+}
+// the ZDF CUTOFF that gives the frequency a legacy patch had at CUTOFF c, PEAK p (PEAK sets the same resonance in both)
+function zdfCutoff(c,p){
+  if(!p)return c;const want=vcfFreq(c,p);let best=c,bd=Infinity;
+  for(let x=c;x<=127;x++){const f=vcfFreq(x,0),d=f>0&&want>0?Math.abs(Math.log(f/want)):Math.abs(f-want);if(d<bd){bd=d;best=x;}}
+  return best;
+}
 function savePatchAs(T_){
   const def=T_.dr?T_.dr.name:S.tracks[T_.ti].name;
   askText('Save patch as',def,12,name=>{name=name.toUpperCase();
     const k=T_.k.slice(0,33),i=userPatches.findIndex(p=>p[0]===name),put=()=>{
-      const e=[name,T_.dr?1:0,k];if(i>=0)userPatches[i]=e;else userPatches.push(e);
+      const e=[name,T_.dr?1:0,k,targetExact(T_)?'ds10':'zdf'];if(i>=0)userPatches[i]=e;else userPatches.push(e);
       saveUserPatches();S.pbSrc=0;S.presetPick=true;flashMsg('Saved patch '+name);dirty=true;};
     if(i>=0)dialog(['A user patch called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:put}]);else put();});
 }
 function deleteUserPatch(i){const n=userPatches[i][0];
   dialog(['Delete the user patch',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{userPatches.splice(i,1);saveUserPatches();S.presetPick=true;flashMsg('Deleted patch '+n);dirty=true;}}]);}
-function loadPreset(T_,src,n,k){
-  const ti=T_.ti,t=S.tracks[ti];
+function loadPreset(T_,src,n,k,legacy){
+  const ti=T_.ti,t=S.tracks[ti];let conv='';
+  if(legacy&&!targetExact(T_)){const c=zdfCutoff(k[11],k[12]);if(c!==k[11]){conv='  (cutoff '+k[11]+' > '+c+')';k=k.slice();k[11]=c;}}
   k.forEach((v,id)=>T_.set(id,v));
   const nn=n.replace(/\s*(S\d P\d+|DR\d)$/,'').trim();
   if(T_.dr){if(nn)T_.dr.name=nn.slice(0,8);}
   else if(nn&&(/^Track \d$/.test(t.name)||t.autoName)){t.name=nn.slice(0,8);t.autoName=true;}
-  S.presetPick=false;flashMsg('Loaded '+src+' '+n+(T_.dr?' into drum '+(T_.d+1):' into T'+(ti+1)));songChanged();dirty=true;
+  S.presetPick=false;flashMsg('Loaded '+src+' '+n+(T_.dr?' into drum '+(T_.d+1):' into T'+(ti+1))+conv);songChanged();dirty=true;
 }
 
 /* ---------- MIXER ---------- */
@@ -3022,7 +3046,7 @@ function frame(){
   if(dirty){dirty=false;render();}
   requestAnimationFrame(frame);
 }
-window.__ast={S,get ac(){return ac},get ready(){return ready},meters};
+window.__ast={S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy};
 (function boot(){
   let ok=false;
   try{const s=localStorage.getItem(LS_KEY);if(s){loadSong(JSON.parse(s));ok=true;}}catch(e){ok=false;}

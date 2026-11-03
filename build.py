@@ -8,7 +8,9 @@ app = src('app.html')
 eng = src('ds10_tables.js') + src('midiverb_fx.js') + src('engine.js')
 assert '</script' not in eng and '</script' not in src('manual.js')
 names = [json.loads(m) for m in re.findall(r'names:(\[.*?\]),fx:', src('midiverb_fx.js'))]
-app = app.replace('@@MANUAL@@', src('manual.js')).replace('@@ENGINE@@', eng).replace('@@MVNAMES@@', json.dumps(names))
+tabs = src('ds10_tables.js'); T, _ = json.JSONDecoder().raw_decode(tabs, tabs.index('{'))
+vcf = json.dumps({'peak': T['peak'], 'coef': T['coef']}, separators=(',', ':'))
+app = app.replace('@@VCF@@', vcf).replace('@@MANUAL@@', src('manual.js')).replace('@@ENGINE@@', eng).replace('@@MVNAMES@@', json.dumps(names))
 assert '@@' not in app
 out = os.path.join(here, 'arranger-st10.html')
 open(out, 'w', encoding='utf-8').write(app)
