@@ -916,7 +916,7 @@ class FxTape {
 }
 
 /* Distortion, three modes (DRIVE = 0..40 dB input gain, LEVEL = output gain, TONE depends on the mode):
-   0 LP CLIP  y[n+1] = clip(a y[n] + x[n]), hard clip at +-1, a = TONE/127; STAGES (1..8) of them in series
+   0 LP CLIP  y[n+1] = clip(a y[n] + x[n]), hard clip at +-1, a = TONE/127
    1 CUBIC    band-pass (200 Hz..5 kHz at TONE, Q 0.7) into a cubic soft clipper 1.5(x - x^3/3), 10 Hz DC block
    2 AMP+CAB  4x oversampled two-stage tube-style preamp, then a 4x12-style cabinet response
               (TONE = mic position: speaker roll-off from 2.5 kHz off-axis to 7 kHz on-axis) */
@@ -924,7 +924,7 @@ const OS = 4;
 const DIST_TRIM = [1, 1.2, 0.8];       // rough loudness match between the modes
 class DistCh {
   constructor() {
-    this.y = new Float64Array(8); this.bp = new Biquad(); this.dc = 0; this.dcA = 1 - Math.exp(-2 * Math.PI * 10 / SR);
+    this.y = 0; this.bp = new Biquad(); this.dc = 0; this.dcA = 1 - Math.exp(-2 * Math.PI * 10 / SR);
     // AMP+CAB: oversampling filters, preamp filters at OS*SR, cabinet at SR
     const fo = Math.min(12000, 0.4 * SR);
     this.up = new LP8(fo, SR * OS); this.dn = new LP8(fo, SR * OS);
@@ -953,17 +953,15 @@ class DistCh {
     for (let i = 0; i < 5; i++) o = this.cab[i].p(o);
     return o;
   }
-  proc(x, mode, g, al, ns) {
-    if (mode === 0) { const Y = this.y; x *= g;
-      for (let i = 0; i < ns; i++) { const y = al * Y[i] + x; x = Y[i] = y > 1 ? 1 : y < -1 ? -1 : y; }
-      return x; }
+  proc(x, mode, g, al) {
+    if (mode === 0) { const y = al * this.y + x * g; return this.y = y > 1 ? 1 : y < -1 ? -1 : y; }
     if (mode === 1) { let v = this.bp.p(x) * g; if (v > 1) v = 1; else if (v < -1) v = -1;
       v = 1.5 * (v - v * v * v / 3); this.dc += this.dcA * (v - this.dc); return v - this.dc; }  // output coupling cap
     return this.amp(x, g);
   }
 }
 class FxDist {
-  constructor() { this.cl = new DistCh(); this.cr = new DistCh(); this.mode = 1; this.ns = 1; this.lv0 = 1; this.l = 0; this.r = 0;
+  constructor() { this.cl = new DistCh(); this.cr = new DistCh(); this.mode = 1; this.lv0 = 1; this.l = 0; this.r = 0;
     this.set('drive', 64); this.set('tone', 90); this.set('level', 80); this.set('mix', 127); }
   set(k, v) {
     if (k === 'drive') this.g = Math.pow(10, (v / 127) * 40 / 20);
@@ -971,11 +969,10 @@ class FxDist {
     else if (k === 'level') this.lv0 = (v / 127) * (v / 127) * 1.5;
     else if (k === 'mix') this.m = v / 127;
     else if (k === 'mode') this.mode = Math.max(0, Math.min(2, v | 0));
-    else if (k === 'stages') this.ns = Math.max(1, Math.min(8, v | 0));
     this.lv = this.lv0 * DIST_TRIM[this.mode];
   }
   proc(l, r) {
-    const wl = this.cl.proc(l, this.mode, this.g, this.al, this.ns), wr = this.cr.proc(r, this.mode, this.g, this.al, this.ns);
+    const wl = this.cl.proc(l, this.mode, this.g, this.al), wr = this.cr.proc(r, this.mode, this.g, this.al);
     this.l = l * (1 - this.m) + wl * this.lv * this.m; this.r = r * (1 - this.m) + wr * this.lv * this.m;
   }
 }
@@ -1004,7 +1001,7 @@ class FxCrush {
 }
 
 const FXC = { ds10: FxDS10, mverb: FxMverb, tape: FxTape, dist: FxDist, crush: FxCrush };
-const FXKEYS = { ds10: ['type', 'time', 'ratio', 'lfo', 'depth', 'sync', 'fb', 'mix'], mverb: ['dev', 'prog', 'fb', 'mix'], tape: ['speed', 'fb', 'len', 'mix'], dist: ['drive', 'tone', 'level', 'mix', 'mode', 'stages'], crush: ['rate', 'aa', 'mix'] };
+const FXKEYS = { ds10: ['type', 'time', 'ratio', 'lfo', 'depth', 'sync', 'fb', 'mix'], mverb: ['dev', 'prog', 'fb', 'mix'], tape: ['speed', 'fb', 'len', 'mix'], dist: ['drive', 'tone', 'level', 'mix', 'mode'], crush: ['rate', 'aa', 'mix'] };
 function mkFx(d) {
   if (!d || !FXC[d.type]) return null;
   const fx = new FXC[d.type](); fx.type_ = d.type; fx.on = d.on !== false;
