@@ -1217,7 +1217,7 @@ const MANUAL=[
 ['p','The transport bar at the bottom of the screen works in every window.'],
 ['k','Play','Space or Numpad Enter. Plays from the song position.'],
 ['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop also returns automated knobs to their patch values.'],
-['k','Record','Enter or Numpad *. Starts playing and recording notes into the active track. While playing, Record punches in and out. Stop keeps Record armed: the next Play (Space) records again, as a new take. Record while stopped and armed disarms it. In Key Edit while stopped, Record arms step input instead.'],
+['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. In Key Edit while stopped, Record arms step input instead.'],
 ['k','Cycle','/ or Numpad /. Loops between the L and R locators. Recording in cycle layers each pass onto the last.'],
 ['k','Return to zero','Home or Numpad . jumps to bar 1.'],
 ['k','Position','Shift+Left/Right moves the song position by a bar. Plain Left/Right page the Arrange and Key Edit views a screen at a time (in the other windows they move the position). Scrolling over the position display steps by the quantize value.'],
@@ -1752,18 +1752,17 @@ function relocate(t){
     for(const k in lastAuto)delete lastAuto[k];chase(S.pos);timer=setInterval(sched,25);}
   dirty=true;
 }
-// Record stays armed over Stop: Play with Record armed starts a new take
-function play(){if(!S.playing){if(S.step)exitStep();if(S.rec){snapshot();S.takeId++;}startPlay();}}
+function play(){if(!S.playing){if(S.step)exitStep();startPlay();}}
 function stop(){
   if(S.playing){S.pos=Math.floor(curTick());S.playing=false;clearInterval(timer);post({t:'ev',ev:[{time:0,k:'alloff'}]});liveQ.length=0;
-    if(S.rec)finalizeHeld();autoHeld.clear();for(const k in recLast)delete recLast[k];restoreLive();}
+    if(S.rec){S.rec=false;finalizeHeld();}autoHeld.clear();for(const k in recLast)delete recLast[k];restoreLive();}
   else{if(S.step)exitStep();else S.pos=(S.pos!==S.L)?S.L:0;}
   dirty=true;
 }
 function togglePlay(){S.playing?stop():play();}
 function rec(){
   if(S.view==='edit'&&!S.playing){S.step?exitStep():enterStep();return;}
-  if(!S.playing){if(S.rec)S.rec=false;else{snapshot();S.takeId++;S.rec=true;startPlay();}}
+  if(!S.playing){snapshot();S.takeId++;S.rec=true;startPlay();}
   else{S.rec=!S.rec;if(S.rec){snapshot();S.takeId++;}else finalizeHeld();}
   dirty=true;
 }
@@ -2667,7 +2666,7 @@ function drawTransport(){
   const y=TBY;clr(0,y,W,H-y,WH);hl(0,y,W);hl(0,y+2,W);
   const btn=[['rtz',rtz,'Return to zero','Home'],['stop',stop,'Stop','Numpad 0'],['play',play,'Play','Space'],['rec',rec,'Record','Enter'],['cyc',toggleCycle,'Cycle','/']];
   btn.forEach(([k,f,nm,key],i)=>{const x=6+i*29,on=k==='play'?S.playing:k==='rec'?(S.rec||S.step):k==='cyc'?S.cycle:k==='stop'?!S.playing:false;
-    box(x,y+8,26,22,on?B:WH);icon(k,x+6,y+13,on?WH:B);reg(x,y+8,26,22,{down:f,hint:[nm,k==='rec'?'Starts playing and recording; while playing, punches in and out. Stays armed over Stop, so the next Play records again. Click while stopped and armed to disarm.':'On-screen twin of the panel key.',key]});});
+    box(x,y+8,26,22,on?B:WH);icon(k,x+6,y+13,on?WH:B);reg(x,y+8,26,22,{down:f,hint:[nm,'On-screen twin of the panel key.',key]});});
   const rm=S.recMode==='replace';box(6,y+36,72,20,rm?B:WH);T(rm?'REPLACE':'OVERDUB',42,y+46,rm?WH:B,'center');
   reg(6,y+36,72,20,{down:()=>{S.recMode=rm?'overdub':'replace';},hint:['Record mode','Overdub adds notes. Replace erases notes under the playhead on the active track while recording.','']});
   box(82,y+36,62,20,S.autoQ?B:WH);T('AUTO-Q',113,y+46,S.autoQ?WH:B,'center');
