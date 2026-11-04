@@ -125,7 +125,7 @@ function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]
    and optional pt (pitch, semitones), pn (pan 0-127) and st (sample start 0-127). */
 const NDRUM=8,DRUM_INIT_HOLD=40;
 const isDrumT=ti=>!!(S.tracks[ti]&&S.tracks[ti].kind==='drum');
-function mkDrum(name,k31,hold,note){return {name,k:(k31||INIT_K.slice(0,31)).slice(0,31).concat([0,0]),hold:hold??DRUM_INIT_HOLD,note:note??60,ins:[null,null],wave:null};}
+function mkDrum(name,k31,hold,note){return {name,k:(k31||INIT_K.slice(0,31)).slice(0,31).concat([0,0]),hold:hold??DRUM_INIT_HOLD,note:note??60,vol:127,pan:64,ins:[null,null],wave:null};}
 const DRUM_NOTE_MIN=12,DRUM_NOTE_MAX=108;
 const holdMs=k=>Math.round(10*Math.pow(200,k/127));
 function defaultKit(){return [mkDrum('KICK',lib('DS10PLUS/RESIN#','DR1')),mkDrum('SNARE',lib('DS10PLUS/RESIN#','DR2')),mkDrum('HAT',lib('DS10PLUS/RESIN#','DR3'),30),
@@ -202,7 +202,7 @@ function newSong(){
 }
 function songObj(){
   return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,padX:S.padX,padY:S.padY,padMode:S.padMode,
-    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,ins:d.ins,...(d.exact?{exact:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
+    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,...(d.exact?{exact:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
     buses:S.buses,master:S.master,
     parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,...(p.dmute?{dmute:p.dmute.map(Boolean)}:{}),notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
 }
@@ -213,7 +213,7 @@ function loadSong(o){
     for(const pp of FXDEF[f.type].p)if(pp[5])p[pp[0]]=clamp(p[pp[0]],pp[2],pp[3]);return {type:f.type,on:f.on!==false,p};};
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
     (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);tr.exact=!!t.exact;
-    if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.exact=!!d.exact;return m;});
+    if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.vol=clamp(Math.round(d.vol??127),0,127);m.pan=clamp(Math.round(d.pan??64),0,127);m.exact=!!d.exact;return m;});
     if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];return tr;});
   while(S.tracks.length<8)S.tracks.push(mkTrack('Track '+(S.tracks.length+1),{},1));
   const bs=o.buses||[];S.buses=[0,1].map(i=>({name:i?'BUS B':'BUS A',ret:clamp((bs[i]||{}).ret??100,0,127),ins:[fx(((bs[i]||{}).ins||[])[0]),fx(((bs[i]||{}).ins||[])[1])]}));
@@ -281,7 +281,9 @@ function ensureAudio(){
   return starting;
 }
 const post=m=>{if(ready)node.port.postMessage(m);};
-const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,ins:d.ins,exact:!!d.exact});
+const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,exact:!!d.exact});
+// NOTE, VOL and PAN only change how the recording is played, so they do not record the drum again
+function drumPlayChanged(ti,d){const dr=S.tracks[ti].drums[d];post({t:'drumplay',tr:ti,d,note:dr.note,vol:dr.vol,pan:dr.pan});songChanged();dirty=true;}
 function cfgObj(){return {tempo:S.tempo,tracks:S.tracks.map(t=>({k:t.lv,nv:t.nv,mute:t.mute,solo:t.solo,ins:t.ins,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(drumDef)})),buses:S.buses.map(b=>({ret:b.ret,ins:b.ins})),master:S.master};}
 function sendCfg(){S.tracks.forEach(syncFx);post({t:'cfg',c:cfgObj()});}
 const meters={tr:new Array(8).fill(0),l:0,r:0,v:new Array(8).fill(0)};
@@ -781,6 +783,14 @@ function knobCell(x,y,w,label,v,min,max,def,set,hint,valTxt,opts){
   reg(x,y,w,42,{drag:(d,e)=>{acc+=d*(e.shiftKey?0.25:1);const st=Math.trunc(acc/px);if(st){acc-=st*px;set(clamp(v=v+st,min,max));}},
     wheel:(d,e)=>set(clamp(v=v-d*(e.shiftKey?1:(range>20?2:1)),min,max)),dbl:()=>set(def),hint,cur:'vert'});
 }
+/* a small knob for the kit rows (28 px high): knob at the left, label and value beside it */
+function rowKnob(x,y,w,label,v,min,max,def,set,valTxt,hint){
+  knobGfx(x+11,y+15,9,(v-min)/(max-min),false,false);
+  T(label,x+24,y+7,B,'left',13);T(valTxt,x+24,y+21,B,'left',13);
+  let acc=0;
+  reg(x,y,w,28,{drag:(d,e)=>{acc+=d*(e.shiftKey?0.25:1);const st=Math.trunc(acc/2);if(st){acc-=st*2;set(clamp(v=v+st,min,max));}},
+    wheel:(d,e)=>set(clamp(v=v-d*(e.shiftKey?1:2),min,max)),dbl:()=>set(def),hint,cur:'vert'});
+}
 /* a switch cell: label and one box per option */
 function switchCell(x,y,w,label,v,opts,set,hint,icons){
   T(label,x+4,y+7);
@@ -1061,7 +1071,9 @@ function drawKit(ti){
     box(4,y,22,28);T(String(d+1),15,y+14,B,'center');
     T(dr.name,32,y+9);reg(30,y+1,76,15,{down:()=>renameDrum(ti,d),hint:['Drum name','Click to rename this drum.','']});
     T('HOLD '+holdMs(dr.hold)+'ms',32,y+22,B,'left',13);noteField(ti,d,478,y+16,92);
-    drawWave(dr.recording||dr.dirty?null:dr.wave,110,y,360,28,dr.recording?'RECORDING':dr.dirty?'NOT RECORDED':null);reg(110,y,360,28,{down:()=>audition(d,110),hint:['Drum '+(d+1)+' '+dr.name,'Click to hear the recorded sample.','']});
+    drawWave(dr.recording||dr.dirty?null:dr.wave,110,y,252,28,dr.recording?'RECORDING':dr.dirty?'NOT RECORDED':null);reg(110,y,252,28,{down:()=>audition(d,110),hint:['Drum '+(d+1)+' '+dr.name,'Click to hear the recorded sample.','']});
+    rowKnob(366,y,52,'VOL',dr.vol,0,127,127,v=>{dr.vol=v;drumPlayChanged(ti,d);},String(dr.vol),['Drum '+(d+1)+' volume','The volume of this drum in the kit, on top of each hit\'s velocity. Takes effect at once, also on hits already sounding. Drag or scroll (Shift: fine), double-click for 127.','']);
+    rowKnob(420,y,52,'PAN',dr.pan,0,127,64,v=>{dr.pan=v;drumPlayChanged(ti,d);},pfmt(34,dr.pan),['Drum '+(d+1)+' pan','Where this drum sits in the stereo field. The PAN lane of each hit is added to it. Drag or scroll (Shift: fine), double-click for centre.','']);
     T(dr.ins.filter(Boolean).map(f=>FXDEF[f.type].short+(f.on?'':'(off)')).join(' ')||'no FX',478,y+7,B,'left',13);
     box(W-60,y+4,54,20);T('EDIT',W-33,y+14,B,'center');
     reg(W-60,y+4,54,20,{down:()=>openDrumEd(ti,d),hint:['Edit drum '+(d+1),'Stops playback and opens the drum editor: its DS-10 voice, HOLD and two effects. Every change re-records the 2-second sample.','']});
@@ -1073,7 +1085,7 @@ function drawWave(w,x,y,ww,h,label){box(x,y,ww,h);if(label){clr(x+1,y+1,ww-2,h-2
   hl(x+1,mid,ww-2);}
 function noteField(ti,d,x,y,w,f){const dr=S.tracks[ti].drums[d];
   T('NOTE',x,y+7,B,'left',f||13);box(x+tw('NOTE',f||13)+4,y,w-tw('NOTE',f||13)-4,14);T(nname(dr.note),x+tw('NOTE',f||13)+4+(w-tw('NOTE',f||13)-4)/2,y+7,B,'center',f||13);
-  let acc=0;const set=v=>{v=clamp(Math.round(v),DRUM_NOTE_MIN,DRUM_NOTE_MAX);if(v!==dr.note){dr.note=v;post({t:'drumnote',tr:ti,d,n:v});songChanged();dirty=true;}};
+  let acc=0;const set=v=>{v=clamp(Math.round(v),DRUM_NOTE_MIN,DRUM_NOTE_MAX);if(v!==dr.note){dr.note=v;drumPlayChanged(ti,d);}};
   reg(x,y,w,14,{drag:(dd,e)=>{acc+=dd;const st=Math.trunc(acc/6);if(st){acc-=st*6;set(dr.note+st*(e.shiftKey?12:1));}},wheel:(dd,e)=>set(dr.note-dd*(e.shiftKey?12:1)),dbl:()=>set(60),cur:'vert',
     hint:['Drum note','The note the drum plays at. It is always recorded at C3 and replayed faster or slower: C2 plays it an octave down at half speed. Scroll or drag (Shift: octaves), double-click for C3. Per-hit PITCH shifts from here.','']});}
 function renameDrum(ti,d){const dr=S.tracks[ti].drums[d];askText('Name of drum '+(d+1),dr.name,8,v=>{dr.name=v;songChanged();});}

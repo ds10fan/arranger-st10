@@ -538,6 +538,8 @@ class Track {
     for (let i = 0; i < 16; i++) this.sv.push({ on: false, age: 0 });
     // defs: how each drum is made; dirty: changed since its sample was recorded; lr: the live recording in progress
     this.defs = []; this.dirty = []; this.lrs = []; this.eng = null;
+    // per-drum mixer: dg = volume gain, dp = pan offset from centre (-64..63); applied live to sounding hits
+    this.dg = new Float32Array(16).fill(1); this.dp = new Float32Array(16);
     for (let i = 0; i < NPARAM; i++) this.set(i, this.k[i]);
   }
   setExact(x, tempo) {
@@ -549,8 +551,9 @@ class Track {
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
   // a drum edited since its last recording is played live from its voice and effects and recorded as it plays
+  setMix(d, def) { this.dg[d] = def && def.vol != null ? volGain(def.vol) : 1; this.dp[d] = def && def.pan != null ? def.pan - 64 : 0; }
   setDef(d, def) {
-    const old = this.defs[d]; this.defs[d] = def; this.dirty[d] = true;
+    const old = this.defs[d]; this.defs[d] = def; this.dirty[d] = true; this.setMix(d, def);
     const lr = this.liveOf(d); if (!lr) return;
     for (let id = 0; id < 31; id++) if (!old || old.k[id] !== def.k[id]) lr.v.knob(id, def.k[id]);
     lr.hp.set(def.k[31] || 0, def.k[32] || 0);
@@ -611,12 +614,11 @@ class Track {
     for (const v of this.sv) if (v.on && v.d === e.p) v.rel = true;            // a drum chokes itself, like a DS-10 drum part
     let v = this.sv.find(x => !x.on);
     if (!v) v = this.sv.reduce((a, b) => (a.age < b.age ? a : b));
-    const pn = (e.pn === undefined ? 64 : e.pn) * 258 / 32767;
     v.lr = null;
     const smp = live ? this.startLive(e.p, v) : this.kit[e.p];
     v.on = true; v.d = e.p; v.L = smp.L; v.R = smp.R; v.n = smp.L.length; v.pos = (e.st || 0) / 128 * v.n;
     const df = this.defs[e.p], nt = df && df.note != null ? df.note : 60;
-    v.rate = Math.pow(2, (nt - 60 + (e.pt || 0)) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC; v.id = e.id;
+    v.rate = Math.pow(2, (nt - 60 + (e.pt || 0)) / 12); v.g = e.v / 127; v.hpn = e.pn === undefined ? 64 : e.pn; v.rel = false; v.fade = 1; v.age = ++this.ageC; v.id = e.id;
   }
   // a note-off releases only the hit its note-on started (by id); without an id, every hit of that drum
   drumOff(p, id) { for (const v of this.sv) if (v.on && v.d === p && (id === undefined || v.id === id)) v.rel = true; }   // a live recording carries on to its 2 s; HOLD ends its note
@@ -628,13 +630,14 @@ class Track {
       const i = v.pos | 0;
       if (i + 1 >= v.n) { v.on = false; continue; }
       const f = v.pos - i;
-      let g = v.g;
+      let g = v.g * this.dg[v.d];
       if (v.rel) { v.fade -= DRUM_FADE; if (v.fade <= 0) { v.on = false; continue; } g *= v.fade; }
       let a, b;
       if (this.interp === 0) { a = v.L[i] + (v.L[i + 1] - v.L[i]) * f; b = v.R[i] + (v.R[i + 1] - v.R[i]) * f; }
       else if (this.interp === 1) { a = hermite(v.L, i, f, v.n); b = hermite(v.R, i, f, v.n); }
       else { a = sincRead(v.L, i, f, v.n, v.rate); b = sincRead(v.R, i, f, v.n, v.rate); }
-      l += a * g * v.pl; r += b * g * v.pr;
+      const pn = Math.min(127, Math.max(0, v.hpn + this.dp[v.d])) * 258 / 32767;   // hit pan + drum pan
+      l += a * g * (1 - pn); r += b * g * pn;
       v.pos += v.rate;
     }
     this.sl = l; this.sr = r;
@@ -1029,7 +1032,7 @@ class Engine {
   renderOne(ti, j, d) {
     const tr = this.tr[ti];
     if (tr.liveOf(j)) { if (d) tr.setDef(j, d); return; }   // a live recording of this drum finishes it instead
-    tr.defs[j] = d; tr.dirty[j] = false;
+    tr.defs[j] = d; tr.dirty[j] = false; tr.setMix(j, d);
     tr.kit[j] = d ? renderDrum(d, this.tempo || 120) : null;
     if (this.post) this.post({ t: 'dw', tr: ti, d: j, w: tr.kit[j] ? wavePeaks(tr.kit[j], 160) : null });
   }
@@ -1044,7 +1047,7 @@ class Engine {
       case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
       case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
-      case 'drumnote': { const df = this.tr[m.tr].defs[m.d]; if (df) df.note = m.n; break; }   // playback rate only, no new recording
+      case 'drumplay': { const t = this.tr[m.tr], df = t.defs[m.d]; if (df) { df.note = m.note; df.vol = m.vol; df.pan = m.pan; t.setMix(m.d, df); } break; }   // NOTE, VOL, PAN: playback only, no new recording
       case 'interp': this.tr[m.tr].interp = m.v; break;
       case 'exact': this.tr[m.tr].setExact(m.v, this.tempo); break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;
