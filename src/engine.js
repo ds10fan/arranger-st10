@@ -496,8 +496,8 @@ const LIVE_AHEAD = 4 * SINC_N + 4;   // samples a live drum recording is rendere
 const DRUM_FADE = 1 / (0.005 * SR);   // 5 ms release when a drum note ends or is choked
 const holdSec = k => 0.01 * Math.pow(200, k / 127);   // drum HOLD knob: 10 ms .. 2 s
 
-// Record a drum the way the DS-10 does: its own voice, at its note (C3 = 60 by default), into a buffer - here 2 s
-// of stereo at host rate - through its highpass and its two effects.
+// Record a drum the way the DS-10 does: its own voice, always at C3 (note 60), into a buffer - here 2 s
+// of stereo at host rate - through its highpass and its two effects. The drum's NOTE only sets the playback rate.
 // a drum's voice: the ZDF voice, or with def.exact the ds10emu integer voice (which runs continuously, as on the DS)
 const drumVoice = d => d.exact ? new VoiceX() : new Voice();
 function renderDrum(d, tempo) {
@@ -507,7 +507,7 @@ function renderDrum(d, tempo) {
   const fx = (d.ins || []).map(mkFx).filter(x => x && x.on);
   for (const x of fx) if (x.setTempo) x.setTempo(Math.round(tempo));
   const N = 2 * SR, L = new Float32Array(N), R = new Float32Array(N), hold = Math.round(holdSec(d.hold) * SR);
-  v.resetLfo(); v.rt = 1; v.noteOn(d.note || 60, 127);
+  v.resetLfo(); v.rt = 1; v.noteOn(60, 127);
   let fc = 0;
   for (let i = 0; i < N; i++) {
     if (i === hold) v.noteOff();
@@ -573,7 +573,7 @@ class Track {
     const hp = new HP4(); hp.set(def.k[31] || 0, def.k[32] || 0);
     const fx = [0, 1].map(s => mkFx((def.ins || [])[s]));
     for (const x of fx) if (x && x.setTempo) x.setTempo(Math.round(tempo));
-    vo.resetLfo(); vo.rt = 1; vo.noteOn(def.note || 60, 127);
+    vo.resetLfo(); vo.rt = 1; vo.noteOn(60, 127);
     const old = this.liveOf(d); if (old) old.stale = true;   // a new hit starts a new recording; the old one only feeds its fading voice
     const N = 2 * SR;
     const lr = { d, v: vo, hp, fx, L: new Float32Array(N), R: new Float32Array(N), pos: 0, hold: Math.round(holdSec(def.hold) * SR), fc: 0, sv: v, stale: false };
@@ -615,7 +615,8 @@ class Track {
     v.lr = null;
     const smp = live ? this.startLive(e.p, v) : this.kit[e.p];
     v.on = true; v.d = e.p; v.L = smp.L; v.R = smp.R; v.n = smp.L.length; v.pos = (e.st || 0) / 128 * v.n;
-    v.rate = Math.pow(2, (e.pt || 0) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC; v.id = e.id;
+    const df = this.defs[e.p], nt = df && df.note != null ? df.note : 60;
+    v.rate = Math.pow(2, (nt - 60 + (e.pt || 0)) / 12); v.g = e.v / 127; v.pl = 1 - pn; v.pr = pn; v.rel = false; v.fade = 1; v.age = ++this.ageC; v.id = e.id;
   }
   // a note-off releases only the hit its note-on started (by id); without an id, every hit of that drum
   drumOff(p, id) { for (const v of this.sv) if (v.on && v.d === p && (id === undefined || v.id === id)) v.rel = true; }   // a live recording carries on to its 2 s; HOLD ends its note
@@ -1043,6 +1044,7 @@ class Engine {
       case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
       case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
+      case 'drumnote': { const df = this.tr[m.tr].defs[m.d]; if (df) df.note = m.n; break; }   // playback rate only, no new recording
       case 'interp': this.tr[m.tr].interp = m.v; break;
       case 'exact': this.tr[m.tr].setExact(m.v, this.tempo); break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;

@@ -478,8 +478,11 @@ function setActive(i){S.active=clamp(i,0,7);if(S.fxSel.w.s==='t'&&S.view!=='fx')
 function setTool(t){S.tool=t;if(S.view==='arr')S.arrTool=t;dirty=true;}
 function nextTool(dir=1){const L=S.view==='edit'?TOOLS_EDIT:TOOLS_ARR;let i=L.indexOf(S.tool);if(i<0)i=0;setTool(L[(i+dir+L.length)%L.length]);}
 function openEdit(p){
-  p=p||part(S.sel)||partAtTick(S.active,S.pos)||partsOn(S.active)[0];
-  if(!p)return dialog(['This track has no parts yet.','Double-click an empty lane','in the Arrange window to add one.']);
+  // from the Arrange window the selected part opens; elsewhere a part of the track being worked on
+  // (the drum editor's track, else the active one), never one of another track
+  if(!p){const dc=drumCtx(),tr=dc?dc.tr:S.active,sp=part(S.sel);
+    p=(sp&&(S.view==='arr'||sp.track===tr)?sp:null)||partAtTick(tr,S.pos)||partsOn(tr)[0];
+    if(!p)return dialog(['T'+(tr+1)+' has no parts yet.','Double-click an empty lane','in the Arrange window to add one.']);}
   if(S.step)exitStep();
   S.view='edit';S.editPart=p.id;S.sel=p.id;S.active=p.track;selOnly(null);
   {const rel=S.pos-p.start;S.escroll=0;if(rel>=0&&rel<p.len)eFollow(p,rel);}
@@ -1070,9 +1073,9 @@ function drawWave(w,x,y,ww,h,label){box(x,y,ww,h);if(label){clr(x+1,y+1,ww-2,h-2
   hl(x+1,mid,ww-2);}
 function noteField(ti,d,x,y,w,f){const dr=S.tracks[ti].drums[d];
   T('NOTE',x,y+7,B,'left',f||13);box(x+tw('NOTE',f||13)+4,y,w-tw('NOTE',f||13)-4,14);T(nname(dr.note),x+tw('NOTE',f||13)+4+(w-tw('NOTE',f||13)-4)/2,y+7,B,'center',f||13);
-  let acc=0;const set=v=>{v=clamp(Math.round(v),DRUM_NOTE_MIN,DRUM_NOTE_MAX);if(v!==dr.note){dr.note=v;drumChanged(ti,d);}};
+  let acc=0;const set=v=>{v=clamp(Math.round(v),DRUM_NOTE_MIN,DRUM_NOTE_MAX);if(v!==dr.note){dr.note=v;post({t:'drumnote',tr:ti,d,n:v});songChanged();dirty=true;}};
   reg(x,y,w,14,{drag:(dd,e)=>{acc+=dd;const st=Math.trunc(acc/6);if(st){acc-=st*6;set(dr.note+st*(e.shiftKey?12:1));}},wheel:(dd,e)=>set(dr.note-dd*(e.shiftKey?12:1)),dbl:()=>set(60),cur:'vert',
-    hint:['Drum note','The note the drum\'s voice is recorded at. C3 is the DS-10\'s own; G4 records it 19 semitones up. Scroll or drag (Shift: octaves), double-click for C3. Per-hit PITCH shifts from here.','']});}
+    hint:['Drum note','The note the drum plays at. It is always recorded at C3 and replayed faster or slower: C2 plays it an octave down at half speed. Scroll or drag (Shift: octaves), double-click for C3. Per-hit PITCH shifts from here.','']});}
 function renameDrum(ti,d){const dr=S.tracks[ti].drums[d];askText('Name of drum '+(d+1),dr.name,8,v=>{dr.name=v;songChanged();});}
 function drawPatch(T_){
   const ti=T_.ti,t=S.tracks[ti],cw=106,dr=T_.dr;
