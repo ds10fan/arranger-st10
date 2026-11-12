@@ -643,7 +643,7 @@ class Track {
     this.sl = l; this.sr = r;
   }
   set(id, v) {
-    if (id === NPARAM + 16) { this.bend = Math.round(v * 0x8000 / 10); for (const vo of this.vs) vo.bend = this.bend; return; }   // pitch bend, tenths of a semitone
+    if (id === NPARAM + 16) { this.bend = Math.round(v * 0x8000 / 40); for (const vo of this.vs) vo.bend = this.bend; return; }   // pitch bend, -120..120 = -3..+3 semitones
     if (id >= NPARAM) {
       // 37..52: knob j of insert slot s, id = 37 + s*8 + j, in the order of that effect's controls
       const s = (id - NPARAM) >> 3, fx = this.ins[s];

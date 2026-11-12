@@ -70,7 +70,7 @@ const P=[
   ['HP CUT','HPF CUTOFF',0,127,0],['HP RES','HPF RESONANCE',0,127,0],
   ['VOLUME','VOLUME',0,127,100],['PAN','PAN',0,127,64],['SEND A','SEND A',0,127,0],['SEND B','SEND B',0,127,0]];
 const NP=P.length,BD=NP+16,NA=NP+17,INIT_K=P.map(p=>p[4]).concat(new Array(17).fill(0));
-// id BD is the synth's pitch bend, -120..120 in tenths of a semitone; not part of the patch, only moved by the pad and automation
+// id BD is the synth's pitch bend, -120..120 = -3..+3 semitones (a minor third); not part of the patch, only moved by the pad and automation
 const BEND=['BEND','PITCH BEND',-120,120,0];
 /* ids NP..NA-1 are the knobs of a track's two insert slots: NP + slot*8 + n, n in the effect's own control order.
    PD() describes any id for a given track, so lanes, the pad and recording treat them like synth knobs. */
@@ -82,7 +82,7 @@ function PD(ti,id){
   if(!pp)return ['—','INS'+(slot+1)+' —',0,127,0,null,true];
   return [pp[1].slice(0,7),'INS'+(slot+1)+' '+d.short+' '+pp[1],pp[2],pp[0]==='prog'?progMax(fx):pp[3],pp[4],pp[5]];
 }
-function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);if(id===BD)return (v>0?'+':'')+(v/10).toFixed(1)+' st';const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
+function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);if(id===BD)return (v>0?'+':'')+(v/40).toFixed(2)+' st';const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
 function fxId(slot,key,fx){return NP+slot*8+FXDEF[fx.type].p.findIndex(x=>x[0]===key);}
 function syncFx(t){for(let s=0;s<2;s++)for(let j=0;j<8;j++){const fx=t.ins[s],pp=fx&&FXDEF[fx.type].p[j],v=pp?fx.p[pp[0]]:0;t.k[NP+s*8+j]=v;t.lv[NP+s*8+j]=v;}}
 const pfmt=(id,v)=>{const p=P[id];if(p[5])return p[5][v]??String(v);if(id===34)return v===64?'C':v<64?'L'+(64-v):'R'+(v-64);if(p[2]<0&&v>0)return '+'+v;return String(v);};
@@ -691,15 +691,15 @@ function audition(p,v,n){ensureAudio();const tr=inputTrack(),id=++noteIdC;post({
 
 /* MIDI */
 let midiAcc=null;
-async function toggleMidi(){
+async function toggleMidi(quiet){
   if(S.midi){S.midi=false;if(midiAcc)for(const i of midiAcc.inputs.values())i.onmidimessage=null;dirty=true;return;}
-  if(!navigator.requestMIDIAccess)return dialog(['This browser has no Web MIDI.','Use Chromium, or keep playing','with the computer keyboard.']);
+  if(!navigator.requestMIDIAccess)return quiet?null:dialog(['This browser has no Web MIDI.','Use Chromium, or keep playing','with the computer keyboard.']);
   try{
     midiAcc=await navigator.requestMIDIAccess();
     const hook=()=>{for(const i of midiAcc.inputs.values())i.onmidimessage=onMidi;};hook();midiAcc.onstatechange=hook;
     S.midi=true;const n=[...midiAcc.inputs.values()].map(i=>i.name);
-    dialog(n.length?['MIDI input ready.',...n.slice(0,3)]:['MIDI is on, but no keyboard','is connected yet. Plug one in.']);
-  }catch(err){dialog(['Web MIDI is blocked here.','The artifact viewer does not allow','MIDI devices. Open the HTML file','locally in Chromium, or keep','playing with the computer keyboard.']);}
+    if(!quiet)dialog(n.length?['MIDI input ready.',...n.slice(0,3)]:['MIDI is on, but no keyboard','is connected yet. Plug one in.']);
+  }catch(err){if(!quiet)dialog(['Web MIDI is blocked here.','The artifact viewer does not allow','MIDI devices. Open the HTML file','locally in Chromium, or keep','playing with the computer keyboard.']);}
   dirty=true;
 }
 // mod wheel (CC 1) drives the KAOSS pad X axis, the pitch wheel its Y axis, each over the target's whole range
@@ -826,7 +826,7 @@ const MENUS=[
   {name:'Options',items:[{l:()=>(S.click?'√ ':'  ')+'Metronome',a:()=>{S.click=!S.click;}},{l:()=>(S.autoQ?'√ ':'  ')+'Auto Quantize',a:()=>{S.autoQ=!S.autoQ;}},
     {l:()=>(S.recMode==='replace'?'√ ':'  ')+'Replace Mode',a:()=>{S.recMode=S.recMode==='replace'?'overdub':'replace';}},
     {l:()=>(S.master.shp?'√ ':'  ')+'DS-10 Master Shaper',a:()=>{S.master.shp=S.master.shp?0:1;sendMst();}},{l:'-'},
-    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi},{l:()=>(S.midiVel?'√ ':'  ')+'MIDI Velocity',a:()=>{S.midiVel=!S.midiVel;flashMsg('MIDI velocity '+(S.midiVel?'on':'off: notes play at 100'));}},{l:'-'},{l:()=>'  Audio Latency: '+(ac?Math.round(outLatency()*1000+128/ac.sampleRate*1000)+' ms':'—')+'…',a:latencyInfo},{l:()=>(S.latComp?'√ ':'  ')+'Record Latency Compensation',a:()=>{S.latComp=!S.latComp;flashMsg('Record compensation '+(S.latComp?'on':'off'));}}]}
+    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:()=>toggleMidi()},{l:()=>(S.midiVel?'√ ':'  ')+'MIDI Velocity',a:()=>{S.midiVel=!S.midiVel;flashMsg('MIDI velocity '+(S.midiVel?'on':'off: notes play at 100'));}},{l:'-'},{l:()=>'  Audio Latency: '+(ac?Math.round(outLatency()*1000+128/ac.sampleRate*1000)+' ms':'—')+'…',a:latencyInfo},{l:()=>(S.latComp?'√ ':'  ')+'Record Latency Compensation',a:()=>{S.latComp=!S.latComp;flashMsg('Record compensation '+(S.latComp?'on':'off'));}}]}
 ];
 const lab=v=>typeof v==='function'?v():v;
 function menuBarGeom(){let x=6;return MENUS.map(m=>{const w=tw(m.name)+14;const r={x,w};x+=w;return r;});}
@@ -1807,6 +1807,7 @@ window.addEventListener('resize',fit);
 document.addEventListener('pointerdown',()=>ensureAudio(),{once:true});
 
 function frame(){
+  savePrefs();
   if(S.playing&&ac){
     const cur=curTick();
     if(S.rec){if(S.recMode==='replace')eraseReplace(prevTick,cur);for(const h of held.values())if(h.rn)h.rn.n.d=recLen(h.rn);
@@ -1824,11 +1825,21 @@ function frame(){
   if(dirty){dirty=false;render();}
   requestAnimationFrame(frame);
 }
+/* settings (the Options menu, keyboard octave, note gate) are kept in this browser apart from the song;
+   they are checked once per frame and written when one changed */
+const PREF_KEY='arranger-st.prefs',PREFS=['click','autoQ','recMode','qwerty','oct','showKb','midi','midiVel','latComp','gate'];
+let prefsJSON='';
+function loadPrefs(){let o=null;try{o=JSON.parse(localStorage.getItem(PREF_KEY)||'null');}catch(e){}
+  if(o&&typeof o==='object')for(const k of PREFS)if(o[k]!=null&&typeof o[k]===typeof S[k])S[k]=o[k];
+  S.oct=clamp(S.oct|0,-1,6);S.gate=clamp(S.gate|0,0,GATES.length-1);if(S.recMode!=='replace')S.recMode='overdub';
+  const midi=S.midi;S.midi=false;prefsJSON=JSON.stringify(Object.fromEntries(PREFS.map(k=>[k,k==='midi'?midi:S[k]])));return midi;}
+function savePrefs(){const j=JSON.stringify(Object.fromEntries(PREFS.map(k=>[k,S[k]])));if(j===prefsJSON)return;prefsJSON=j;try{localStorage.setItem(PREF_KEY,j);}catch(e){}}
 window.__ast={S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy,onMidi};
 (function boot(){
   let ok=false;
   try{const s=localStorage.getItem(LS_KEY);if(s){loadSong(JSON.parse(s));ok=true;}}catch(e){ok=false;}
   if(!ok)loadDemo();
+  const midi=loadPrefs();if(midi)toggleMidi(true);
   buildKb();fit();
   (document.fonts?document.fonts.load('16px VT323'):Promise.resolve()).catch(()=>{}).then(()=>{dirty=true;requestAnimationFrame(frame);});
 })();
