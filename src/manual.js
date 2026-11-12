@@ -39,6 +39,7 @@ const MANUAL=[
 ['k','- and =','Keyboard octave down and up. The current base note is shown in Options.'],
 ['k','Options > QWERTY Input','Turn it off to free the letter keys. A, P, E, S, G and M then pick the pointer, pencil, eraser, scissors, glue and mute tools.'],
 ['k','Options > Web MIDI Input','Listens to every connected MIDI keyboard. The claude.ai viewer may block MIDI. To use a real keyboard, open the HTML file locally in Chromium.'],
+['k','Options > MIDI Velocity','On by default: MIDI notes play at the velocity they are played with. Off: every MIDI note plays (and records) at velocity 100, like the computer keys.'],
 ['p','Notes always go to the active track. In Key Edit, the active track is the track of the part you are editing.'],
 
 ['h','Arrange window'],
@@ -143,6 +144,7 @@ const MANUAL=[
 
 ['h','KAOSS pad and automation'],
 ['p','The pad moves two knobs of the active track at once: X left to right and Y bottom to top. Click a target\'s name to choose from every knob on one page: the synth columns, the patch depths and sources, the track strip and the knobs of both insert effects. The arrows and the scroll wheel step through them one by one. Any synth knob, the highpass, volume, pan, the sends and the knobs of the track\'s insert effects can be a target. Releasing the pad returns the knobs to their patch values.'],
+['p','With Web MIDI Input on, a MIDI keyboard\'s mod wheel moves X (0 to full) and its pitch wheel moves Y (down to bottom, up to top). The wheels act on the active track like the pad, record automation the same way, and do not bend notes. A wheel at rest (mod wheel at 0, pitch wheel centred) lets go of its axis, which returns that knob to its patch value.'],
 ['p','Recording automation: press Record and play, then move the pad, a synth knob or an insert-effect knob of the active track. The moves are written into the part under the playhead. If no part is there, one is created and grows bar by bar. Moving over existing automation overwrites it, and holding the pad still keeps writing the same value. CURVE sets whether new lanes are SMOOTH or HOLD.'],
 ['p','Playback: automation moves a live copy of the knob and leaves the patch alone; Stop restores the patch values. Before a part\'s first point the lane holds that value, and after the last point it holds the last value. Changing an insert slot\'s effect type clears that slot\'s lanes.'],
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],

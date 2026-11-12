@@ -105,7 +105,7 @@ function progName(fx){const n=MV_NAMES[fx.p.dev]||[];const i=clamp(fx.p.prog,0,n
 /* ---------- state ---------- */
 const S={tracks:[],buses:[],master:null,parts:[],nextId:1,active:0,sel:null,view:'arr',editPart:null,selNote:null,selSet:new Set(),ptSel:new Set(),band:null,
   tool:'pointer',arrTool:'pointer',pos:0,L:0,R:BAR*8,cycle:false,playing:false,rec:false,recMode:'overdub',
-  tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,
+  tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,midiVel:true,
   menu:null,popup:null,dialog:null,toolbox:null,step:false,stepPos:0,stepHeld:0,editHi:72,takeId:0,
   mx:-1,my:-1,lastIn:null,inFlash:0,drag:null,pencil:null,lane:'vel',
   fxSel:{w:{s:'t',i:0},slot:0},ezoom:0,escroll:0,showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
@@ -699,8 +699,12 @@ async function toggleMidi(){
   }catch(err){dialog(['Web MIDI is blocked here.','The artifact viewer does not allow','MIDI devices. Open the HTML file','locally in Chromium, or keep','playing with the computer keyboard.']);}
   dirty=true;
 }
+// mod wheel (CC 1) drives the KAOSS pad X axis, the pitch wheel its Y axis; a wheel at rest (mod 0, pitch centre)
+// lets go of its axis like releasing the pad
 function onMidi(e){const [st,d1,d2]=e.data;const cmd=st&0xf0;
-  if(cmd===0x90&&d2>0)noteOn('m:'+d1,d1,d2);else if(cmd===0x80||(cmd===0x90&&d2===0))noteOff('m:'+d1);}
+  if(cmd===0x90&&d2>0)noteOn('m:'+d1,d1,S.midiVel?d2:100);else if(cmd===0x80||(cmd===0x90&&d2===0))noteOff('m:'+d1);
+  else if(cmd===0xb0&&d1===1){if(d2)padAxis('x',d2/127);else padRelease('x');}
+  else if(cmd===0xe0){const v=d1|d2<<7;if(v===8192)padRelease('y');else padAxis('y',v/16383);}}
 
 /* ---------- drawing primitives ---------- */
 const cv=$('#screen'),ctx=cv.getContext('2d',{willReadFrequently:true});
@@ -820,7 +824,7 @@ const MENUS=[
   {name:'Options',items:[{l:()=>(S.click?'√ ':'  ')+'Metronome',a:()=>{S.click=!S.click;}},{l:()=>(S.autoQ?'√ ':'  ')+'Auto Quantize',a:()=>{S.autoQ=!S.autoQ;}},
     {l:()=>(S.recMode==='replace'?'√ ':'  ')+'Replace Mode',a:()=>{S.recMode=S.recMode==='replace'?'overdub':'replace';}},
     {l:()=>(S.master.shp?'√ ':'  ')+'DS-10 Master Shaper',a:()=>{S.master.shp=S.master.shp?0:1;sendMst();}},{l:'-'},
-    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi},{l:'-'},{l:()=>'  Audio Latency: '+(ac?Math.round(outLatency()*1000+128/ac.sampleRate*1000)+' ms':'—')+'…',a:latencyInfo},{l:()=>(S.latComp?'√ ':'  ')+'Record Latency Compensation',a:()=>{S.latComp=!S.latComp;flashMsg('Record compensation '+(S.latComp?'on':'off'));}}]}
+    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi},{l:()=>(S.midiVel?'√ ':'  ')+'MIDI Velocity',a:()=>{S.midiVel=!S.midiVel;flashMsg('MIDI velocity '+(S.midiVel?'on':'off: notes play at 100'));}},{l:'-'},{l:()=>'  Audio Latency: '+(ac?Math.round(outLatency()*1000+128/ac.sampleRate*1000)+' ms':'—')+'…',a:latencyInfo},{l:()=>(S.latComp?'√ ':'  ')+'Record Latency Compensation',a:()=>{S.latComp=!S.latComp;flashMsg('Record compensation '+(S.latComp?'on':'off'));}}]}
 ];
 const lab=v=>typeof v==='function'?v():v;
 function menuBarGeom(){let x=6;return MENUS.map(m=>{const w=tw(m.name)+14;const r={x,w};x+=w;return r;});}
@@ -1653,11 +1657,12 @@ function padApply(fx,fy){
 }
 const padAt=(x,y)=>padApply(clamp((x-PADR.x)/PADR.w,0,1),clamp(1-(y-PADR.y)/PADR.h,0,1));
 function padDown(x,y){ensureAudio();S.padOn=true;padAt(x,y);S.drag={move:(x2,y2)=>padAt(x2,y2),up:padUp};}
-function padUp(){
-  S.padOn=false;const ti=inputTrack();recRelease(ti,[S.padX,S.padY]);
-  for(const id of [S.padX,S.padY]){const t=S.tracks[ti];if(t.lv[id]!==t.k[id]&&!(S.playing&&hasLane(ti,id))){t.lv[id]=t.k[id];post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v:t.k[id]}]});}}
-  dirty=true;
-}
+function padUp(){S.padOn=false;padRelease('x');padRelease('y');}
+function padAxis(ax,f){ensureAudio();const ti=inputTrack(),id=ax==='x'?S.padX:S.padY,p=PD(ti,id);
+  if(ax==='x')S.padVX=f;else S.padVY=f;if(!p[6])setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
+function padRelease(ax){const ti=inputTrack(),id=ax==='x'?S.padX:S.padY,t=S.tracks[ti];recRelease(ti,[id]);
+  if(t.lv[id]!==t.k[id]&&!(S.playing&&hasLane(ti,id))){t.lv[id]=t.k[id];post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v:t.k[id]}]});}
+  dirty=true;}
 function hasLane(ti,id){return S.parts.some(p=>p.track===ti&&p.auto&&p.auto[id]&&p.auto[id].pts.length);}
 function drawPad(){
   const ti=inputTrack(),t=S.tracks[ti],R=PADR;
@@ -1676,7 +1681,7 @@ function drawPad(){
   else{box(px-5,py-5,11,11);}
   clr(R.x+1,R.y+R.h-15,tw('X '+DX[1])+8,14,B);T('X '+DX[1],R.x+5,R.y+R.h-8,WH);
   clr(R.x+1,R.y+1,tw('Y '+DY[1])+8,14,B);T('Y '+DY[1],R.x+5,R.y+8,WH);
-  reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track. Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
+  reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track (or use a MIDI keyboard\'s mod wheel for X, pitch wheel for Y). Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
   const x0=424,cw=W-x0-8;
   if(S.padPick)return drawPadPick(ti);
   const axis=(ax,y)=>{const id=ax==='x'?S.padX:S.padY;
@@ -1817,7 +1822,7 @@ function frame(){
   if(dirty){dirty=false;render();}
   requestAnimationFrame(frame);
 }
-window.__ast={S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy};
+window.__ast={S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy,onMidi};
 (function boot(){
   let ok=false;
   try{const s=localStorage.getItem(LS_KEY);if(s){loadSong(JSON.parse(s));ok=true;}}catch(e){ok=false;}
