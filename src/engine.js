@@ -66,7 +66,7 @@ class Voice {
     // VCA
     this.dist = 0; this.wet = 0; this.alk = 0; this.ain = 0; this.aeg = 0; this.als = 4; this.aes = 2;
     this.dr1 = 0; this.dr2 = 32767; this.lvl = 0; this.lvd = 0; this.lvT = 0;
-    this.on = false; this.gate = false; this.note = -1; this.vg = 1; this.age = 0;
+    this.on = false; this.gate = false; this.note = -1; this.vg = 1; this.age = 0; this.bend = 0;
   }
 
   // ds10_patch_set_knob
@@ -172,7 +172,7 @@ class Voice {
     const D = T.depth;
     const mt = (ds, l, e) => I(D[ds], (l + e) >> 9) >> 15;
     const common = mt(this.pds[0], LO[this.pls[0]], eo(this.pes[0])) + (I(D[this.peg], EO0 >> 9) >> 15);
-    const base = this.nC + this.oct12 * 0x8000;
+    const base = this.nC + this.oct12 * 0x8000 + this.bend;
     const inc1 = plook((common + mt(this.pds[1], LO[this.pls[1]], eo(this.pes[1]))) * 0x30 + base);
     const inc2 = plook((common + mt(this.pds[2], LO[this.pls[2]], eo(this.pes[2]))) * 0x30 + base + D[this.v2p] * 0x30);
     this.d1 = inc1 / TWO32 * RT; this.d2 = inc2 / TWO32 * RT;
@@ -354,7 +354,7 @@ class VoiceX extends Voice {
     if (this.nD === 0) { if (this.nC < this.nT) this.nC = this.nT; } else if (this.nT < this.nC) this.nC = this.nT;
     const D = T.depth, mt = (ds, l, e) => I(D[ds], (l + e) >> 9) >> 15;
     const common = mt(this.pds[0], LO[this.pls[0]], eo(this.pes[0])) + (I(D[this.peg], EO0 >> 9) >> 15);
-    const base = this.nC + this.oct12 * 0x8000;
+    const base = this.nC + this.oct12 * 0x8000 + this.bend;
     const pl = v => { if (v < 0) v = 0; else if (v > 0x3C0000) v = 0x3C0000; const i = v >> 15, fr = v & 0x7FFF, lo = T.pitch[i]; return (lo + x15(fr, T.pitch[i + 1] - lo)) | 0; };
     const inc1 = pl((common + mt(this.pds[1], LO[this.pls[1]], eo(this.pes[1]))) * 0x30 + base);
     const inc2 = pl((common + mt(this.pds[2], LO[this.pls[2]], eo(this.pes[2]))) * 0x30 + base + D[this.v2p] * 0x30);
@@ -530,7 +530,7 @@ const volGain = v => (v * v * 0x10404 / 32768) / 32768;
 
 class Track {
   constructor() {
-    this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.stack = []; this.ageC = 0;
+    this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.bend = 0; this.stack = []; this.ageC = 0;
     for (let i = 0; i < 8; i++) this.vs.push(new Voice());
     this.hp = new HP4(); this.ins = [null, null]; this.mute = 0; this.solo = 0; this.peak = 0;
     // drum tracks play rendered samples instead of the voices: kit[d] = {L, R}, sv = sample voices
@@ -546,7 +546,7 @@ class Track {
     x = !!x; if (!!this.exact === x) return;
     this.exact = x; this.stack = [];
     this.vs = []; for (let i = 0; i < 8; i++) this.vs.push(x ? new VoiceX() : new Voice());
-    for (const vo of this.vs) { for (let id = 0; id < 31; id++) vo.knob(id, this.k[id]); vo.setBpm(tempo || 120); }
+    for (const vo of this.vs) { for (let id = 0; id < 31; id++) vo.knob(id, this.k[id]); vo.setBpm(tempo || 120); vo.bend = this.bend; }
   }
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
@@ -643,6 +643,7 @@ class Track {
     this.sl = l; this.sr = r;
   }
   set(id, v) {
+    if (id === NPARAM + 16) { this.bend = Math.round(v * 0x8000 / 10); for (const vo of this.vs) vo.bend = this.bend; return; }   // pitch bend, tenths of a semitone
     if (id >= NPARAM) {
       // 37..52: knob j of insert slot s, id = 37 + s*8 + j, in the order of that effect's controls
       const s = (id - NPARAM) >> 3, fx = this.ins[s];
@@ -1018,7 +1019,7 @@ class Engine {
   cfg(c) {
     c.tracks.forEach((t, i) => {
       const tr = this.tr[i]; if (!tr) return;
-      tr.setExact(t.exact, this.tempo); tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); });
+      tr.setExact(t.exact, this.tempo); tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); }); tr.set(NPARAM + 16, t.k[NPARAM + 16] || 0);
       tr.mute = t.mute ? 1 : 0; tr.solo = t.solo ? 1 : 0;
       tr.ins = (t.ins || [null, null]).map(mkFx);
       tr.setKind(t.kind === 'drum'); tr.interp = t.interp ?? 1;

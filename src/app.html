@@ -69,17 +69,20 @@ const P=[
   ['SRC','PITCH SOURCE',0,6,0,SRC],['SRC','VCO1 SOURCE',0,6,0,SRC],['SRC','VCO2 SOURCE',0,6,0,SRC],['SRC','CUTOFF SOURCE',0,6,0,SRC],['SRC','VCA SOURCE',0,6,0,SRC],
   ['HP CUT','HPF CUTOFF',0,127,0],['HP RES','HPF RESONANCE',0,127,0],
   ['VOLUME','VOLUME',0,127,100],['PAN','PAN',0,127,64],['SEND A','SEND A',0,127,0],['SEND B','SEND B',0,127,0]];
-const NP=P.length,NA=NP+16,INIT_K=P.map(p=>p[4]).concat(new Array(16).fill(0));
+const NP=P.length,BD=NP+16,NA=NP+17,INIT_K=P.map(p=>p[4]).concat(new Array(17).fill(0));
+// id BD is the synth's pitch bend, -120..120 in tenths of a semitone; not part of the patch, only moved by the pad and automation
+const BEND=['BEND','PITCH BEND',-120,120,0];
 /* ids NP..NA-1 are the knobs of a track's two insert slots: NP + slot*8 + n, n in the effect's own control order.
    PD() describes any id for a given track, so lanes, the pad and recording treat them like synth knobs. */
 function PD(ti,id){
   if(id<33&&isDrumT(ti))return ['—','(synth knob)',0,127,0,null,true];
   if(id<NP)return P[id];
+  if(id===BD)return isDrumT(ti)?['—','(synth knob)',0,127,0,null,true]:BEND;
   const slot=(id-NP)>>3,j=(id-NP)&7,fx=S.tracks[ti]&&S.tracks[ti].ins[slot],d=fx&&FXDEF[fx.type],pp=d&&d.p[j];
   if(!pp)return ['—','INS'+(slot+1)+' —',0,127,0,null,true];
   return [pp[1].slice(0,7),'INS'+(slot+1)+' '+d.short+' '+pp[1],pp[2],pp[0]==='prog'?progMax(fx):pp[3],pp[4],pp[5]];
 }
-function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
+function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);if(id===BD)return (v>0?'+':'')+(v/10).toFixed(1)+' st';const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
 function fxId(slot,key,fx){return NP+slot*8+FXDEF[fx.type].p.findIndex(x=>x[0]===key);}
 function syncFx(t){for(let s=0;s<2;s++)for(let j=0;j<8;j++){const fx=t.ins[s],pp=fx&&FXDEF[fx.type].p[j],v=pp?fx.p[pp[0]]:0;t.k[NP+s*8+j]=v;t.lv[NP+s*8+j]=v;}}
 const pfmt=(id,v)=>{const p=P[id];if(p[5])return p[5][v]??String(v);if(id===34)return v===64?'C':v<64?'L'+(64-v):'R'+(v-64);if(p[2]<0&&v>0)return '+'+v;return String(v);};
@@ -297,7 +300,7 @@ function setParam(ti,id,v,perm){
   const t=S.tracks[ti],d=PD(ti,id);if(d[6])return;v=clamp(Math.round(v),d[2],d[3]);
   const recording=S.playing&&S.rec&&ti===inputTrack();
   if(recording){recAuto(ti,id,v);perm=false;}
-  if(perm){t.k[id]=v;if(id>=NP){const fx=t.ins[(id-NP)>>3];fx.p[FXDEF[fx.type].p[(id-NP)&7][0]]=v;}songChanged();}
+  if(perm){t.k[id]=v;if(id>=NP&&id<BD){const fx=t.ins[(id-NP)>>3];fx.p[FXDEF[fx.type].p[(id-NP)&7][0]]=v;}songChanged();}
   if(t.lv[id]!==v){t.lv[id]=v;post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v}]});}
   dirty=true;
 }
@@ -699,12 +702,11 @@ async function toggleMidi(){
   }catch(err){dialog(['Web MIDI is blocked here.','The artifact viewer does not allow','MIDI devices. Open the HTML file','locally in Chromium, or keep','playing with the computer keyboard.']);}
   dirty=true;
 }
-// mod wheel (CC 1) drives the KAOSS pad X axis, the pitch wheel its Y axis; a wheel at rest (mod 0, pitch centre)
-// lets go of its axis like releasing the pad
+// mod wheel (CC 1) drives the KAOSS pad X axis, the pitch wheel its Y axis, each over the target's whole range
 function onMidi(e){const [st,d1,d2]=e.data;const cmd=st&0xf0;
   if(cmd===0x90&&d2>0)noteOn('m:'+d1,d1,S.midiVel?d2:100);else if(cmd===0x80||(cmd===0x90&&d2===0))noteOff('m:'+d1);
-  else if(cmd===0xb0&&d1===1){if(d2)padAxis('x',d2/127);else padRelease('x');}
-  else if(cmd===0xe0){const v=d1|d2<<7;if(v===8192)padRelease('y');else padAxis('y',v/16383);}}
+  else if(cmd===0xb0&&d1===1)padAxis('x',d2/127);
+  else if(cmd===0xe0)padAxis('y',(d1|d2<<7)/16383);}
 
 /* ---------- drawing primitives ---------- */
 const cv=$('#screen'),ctx=cv.getContext('2d',{willReadFrequently:true});
@@ -1700,7 +1702,7 @@ function drawPad(){
 }
 
 // full-page chooser for a pad axis: the synth layout, the patch row, the track strip and both inserts
-const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['MG',[24,25]]];
+const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['MG / BEND',[24,25,BD]]];
 const PICK_LOW=[['PATCH DEPTH',[3,4,5,15,17],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['PATCH SOURCE',[26,27,28,29,30],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['OUTPUT',[31,32,33,34,35,36]],
   ['INSERT 1',[0,1,2,3,4,5,6,7].map(j=>NP+j)],['INSERT 2',[0,1,2,3,4,5,6,7].map(j=>NP+8+j)]];
 function drawPadPick(ti){

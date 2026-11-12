@@ -108,7 +108,7 @@ class Voice {
     // VCA
     this.dist = 0; this.wet = 0; this.alk = 0; this.ain = 0; this.aeg = 0; this.als = 4; this.aes = 2;
     this.dr1 = 0; this.dr2 = 32767; this.lvl = 0; this.lvd = 0; this.lvT = 0;
-    this.on = false; this.gate = false; this.note = -1; this.vg = 1; this.age = 0;
+    this.on = false; this.gate = false; this.note = -1; this.vg = 1; this.age = 0; this.bend = 0;
   }
 
   // ds10_patch_set_knob
@@ -214,7 +214,7 @@ class Voice {
     const D = T.depth;
     const mt = (ds, l, e) => I(D[ds], (l + e) >> 9) >> 15;
     const common = mt(this.pds[0], LO[this.pls[0]], eo(this.pes[0])) + (I(D[this.peg], EO0 >> 9) >> 15);
-    const base = this.nC + this.oct12 * 0x8000;
+    const base = this.nC + this.oct12 * 0x8000 + this.bend;
     const inc1 = plook((common + mt(this.pds[1], LO[this.pls[1]], eo(this.pes[1]))) * 0x30 + base);
     const inc2 = plook((common + mt(this.pds[2], LO[this.pls[2]], eo(this.pes[2]))) * 0x30 + base + D[this.v2p] * 0x30);
     this.d1 = inc1 / TWO32 * RT; this.d2 = inc2 / TWO32 * RT;
@@ -396,7 +396,7 @@ class VoiceX extends Voice {
     if (this.nD === 0) { if (this.nC < this.nT) this.nC = this.nT; } else if (this.nT < this.nC) this.nC = this.nT;
     const D = T.depth, mt = (ds, l, e) => I(D[ds], (l + e) >> 9) >> 15;
     const common = mt(this.pds[0], LO[this.pls[0]], eo(this.pes[0])) + (I(D[this.peg], EO0 >> 9) >> 15);
-    const base = this.nC + this.oct12 * 0x8000;
+    const base = this.nC + this.oct12 * 0x8000 + this.bend;
     const pl = v => { if (v < 0) v = 0; else if (v > 0x3C0000) v = 0x3C0000; const i = v >> 15, fr = v & 0x7FFF, lo = T.pitch[i]; return (lo + x15(fr, T.pitch[i + 1] - lo)) | 0; };
     const inc1 = pl((common + mt(this.pds[1], LO[this.pls[1]], eo(this.pes[1]))) * 0x30 + base);
     const inc2 = pl((common + mt(this.pds[2], LO[this.pls[2]], eo(this.pes[2]))) * 0x30 + base + D[this.v2p] * 0x30);
@@ -572,7 +572,7 @@ const volGain = v => (v * v * 0x10404 / 32768) / 32768;
 
 class Track {
   constructor() {
-    this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.stack = []; this.ageC = 0;
+    this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.bend = 0; this.stack = []; this.ageC = 0;
     for (let i = 0; i < 8; i++) this.vs.push(new Voice());
     this.hp = new HP4(); this.ins = [null, null]; this.mute = 0; this.solo = 0; this.peak = 0;
     // drum tracks play rendered samples instead of the voices: kit[d] = {L, R}, sv = sample voices
@@ -588,7 +588,7 @@ class Track {
     x = !!x; if (!!this.exact === x) return;
     this.exact = x; this.stack = [];
     this.vs = []; for (let i = 0; i < 8; i++) this.vs.push(x ? new VoiceX() : new Voice());
-    for (const vo of this.vs) { for (let id = 0; id < 31; id++) vo.knob(id, this.k[id]); vo.setBpm(tempo || 120); }
+    for (const vo of this.vs) { for (let id = 0; id < 31; id++) vo.knob(id, this.k[id]); vo.setBpm(tempo || 120); vo.bend = this.bend; }
   }
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
@@ -685,6 +685,7 @@ class Track {
     this.sl = l; this.sr = r;
   }
   set(id, v) {
+    if (id === NPARAM + 16) { this.bend = Math.round(v * 0x8000 / 10); for (const vo of this.vs) vo.bend = this.bend; return; }   // pitch bend, tenths of a semitone
     if (id >= NPARAM) {
       // 37..52: knob j of insert slot s, id = 37 + s*8 + j, in the order of that effect's controls
       const s = (id - NPARAM) >> 3, fx = this.ins[s];
@@ -1060,7 +1061,7 @@ class Engine {
   cfg(c) {
     c.tracks.forEach((t, i) => {
       const tr = this.tr[i]; if (!tr) return;
-      tr.setExact(t.exact, this.tempo); tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); });
+      tr.setExact(t.exact, this.tempo); tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); }); tr.set(NPARAM + 16, t.k[NPARAM + 16] || 0);
       tr.mute = t.mute ? 1 : 0; tr.solo = t.solo ? 1 : 0;
       tr.ins = (t.ins || [null, null]).map(mkFx);
       tr.setKind(t.kind === 'drum'); tr.interp = t.interp ?? 1;
@@ -1339,7 +1340,8 @@ const MANUAL=[
 
 ['h','KAOSS pad and automation'],
 ['p','The pad moves two knobs of the active track at once: X left to right and Y bottom to top. Click a target\'s name to choose from every knob on one page: the synth columns, the patch depths and sources, the track strip and the knobs of both insert effects. The arrows and the scroll wheel step through them one by one. Any synth knob, the highpass, volume, pan, the sends and the knobs of the track\'s insert effects can be a target. Releasing the pad returns the knobs to their patch values.'],
-['p','With Web MIDI Input on, a MIDI keyboard\'s mod wheel moves X (0 to full) and its pitch wheel moves Y (down to bottom, up to top). The wheels act on the active track like the pad, record automation the same way, and do not bend notes. A wheel at rest (mod wheel at 0, pitch wheel centred) lets go of its axis, which returns that knob to its patch value.'],
+['p','With Web MIDI Input on, a MIDI keyboard\'s mod wheel moves X and its pitch wheel moves Y, each over the target\'s whole range: mod wheel 0 is the left edge, pitch wheel fully down the bottom edge and fully up the top edge. There is no centre or rest position; a wheel always sets its knob to where it stands, and the knob keeps that value until something else moves it (Stop restores the patch values). The wheels act on the active track like the pad and record automation the same way.'],
+['p','BEND (in the MG / BEND column of the target chooser) is the synth\'s pitch bend: -12 to +12 semitones in tenths, 0 in the patch. It is not a knob in the Synth window; only the pad, the wheels and automation move it. Put it on Y and the pitch wheel bends notes, with its centre at no bend. Drum tracks have no BEND.'],
 ['p','Recording automation: press Record and play, then move the pad, a synth knob or an insert-effect knob of the active track. The moves are written into the part under the playhead. If no part is there, one is created and grows bar by bar. Moving over existing automation overwrites it, and holding the pad still keeps writing the same value. CURVE sets whether new lanes are SMOOTH or HOLD.'],
 ['p','Playback: automation moves a live copy of the knob and leaves the patch alone; Stop restores the patch values. Before a part\'s first point the lane holds that value, and after the last point it holds the last value. Changing an insert slot\'s effect type clears that slot\'s lanes.'],
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],
@@ -1401,17 +1403,20 @@ const P=[
   ['SRC','PITCH SOURCE',0,6,0,SRC],['SRC','VCO1 SOURCE',0,6,0,SRC],['SRC','VCO2 SOURCE',0,6,0,SRC],['SRC','CUTOFF SOURCE',0,6,0,SRC],['SRC','VCA SOURCE',0,6,0,SRC],
   ['HP CUT','HPF CUTOFF',0,127,0],['HP RES','HPF RESONANCE',0,127,0],
   ['VOLUME','VOLUME',0,127,100],['PAN','PAN',0,127,64],['SEND A','SEND A',0,127,0],['SEND B','SEND B',0,127,0]];
-const NP=P.length,NA=NP+16,INIT_K=P.map(p=>p[4]).concat(new Array(16).fill(0));
+const NP=P.length,BD=NP+16,NA=NP+17,INIT_K=P.map(p=>p[4]).concat(new Array(17).fill(0));
+// id BD is the synth's pitch bend, -120..120 in tenths of a semitone; not part of the patch, only moved by the pad and automation
+const BEND=['BEND','PITCH BEND',-120,120,0];
 /* ids NP..NA-1 are the knobs of a track's two insert slots: NP + slot*8 + n, n in the effect's own control order.
    PD() describes any id for a given track, so lanes, the pad and recording treat them like synth knobs. */
 function PD(ti,id){
   if(id<33&&isDrumT(ti))return ['—','(synth knob)',0,127,0,null,true];
   if(id<NP)return P[id];
+  if(id===BD)return isDrumT(ti)?['—','(synth knob)',0,127,0,null,true]:BEND;
   const slot=(id-NP)>>3,j=(id-NP)&7,fx=S.tracks[ti]&&S.tracks[ti].ins[slot],d=fx&&FXDEF[fx.type],pp=d&&d.p[j];
   if(!pp)return ['—','INS'+(slot+1)+' —',0,127,0,null,true];
   return [pp[1].slice(0,7),'INS'+(slot+1)+' '+d.short+' '+pp[1],pp[2],pp[0]==='prog'?progMax(fx):pp[3],pp[4],pp[5]];
 }
-function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
+function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);if(id===BD)return (v>0?'+':'')+(v/10).toFixed(1)+' st';const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
 function fxId(slot,key,fx){return NP+slot*8+FXDEF[fx.type].p.findIndex(x=>x[0]===key);}
 function syncFx(t){for(let s=0;s<2;s++)for(let j=0;j<8;j++){const fx=t.ins[s],pp=fx&&FXDEF[fx.type].p[j],v=pp?fx.p[pp[0]]:0;t.k[NP+s*8+j]=v;t.lv[NP+s*8+j]=v;}}
 const pfmt=(id,v)=>{const p=P[id];if(p[5])return p[5][v]??String(v);if(id===34)return v===64?'C':v<64?'L'+(64-v):'R'+(v-64);if(p[2]<0&&v>0)return '+'+v;return String(v);};
@@ -1629,7 +1634,7 @@ function setParam(ti,id,v,perm){
   const t=S.tracks[ti],d=PD(ti,id);if(d[6])return;v=clamp(Math.round(v),d[2],d[3]);
   const recording=S.playing&&S.rec&&ti===inputTrack();
   if(recording){recAuto(ti,id,v);perm=false;}
-  if(perm){t.k[id]=v;if(id>=NP){const fx=t.ins[(id-NP)>>3];fx.p[FXDEF[fx.type].p[(id-NP)&7][0]]=v;}songChanged();}
+  if(perm){t.k[id]=v;if(id>=NP&&id<BD){const fx=t.ins[(id-NP)>>3];fx.p[FXDEF[fx.type].p[(id-NP)&7][0]]=v;}songChanged();}
   if(t.lv[id]!==v){t.lv[id]=v;post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v}]});}
   dirty=true;
 }
@@ -2031,12 +2036,11 @@ async function toggleMidi(){
   }catch(err){dialog(['Web MIDI is blocked here.','The artifact viewer does not allow','MIDI devices. Open the HTML file','locally in Chromium, or keep','playing with the computer keyboard.']);}
   dirty=true;
 }
-// mod wheel (CC 1) drives the KAOSS pad X axis, the pitch wheel its Y axis; a wheel at rest (mod 0, pitch centre)
-// lets go of its axis like releasing the pad
+// mod wheel (CC 1) drives the KAOSS pad X axis, the pitch wheel its Y axis, each over the target's whole range
 function onMidi(e){const [st,d1,d2]=e.data;const cmd=st&0xf0;
   if(cmd===0x90&&d2>0)noteOn('m:'+d1,d1,S.midiVel?d2:100);else if(cmd===0x80||(cmd===0x90&&d2===0))noteOff('m:'+d1);
-  else if(cmd===0xb0&&d1===1){if(d2)padAxis('x',d2/127);else padRelease('x');}
-  else if(cmd===0xe0){const v=d1|d2<<7;if(v===8192)padRelease('y');else padAxis('y',v/16383);}}
+  else if(cmd===0xb0&&d1===1)padAxis('x',d2/127);
+  else if(cmd===0xe0)padAxis('y',(d1|d2<<7)/16383);}
 
 /* ---------- drawing primitives ---------- */
 const cv=$('#screen'),ctx=cv.getContext('2d',{willReadFrequently:true});
@@ -3032,7 +3036,7 @@ function drawPad(){
 }
 
 // full-page chooser for a pad axis: the synth layout, the patch row, the track strip and both inserts
-const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['MG',[24,25]]];
+const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['MG / BEND',[24,25,BD]]];
 const PICK_LOW=[['PATCH DEPTH',[3,4,5,15,17],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['PATCH SOURCE',[26,27,28,29,30],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['OUTPUT',[31,32,33,34,35,36]],
   ['INSERT 1',[0,1,2,3,4,5,6,7].map(j=>NP+j)],['INSERT 2',[0,1,2,3,4,5,6,7].map(j=>NP+8+j)]];
 function drawPadPick(ti){
