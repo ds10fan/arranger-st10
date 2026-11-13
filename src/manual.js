@@ -115,8 +115,9 @@ const MANUAL=[
 ['h','Drums'],
 ['p','Any track can be a drum kit instead of a synth: click DRUM at the top right of the Synth window (F3). A kit has 8 drums. Each drum is recorded, like on the DS-10, from its own DS-10 voice, highpass and two effects into a 2-second stereo sample at C3. From then on the track plays samples, so drums cost almost nothing to play back. The song file stores how each drum is made, and the samples are recorded again when a song loads.'],
 ['p','Switching a track to DRUM turns its notes into drum hits: C, C#, D and so on up the octave pick drums 1 to 8. Switching back turns hits into notes from C3 up. Ctrl+Z undoes the switch. The synth knobs of a drum track are not used, so they cannot be automated there; volume, pan, sends and the track\'s inserts still can.'],
-['k','Kit view (F3)','One row per drum: its name (click to rename), HOLD time, a picture of the recorded sample (click to hear it), VOL and PAN, its effects, its NOTE and EDIT.'],
+['k','Kit view (F3)','One row per drum: its number (click it, or press 1-8, to mute the drum), its name (click to rename), HOLD time, a picture of the recorded sample (click to hear it), VOL and PAN, its effects, its NOTE and EDIT.'],
 ['k','VOL / PAN','Each drum\'s own volume and pan in the kit. VOL scales every hit of the drum on top of its velocity (127 = as recorded); PAN places it in the stereo field, and each hit\'s PAN lane value is added to it. Both act at once, also on hits still sounding, and do not record the drum again. Drag or scroll (Shift: fine); double-click resets. They are not automatable; the track\'s own volume and pan in the mixer are.'],
+['k','Drum mute','Click a drum\'s number box, or press its key 1-8 while the kit is shown, to mute the drum in the whole kit: in every part and when played live, at once, also hits still sounding. A muted drum\'s number box turns black with an M. The mute is saved with the song. The M boxes in Key Edit mute a drum in one part only.'],
 ['k','NOTE','The note the drum plays at, shown in the kit and in the drum editor\'s top bar. A drum is always recorded at C3, the DS-10\'s own note; NOTE replays that recording faster or slower. Set it to C2 and the drum sounds an octave lower and takes twice as long, envelope included. Changing NOTE does not record the drum again. Scroll or drag (Shift: octaves); double-click for C3.'],
 ['k','INTERP','How the samples are played between their recorded points. LIN is linear and cheapest, with a gritty top when pitched. CUBIC (4-point Hermite) is smoother. SINC is band-limited and stays clean when drums are pitched far up, but uses the most CPU.'],
 ['k','EDIT','Stops playback and opens the drum editor.'],
@@ -130,6 +131,7 @@ const MANUAL=[
 ['k','Insert slots','Click a slot to put DS-10 FX, Midiverb, Tape Delay, Distortion or Rate Crush in it. The same menu bypasses, removes or edits the effect. Bypassed effects are drawn struck through.'],
 ['k','SEND A  SEND B  PAN','Post-fader sends and the DS-10 linear pan. Double-click resets.'],
 ['k','Fader','Drag; double-click for 100. A meter runs beside it.'],
+['k','M  S','Mute and solo. Keys 1-8 mute tracks 1-8 while the Mixer is shown.'],
 ['k','SHAPER','The DS-10 master stage: about 2x gain that saturates smoothly near full scale.'],
 ['p','Effects added to a bus slot start fully wet (DRY/WET 127), because the dry signal already reaches the master; keep them that way. Inserts run in series, so delay into reverb is insert 1 and insert 2 of the same strip. The volume curve is the DS-10\'s: 100 is about -4 dB, and 127 is 0 dB.'],
 
@@ -185,6 +187,7 @@ const MANUAL=[
 ['k','Ctrl+Z','Undo'],
 ['k','Ctrl+S','Save JSON'],
 ['k','Ctrl+A C X V','Key Edit: select all, copy, cut, paste'],
+['k','1 … 8','Mixer: mute tracks 1-8; drum kit (F3): mute drums 1-8. On these two screens the number keys do not play notes.'],
 ['k','Numpad','Enter play, 0 stop, * record, / cycle, . bar 1'],
 
 ['h','Credits'],

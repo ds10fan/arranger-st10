@@ -551,7 +551,7 @@ class Track {
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
   // a drum edited since its last recording is played live from its voice and effects and recorded as it plays
-  setMix(d, def) { this.dg[d] = def && def.vol != null ? volGain(def.vol) : 1; this.dp[d] = def && def.pan != null ? def.pan - 64 : 0; }
+  setMix(d, def) { this.dg[d] = def && def.mute ? 0 : def && def.vol != null ? volGain(def.vol) : 1; this.dp[d] = def && def.pan != null ? def.pan - 64 : 0; }
   setDef(d, def) {
     const old = this.defs[d]; this.defs[d] = def; this.dirty[d] = true; this.setMix(d, def);
     const lr = this.liveOf(d); if (!lr) return;
@@ -1048,7 +1048,7 @@ class Engine {
       case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
       case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
-      case 'drumplay': { const t = this.tr[m.tr], df = t.defs[m.d]; if (df) { df.note = m.note; df.vol = m.vol; df.pan = m.pan; t.setMix(m.d, df); } break; }   // NOTE, VOL, PAN: playback only, no new recording
+      case 'drumplay': { const t = this.tr[m.tr], df = t.defs[m.d]; if (df) { df.note = m.note; df.vol = m.vol; df.pan = m.pan; df.mute = !!m.mute; t.setMix(m.d, df); } break; }   // NOTE, VOL, PAN: playback only, no new recording
       case 'interp': this.tr[m.tr].interp = m.v; break;
       case 'exact': this.tr[m.tr].setExact(m.v, this.tempo); break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;
