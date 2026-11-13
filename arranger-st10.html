@@ -1343,6 +1343,7 @@ const MANUAL=[
 
 ['h','KAOSS pad and automation'],
 ['p','The pad moves two knobs of the active track at once: X left to right and Y bottom to top. Click a target\'s name to choose from every knob on one page: the synth columns, the patch depths and sources, the track strip and the knobs of both insert effects. The arrows and the scroll wheel step through them one by one. Any synth knob, the highpass, volume, pan, the sends and the knobs of the track\'s insert effects can be a target. Releasing the pad returns the knobs to their patch values.'],
+['p','Every track keeps its own X and Y targets and its own CURVE, saved with the song, so switching the active track also switches what the pad and the wheels move. New tracks start with CUTOFF on X and RESONANCE on Y; a drum kit, which has no synth knobs, starts with VOLUME and PAN.'],
 ['p','With Web MIDI Input on, a MIDI keyboard\'s mod wheel moves X and its pitch wheel moves Y, each over the target\'s whole range: mod wheel 0 is the left edge, pitch wheel fully down the bottom edge and fully up the top edge. There is no centre or rest position; a wheel always sets its knob to where it stands, and the knob keeps that value until something else moves it (Stop restores the patch values). The wheels act on the active track like the pad and record automation the same way.'],
 ['p','BEND (in the MG / BEND column of the target chooser) is the synth\'s pitch bend: -3 to +3 semitones (a minor third each way) in steps of 1/40 semitone, 0 in the patch. It is not a knob in the Synth window; only the pad, the wheels and automation move it. Put it on Y and the pitch wheel bends notes, with its centre at no bend. Drum tracks have no BEND.'],
 ['p','Recording automation: press Record and play, then move the pad, a synth knob or an insert-effect knob of the active track. The moves are written into the part under the playhead. If no part is there, one is created and grows bar by bar. Moving over existing automation overwrites it, and holding the pad still keeps writing the same value. CURVE sets whether new lanes are SMOOTH or HOLD.'],
@@ -1449,7 +1450,7 @@ const S={tracks:[],buses:[],master:null,parts:[],nextId:1,active:0,sel:null,view
   tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,midiVel:true,
   menu:null,popup:null,dialog:null,toolbox:null,step:false,stepPos:0,stepHeld:0,editHi:72,takeId:0,
   mx:-1,my:-1,lastIn:null,inFlash:0,drag:null,pencil:null,lane:'vel',
-  fxSel:{w:{s:'t',i:0},slot:0},ezoom:0,escroll:0,showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
+  fxSel:{w:{s:'t',i:0},slot:0},ezoom:0,escroll:0,showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padOn:false,padVX:.5,padVY:.5,clip:null};
 const gate=new Array(8).fill(0);
 let dirty=true;
 const q=()=>QS[S.qi][1];
@@ -1460,7 +1461,7 @@ function selOnly(n){S.selSet=new Set(n?[n]:[]);S.selNote=n||null;S.ptSel=new Set
 const selList=()=>[...S.selSet];
 let noteClip=null;
 
-function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1,exact:false};}
+function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1,exact:false,padX:11,padY:12,padMode:'s'};}
 /* drum tracks: a kit of 8 drums. Each drum is a DS-10 patch (knobs 0-30 + highpass 31-32), a HOLD time
    and two effects, recorded by the engine into a 2 s sample. Notes on a drum track carry the drum in p (0-7)
    and optional pt (pitch, semitones), pn (pan 0-127) and st (sample start 0-127). */
@@ -1542,8 +1543,8 @@ function newSong(){
   sendCfg();songChanged();dirty=true;
 }
 function songObj(){
-  return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,padX:S.padX,padY:S.padY,padMode:S.padMode,
-    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,...(d.exact?{exact:true}:{}),...(d.mute?{mute:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
+  return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,
+    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,...(d.exact?{exact:true}:{}),...(d.mute?{mute:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins,padX:t.padX,padY:t.padY,padMode:t.padMode})),
     buses:S.buses,master:S.master,
     parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,...(p.dmute?{dmute:p.dmute.map(Boolean)}:{}),notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
 }
@@ -1555,7 +1556,8 @@ function loadSong(o){
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
     (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);tr.exact=!!t.exact;
     if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.vol=clamp(Math.round(d.vol??127),0,127);m.pan=clamp(Math.round(d.pan??64),0,127);m.exact=!!d.exact;m.mute=!!d.mute;return m;});
-    if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];return tr;});
+    if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];
+    const px=t.padX??o.padX,py=t.padY??o.padY,pm=t.padMode??o.padMode;if(px!=null)tr.padX=clamp(px|0,0,NA-1);if(py!=null)tr.padY=clamp(py|0,0,NA-1);if(pm)tr.padMode=pm==='h'?'h':'s';return tr;});
   while(S.tracks.length<8)S.tracks.push(mkTrack('Track '+(S.tracks.length+1),{},1));
   const bs=o.buses||[];S.buses=[0,1].map(i=>({name:i?'BUS B':'BUS A',ret:clamp((bs[i]||{}).ret??100,0,127),ins:[fx(((bs[i]||{}).ins||[])[0]),fx(((bs[i]||{}).ins||[])[1])]}));
   const m=o.master||{};S.master={vol:clamp(m.vol??100,0,127),shp:m.shp?1:0,ins:[fx((m.ins||[])[0]),fx((m.ins||[])[1])]};
@@ -1563,7 +1565,6 @@ function loadSong(o){
     notes:(p.notes||[]).map(n=>{const o={t:n.t|0,p:clamp(n.p|0,0,127),v:clamp(n.v|0,1,127),d:Math.max(1,n.d|0)};if(n.pt!=null)o.pt=clamp(n.pt|0,-24,24);if(n.pn!=null)o.pn=clamp(n.pn|0,0,127);if(n.st!=null)o.st=clamp(n.st|0,0,127);return o;}),auto:cleanAuto(p.auto)}));
   S.nextId=S.parts.reduce((a,p)=>Math.max(a,p.id),0)+1;
   S.tempo=clamp(+o.tempo||120,40,240);S.qi=clamp(o.qi??4,0,QS.length-1);S.L=o.L|0;S.R=o.R|0||BAR*8;S.cycle=!!o.cycle;
-  if(o.padX!=null)S.padX=clamp(o.padX|0,0,NA-1);if(o.padY!=null)S.padY=clamp(o.padY|0,0,NA-1);if(o.padMode)S.padMode=o.padMode==='h'?'h':'s';
   S.songName=String(o.name||'song').slice(0,24);
   S.sel=null;S.view='arr';S.editPart=null;selOnly(null);S.active=0;S.pos=0;S.lane='vel';
   sendCfg();dirty=true;
@@ -1961,7 +1962,7 @@ function recAuto(tr,id,v){
   const tk=recTick();const pt=recPartAt(tr,tk);
   pt.auto=pt.auto||{};
   const rel=clamp(Math.round((tk-pt.start)/6)*6,0,pt.len-1);
-  const ln=pt.auto[id]||(pt.auto[id]={m:S.padMode,pts:[]});
+  const ln=pt.auto[id]||(pt.auto[id]={m:S.tracks[tr].padMode,pts:[]});
   const key=tr+':'+id,last=recLast[key];
   if(last&&last.part===pt.id&&rel>=last.t)ln.pts=ln.pts.filter(x=>x.t<=last.t||x.t>rel);
   else ln.pts=ln.pts.filter(x=>x.t!==rel);
@@ -2352,7 +2353,7 @@ function drawEdit(){
   hl(0,VY-2,W);clr(0,VY-1,W,VH+2,WH);vl(GX-1,VY-1,VH+2);
   const NL=NOTE_LANES[S.lane],ln=NL?null:p.auto[S.lane];
   clr(0,VY-1,GX-1,20,B);T(laneShort(S.lane,p.track),GX/2,VY+8,WH,'center',tw(laneShort(S.lane,p.track))>34?13:16);
-  if(!NL){const m=ln?ln.m:S.padMode;box(4,VY+21,GX-9,14,m==='h'?B:WH);T(m==='h'?'HLD':'SMT',GX/2-2,VY+28,m==='h'?WH:B,'center');}
+  if(!NL){const m=ln?ln.m:S.tracks[p.track].padMode;box(4,VY+21,GX-9,14,m==='h'?B:WH);T(m==='h'?'HLD':'SMT',GX/2-2,VY+28,m==='h'?WH:B,'center');}
   if(NL){
     // bars grow from the lane's default value: the floor for velocity and start, the middle for pitch and pan
     const [,,mn,mx,def]=NL,yv=v=>VY+VH-1-Math.round((v-mn)/(mx-mn)*(VH-2)),y0=yv(S.lane==='vel'?mn:def);
@@ -2381,7 +2382,7 @@ function drawEdit(){
     const blink=Math.floor(performance.now()/400)%2;clr(x-1,38,32,12,blink?B:WH);T('STEP',x+2,44,blink?WH:B);}}
   const rel=S.pos-p.start;if(rel>=ES&&rel<=ES+V.vis){const x=Math.floor(GX+((rel)-ES)*ppt);ctx.globalCompositeOperation='difference';clr(x,38,1,TBY-38,WH);ctx.globalCompositeOperation='source-over';}
 }
-function laneList(p){const s=new Set(isDrumT(p.track)?['vel','pt','pn','st']:['vel']);for(const k in p.auto)if(p.auto[k].pts.length)s.add(k);for(const id of [S.padX,S.padY])if(!PD(p.track,id)[6])s.add(String(id));if(!NOTE_LANES[S.lane])s.add(String(S.lane));return [...s];}
+function laneList(p){const s=new Set(isDrumT(p.track)?['vel','pt','pn','st']:['vel']);for(const k in p.auto)if(p.auto[k].pts.length)s.add(k);const t=padOf(p.track);s.add(String(t.padX));s.add(String(t.padY));if(!NOTE_LANES[S.lane])s.add(String(S.lane));return [...s];}
 
 /* ---------- SYNTH ---------- */
 const SYN_COLS=[['VCO',[0,2,1,19]],['VCO1',[6,9,null,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['OUTPUT',[31,32,'nv',33]]];
@@ -2883,7 +2884,7 @@ function editDown(x,y,e,dbl){
   if(x<GX&&y>=GY&&y<GY+GH){const pitch=pAtY(y),G=eg();if(G.dr)noteOn('ptr',60,100,pitch);else noteOn('ptr',pitch,100);S.drag={up:()=>noteOff('ptr')};return;}
   if(x<GX&&y>=VY-2&&y<TBY){
     if(y<VY+19){const L=laneList(p);S.lane=L[(L.indexOf(String(S.lane))+1)%L.length];S.ptSel=new Set();}
-    else if(!NOTE_LANES[S.lane]){snapshot();const ln=p.auto[S.lane];if(ln)ln.m=ln.m==='h'?'s':'h';else S.padMode=S.padMode==='h'?'s':'h';}
+    else if(!NOTE_LANES[S.lane]){snapshot();const ln=p.auto[S.lane];if(ln)ln.m=ln.m==='h'?'s':'h';else{const t=S.tracks[p.track];t.padMode=t.padMode==='h'?'s':'h';songChanged();}}
     return;}
   if(y>=VY-2&&y<TBY&&x>=GX){
     let snap=false;
@@ -2893,7 +2894,7 @@ function editDown(x,y,e,dbl){
         for(const n of p.notes){const nx=Math.round(GX+(n.t-ES)*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;S.laneNote=n;}}};
       set(x,y);S.drag={move:set,up:()=>{S.laneNote=null;songChanged();dirty=true;}};return;}
     const id=+S.lane,mn=PD(p.track,id)[2],mx=PD(p.track,id)[3];if(PD(p.track,id)[6])return;
-    const ln=()=>p.auto[id]||(p.auto[id]={m:S.padMode,pts:[]});
+    const ln=()=>p.auto[id]||(p.auto[id]={m:S.tracks[p.track].padMode,pts:[]});
     if(S.tool==='eraser'){const er=x2=>{const L=p.auto[id];if(!L)return;const t=((x2-GX)/ppt+ES);const before=L.pts.length;L.pts=L.pts.filter(pt=>Math.abs(pt.t-t)>q()/2);if(L.pts.length!==before&&!snap){snap=true;}};snapshot();er(x);S.drag={move:er};return;}
     if(S.tool==='pointer'){
       const L=p.auto[id],yv=v=>VY+VH-1-Math.round((v-mn)/(mx-mn)*(VH-2)),vy=y2=>mn+(VY+VH-1-y2)/(VH-2)*(mx-mn);
@@ -2996,17 +2997,20 @@ function canvasHint(x,y){
 
 /* ---------- KAOSS pad window ---------- */
 const PADR={x:8,y:62,w:400,h:268};
-function padTarget(axis,d){const k=axis==='x'?'padX':'padY',ti=inputTrack();let v=S[k];for(let n=0;n<NA;n++){v=(v+d+NA)%NA;if(!PD(ti,v)[6])break;}S[k]=v;songChanged();dirty=true;}
+// every track keeps its own pad targets and curve; a target the track cannot use (a synth knob on a drum kit) falls back to its VOLUME / PAN
+function padOf(ti){const t=S.tracks[ti];if(PD(ti,t.padX)[6])t.padX=33;if(PD(ti,t.padY)[6])t.padY=34;return t;}
+const padId=(ti,ax)=>padOf(ti)[ax==='x'?'padX':'padY'];
+function padTarget(axis,d){const k=axis==='x'?'padX':'padY',ti=inputTrack(),t=S.tracks[ti];let v=t[k];for(let n=0;n<NA;n++){v=(v+d+NA)%NA;if(!PD(ti,v)[6])break;}t[k]=v;songChanged();dirty=true;}
 function padApply(fx,fy){
   S.padVX=fx;S.padVY=fy;const ti=inputTrack();
-  for(const [id,f] of [[S.padX,fx],[S.padY,fy]]){const p=PD(ti,id);if(!p[6])setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
+  for(const [id,f] of [[padId(ti,'x'),fx],[padId(ti,'y'),fy]]){const p=PD(ti,id);if(!p[6])setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
 }
 const padAt=(x,y)=>padApply(clamp((x-PADR.x)/PADR.w,0,1),clamp(1-(y-PADR.y)/PADR.h,0,1));
 function padDown(x,y){ensureAudio();S.padOn=true;padAt(x,y);S.drag={move:(x2,y2)=>padAt(x2,y2),up:padUp};}
 function padUp(){S.padOn=false;padRelease('x');padRelease('y');}
-function padAxis(ax,f){ensureAudio();const ti=inputTrack(),id=ax==='x'?S.padX:S.padY,p=PD(ti,id);
+function padAxis(ax,f){ensureAudio();const ti=inputTrack(),id=padId(ti,ax),p=PD(ti,id);
   if(ax==='x')S.padVX=f;else S.padVY=f;if(!p[6])setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
-function padRelease(ax){const ti=inputTrack(),id=ax==='x'?S.padX:S.padY,t=S.tracks[ti];recRelease(ti,[id]);
+function padRelease(ax){const ti=inputTrack(),id=padId(ti,ax),t=S.tracks[ti];recRelease(ti,[id]);
   if(t.lv[id]!==t.k[id]&&!(S.playing&&hasLane(ti,id))){t.lv[id]=t.k[id];post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v:t.k[id]}]});}
   dirty=true;}
 function hasLane(ti,id){return S.parts.some(p=>p.track===ti&&p.auto&&p.auto[id]&&p.auto[id].pts.length);}
@@ -3021,16 +3025,16 @@ function drawPad(){
   else T('Record + play to write moves',W-8,47,B,'right');
   box(R.x-1,R.y-1,R.w+2,R.h+2);
   for(let i=1;i<8;i++){dotV(R.x+Math.round(i*R.w/8),R.y,R.h,4);dotH(R.x,R.y+Math.round(i*R.h/8),R.w,4);}
-  const DX=PD(ti,S.padX),DY=PD(ti,S.padY),vx=clamp((t.lv[S.padX]-DX[2])/(DX[3]-DX[2]),0,1),vy=clamp((t.lv[S.padY]-DY[2])/(DY[3]-DY[2]),0,1);
+  padOf(ti);const DX=PD(ti,t.padX),DY=PD(ti,t.padY),vx=clamp((t.lv[t.padX]-DX[2])/(DX[3]-DX[2]),0,1),vy=clamp((t.lv[t.padY]-DY[2])/(DY[3]-DY[2]),0,1);
   const px=Math.round(R.x+vx*R.w),py=Math.round(R.y+(1-vy)*R.h);
   if(S.padOn){vl(px,R.y,R.h);hl(R.x,py,R.w);clr(px-5,py-5,11,11,B);}
   else{box(px-5,py-5,11,11);}
   clr(R.x+1,R.y+R.h-15,tw('X '+DX[1])+8,14,B);T('X '+DX[1],R.x+5,R.y+R.h-8,WH);
   clr(R.x+1,R.y+1,tw('Y '+DY[1])+8,14,B);T('Y '+DY[1],R.x+5,R.y+8,WH);
-  reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track (or use a MIDI keyboard\'s mod wheel for X, pitch wheel for Y). Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
+  reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track (each track keeps its own targets) (or use a MIDI keyboard\'s mod wheel for X, pitch wheel for Y). Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
   const x0=424,cw=W-x0-8;
   if(S.padPick)return drawPadPick(ti);
-  const axis=(ax,y)=>{const id=ax==='x'?S.padX:S.padY;
+  const axis=(ax,y)=>{const id=padId(ti,ax);
     T(ax.toUpperCase()+' AXIS',x0,y);
     box(x0,y+8,16,18);T('<',x0+8,y+17,B,'center');box(x0+cw-16,y+8,16,18);T('>',x0+cw-8,y+17,B,'center');
     const nm=PD(ti,id)[1];box(x0+18,y+8,cw-36,18);T(nm.slice(0,22),x0+cw/2,y+17,B,'center',nm.length>19?14:16);
@@ -3040,8 +3044,8 @@ function drawPad(){
     reg(x0+18,y+8,cw-36,18,{down:()=>{S.padPick=ax;dirty=true;},wheel:d=>padTarget(ax,d),hint:h});};
   axis('x',70);axis('y',130);
   T('CURVE',x0,198);
-  [['SMOOTH','s'],['HOLD','h']].forEach(([l,m],i)=>{const bx=x0+i*(cw/2),on=S.padMode===m;box(bx,206,cw/2-2,18,on?B:WH);T(l,bx+cw/4-1,215,on?WH:B,'center');
-    reg(bx,206,cw/2-2,18,{down:()=>{S.padMode=m;songChanged();dirty=true;},hint:['Automation curve','SMOOTH draws a line between recorded points; HOLD keeps each value until the next, for stepped sequences. Applies to lanes recorded from now on.','']});});
+  [['SMOOTH','s'],['HOLD','h']].forEach(([l,m],i)=>{const bx=x0+i*(cw/2),on=t.padMode===m;box(bx,206,cw/2-2,18,on?B:WH);T(l,bx+cw/4-1,215,on?WH:B,'center');
+    reg(bx,206,cw/2-2,18,{down:()=>{t.padMode=m;songChanged();dirty=true;},hint:['Automation curve','SMOOTH draws a line between recorded points; HOLD keeps each value until the next, for stepped sequences. Applies to lanes of this track recorded from now on.','']});});
   T('Recorded lanes show',x0,250);T('in Key Edit under the',x0,266);T('note grid (F2).',x0,282);
 }
 
@@ -3050,12 +3054,12 @@ const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF'
 const PICK_LOW=[['PATCH DEPTH',[3,4,5,15,17],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['PATCH SOURCE',[26,27,28,29,30],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['OUTPUT',[31,32,33,34,35,36]],
   ['INSERT 1',[0,1,2,3,4,5,6,7].map(j=>NP+j)],['INSERT 2',[0,1,2,3,4,5,6,7].map(j=>NP+8+j)]];
 function drawPadPick(ti){
-  const ax=S.padPick,cur=ax==='x'?S.padX:S.padY,other=ax==='x'?S.padY:S.padX,cw=106,bh=15;
+  const ax=S.padPick,cur=padId(ti,ax),other=padId(ti,ax==='x'?'y':'x'),cw=106,bh=15;
   clr(0,56,W,TBY-56,WH);
   reg(0,56,W,TBY-56,{down:()=>{S.padPick=null;dirty=true;},hint:['Choose the '+ax.toUpperCase()+' target','Click a knob. Click elsewhere or press Esc to keep the current one.','Esc']});
   const item=(id,x,y,w,label)=>{const d=PD(ti,id);if(d[6]){T('—',x+w/2,y+bh/2,B,'center',13);return;}
     const on=id===cur;box(x,y,w-2,bh-1,on?B:WH);T(label||d[0],x+5,y+bh/2,on?WH:B,'left',13);if(id===other)T(ax==='x'?'Y':'X',x+w-8,y+bh/2,on?WH:B,'right',13);
-    reg(x,y,w-2,bh-1,{down:()=>{S[ax==='x'?'padX':'padY']=id;S.padPick=null;songChanged();dirty=true;},hint:[d[1],'Moves with the pad\'s '+ax.toUpperCase()+' axis.'+(id===other?' Already on the other axis.':''),'']});};
+    reg(x,y,w-2,bh-1,{down:()=>{S.tracks[ti][ax==='x'?'padX':'padY']=id;S.padPick=null;songChanged();dirty=true;},hint:[d[1],'Moves with the pad\'s '+ax.toUpperCase()+' axis.'+(id===other?' Already on the other axis.':''),'']});};
   T('CHOOSE THE '+ax.toUpperCase()+' AXIS TARGET  ·  T'+(ti+1)+' '+S.tracks[ti].name.toUpperCase(),8,66,B,'left',14);
   PICK_SYN.forEach(([title,ids],c)=>{const x=c*cw+2;clr(x,74,cw-4,11,B);T(title,x+(cw-4)/2,79,WH,'center',13);ids.forEach((id,r)=>item(id,x,87+r*bh,cw-2));});
   PICK_LOW.forEach(([title,ids,labels],c)=>{const x=c*128+2;clr(x,152,124,11,B);T(title,x+62,157,WH,'center',13);
@@ -3155,7 +3159,7 @@ function frame(){
   if(S.playing&&ac){
     const cur=curTick();
     if(S.rec){if(S.recMode==='replace')eraseReplace(prevTick,cur);for(const h of held.values())if(h.rn)h.rn.n.d=recLen(h.rn);
-      if(S.padOn){const ti=inputTrack();for(const [id,f] of [[S.padX,S.padVX],[S.padY,S.padVY]]){const p=PD(ti,id);if(!p[6])recAuto(ti,id,Math.round(p[2]+f*(p[3]-p[2])));}}}
+      if(S.padOn){const ti=inputTrack();for(const [id,f] of [[padId(ti,'x'),S.padVX],[padId(ti,'y'),S.padVY]]){const p=PD(ti,id);if(!p[6])recAuto(ti,id,Math.round(p[2]+f*(p[3]-p[2])));}}}
     prevTick=cur;S.pos=cur;
     if(!cycOn()&&cur>=NBARS*BAR){stop();S.pos=0;}
     if(S.view==='arr'){const bar=Math.floor(cur/BAR);if(bar>=S.scroll+VIS||bar<S.scroll)S.scroll=clamp(bar,0,NBARS-VIS);}
