@@ -496,6 +496,11 @@ class VoiceX extends Voice {
 }
 
 // 4-pole highpass: two TPT SVF sections, resonance on the second
+// Anti-denormal noise: white noise around 1e-18 (-360 dB) added at the inputs of the filters and effects.
+// Without it, filter states and delay lines fed with silence decay into denormal numbers, which many CPUs
+// (most Intel ones) process 10-100x slower; the engine then overloads seconds after a track goes quiet.
+let dnS = 22222;
+function DN() { dnS = (Math.imul(dnS, 1664525) + 1013904223) | 0; return dnS * 4.6e-28; }
 class HP4 {
   constructor() { this.a = [0, 0, 0, 0]; this.set(0, 0); }
   set(c, r) {
@@ -554,7 +559,7 @@ function renderDrum(d, tempo) {
   for (let i = 0; i < N; i++) {
     if (i === hold) v.noteOff();
     if (--fc <= 0) { fc += FR; v.frame(); for (const x of fx) if (x.frame) x.frame(); }
-    let x0 = hp.p(v.on || v.exact ? v.sample() : 0), l = x0, r = x0;
+    let x0 = hp.p((v.on || v.exact ? v.sample() : 0) + DN()), l = x0, r = x0;
     for (const x of fx) { x.proc(l, r); l = x.l; r = x.r; }
     L[i] = l; R[i] = r;
   }
@@ -629,7 +634,7 @@ class Track {
   liveStep(lr) {
     if (lr.pos === lr.hold) lr.v.noteOff();
     if (--lr.fc <= 0) { lr.fc += FR; lr.v.frame(); for (const x of lr.fx) if (x && x.on && x.frame) x.frame(); }
-    let l = lr.hp.p(lr.v.on || lr.v.exact ? lr.v.sample() : 0), r = l;
+    let l = lr.hp.p((lr.v.on || lr.v.exact ? lr.v.sample() : 0) + DN()), r = l;
     for (const x of lr.fx) if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; }
     lr.L[lr.pos] = l; lr.R[lr.pos] = r; lr.pos++;
     if (lr.pos < lr.L.length) return;
@@ -738,7 +743,7 @@ class Track {
     let m = 0;
     if (this.exact) { for (let i = 0; i < this.nv; i++) m += this.vs[i].sample(); }   // exact voices run continuously, as on the DS
     else for (let i = 0; i < 8; i++) { const vo = this.vs[i]; if (vo.on) m += vo.sample(); }
-    return this.hp.p(m);
+    return this.hp.p(m + DN());
   }
 }
 
@@ -923,8 +928,8 @@ class FxMverb {
       if (this.lp && ++this.lc >= 8) { this.lc = 0; this.stepLfo(); }
       this.l0 = this.l1; this.l1 = this.o[0] / 0x0fff; this.r0 = this.r1; this.r1 = this.o[1] / 0x0fff;
     }
-    this.wl = this.rcL.p(this.l0 + this.ph * (this.l1 - this.l0));
-    this.wr = this.rcR.p(this.r0 + this.ph * (this.r1 - this.r0));
+    this.wl = this.rcL.p(this.l0 + this.ph * (this.l1 - this.l0) + DN());
+    this.wr = this.rcR.p(this.r0 + this.ph * (this.r1 - this.r0) + DN());
     this.l = l * this.dg + this.wl * this.wg; this.r = r * this.dg + this.wr * this.wg;
   }
 }
@@ -1130,6 +1135,7 @@ class Engine {
         let l, r;
         if (T_.drum) { T_.stereo(); l = T_.sl * T_.pl * 2; r = T_.sr * T_.pr * 2; }   // pan acts as balance on the stereo samples
         else { const m = T_.sample(); l = m * T_.pl; r = m * T_.pr; }
+        l += DN(); r += DN();
         for (let s = 0; s < 2; s++) { const x = T_.ins[s]; if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; } }
         const audible = !T_.mute && (!this.solo || T_.solo);
         l *= T_.g; r *= T_.g;
@@ -1139,10 +1145,11 @@ class Engine {
         ml += l; mr += r; al += l * T_.ga; ar += r * T_.ga; bl += l * T_.gb; br += r * T_.gb;
       }
       for (let b = 0; b < 2; b++) {
-        let l = b ? bl : al, r = b ? br : ar; const B = bus[b];
+        let l = (b ? bl : al) + DN(), r = (b ? br : ar) + DN(); const B = bus[b];
         for (let s = 0; s < 2; s++) { const x = B.ins[s]; if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; } }
         ml += l * B.g; mr += r * B.g;
       }
+      ml += DN(); mr += DN();
       for (let s = 0; s < 2; s++) { const x = mst.ins[s]; if (x && x.on) { x.proc(ml, mr); ml = x.l; mr = x.r; } }
       ml *= mst.g; mr *= mst.g;
       if (mst.shp) {
