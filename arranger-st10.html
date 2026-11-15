@@ -1317,12 +1317,13 @@ const MANUAL=[
 ['k','VOICES','M is mono with legato and portamento. 2 to 8 make the track polyphonic.'],
 ['k','VOLUME','Track volume, the same as the mixer fader.'],
 ['p','Patch panel: MG is the LFO, with its rate (FREQ) and FREE or BPM sync. A BPM-synced MG restarts when play starts. Each of PITCH, VCO1, VCO2, CUTOFF and VCA has a depth knob and a source box. Click the box to choose SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate. VCO2 on a pitch destination gives FM, on CUTOFF filter FM, and on VCA ring modulation.'],
-['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets its CUTOFF changed so the filter sits where it did on the DS-10 (usually lower, since the ZDF voice is an octave higher; higher again with PEAK); the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
+['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. USER starts with three tiles: + SAVE CURRENT keeps the patch in this browser, SAVE FILE… writes it to a .patch.json file, and LOAD FILE… reads such a file into the track (or the drum in the drum editor). D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets its CUTOFF changed so the filter sits where it did on the DS-10 (usually lower, since the ZDF voice is an octave higher; higher again with PEAK); the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
 ['p','USER patches are kept in this browser (localStorage), not in the song. In USER, + SAVE CURRENT stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. A patch saved from a ZDF voice is not legacy; one saved from a DS-10 EXACT voice is. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
 
 ['h','Drums'],
 ['p','Any track can be a drum kit instead of a synth: click DRUM at the top right of the Synth window (F3). A kit has 8 drums; a new kit starts with 8 init patches named DRUM1 to DRUM8, ready to be edited or loaded from PRESET. Each drum is recorded, like on the DS-10, from its own DS-10 voice, highpass and two effects into a 2-second stereo sample at C3. From then on the track plays samples, so drums cost almost nothing to play back. The song file stores how each drum is made, and the samples are recorded again when a song loads.'],
 ['p','Switching a track to DRUM turns its notes into drum hits: C, C#, D and so on up the octave pick drums 1 to 8. Switching back turns hits into notes from C3 up. Ctrl+Z undoes the switch. The synth knobs of a drum track are not used, so they cannot be automated there; volume, pan, sends and the track\'s inserts still can.'],
+['k','KITS','The kit library of a drum track. + SAVE KIT keeps all 8 drums (voices, HOLD, NOTE, VOL, PAN, effects) in this browser as a user kit; click a saved kit to load it into this track, x deletes it. SAVE FILE… writes the kit to a .kit.json file, LOAD FILE… reads one. Loading replaces all 8 drums (it asks first), clears the drum mutes and records the drums again.'],
 ['k','Kit view (F3)','One row per drum: its number (click it, or press 1-8, to mute the drum), its name (click to rename), HOLD time, a picture of the recorded sample (click to hear it), VOL and PAN, its effects, its NOTE and EDIT.'],
 ['k','VOL / PAN','Each drum\'s own volume and pan in the kit. VOL scales every hit of the drum on top of its velocity (127 = as recorded); PAN places it in the stereo field, and each hit\'s PAN lane value is added to it. Both act at once, also on hits still sounding, and do not record the drum again. Drag or scroll (Shift: fine); double-click resets. They are not automatable; the track\'s own volume and pan in the mixer are.'],
 ['k','Drum mute','Click a drum\'s number box, or press its key 1-8 while the kit is shown, to mute the drum in the whole kit: in every part and when played live, at once, also hits still sounding. A muted drum\'s number box turns black with an M. The mute is saved with the song. The M boxes in Key Edit mute a drum in one part only.'],
@@ -1560,18 +1561,22 @@ function newSong(){
 }
 function songObj(){
   return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,
-    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,...(d.exact?{exact:true}:{}),...(d.mute?{mute:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins,padX:t.padX,padY:t.padY,padMode:t.padMode})),
+    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({...drumOut(d),...(d.mute?{mute:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins,padX:t.padX,padY:t.padY,padMode:t.padMode})),
     buses:S.buses,master:S.master,
     parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,...(p.dmute?{dmute:p.dmute.map(Boolean)}:{}),notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
 }
+const drumOut=d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,...(d.exact?{exact:true}:{})});
+function fxIn(f){if(!f||!FXDEF[f.type])return null;const p=Object.assign(mkFx(f.type).p,f.p||{});
+  for(const pp of FXDEF[f.type].p)if(pp[5])p[pp[0]]=clamp(p[pp[0]],pp[2],pp[3]);return {type:f.type,on:f.on!==false,p};}
+function drumIn(d,j){d=d||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fxIn((d.ins||[])[0]),fxIn((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.vol=clamp(Math.round(d.vol??127),0,127);m.pan=clamp(Math.round(d.pan??64),0,127);m.exact=!!d.exact;m.mute=!!d.mute;return m;}
+const kitIn=drums=>Array.from({length:NDRUM},(_,j)=>drumIn(drums[j],j));
 function cleanAuto(a){const o={};if(a&&typeof a==='object')for(const k in a){const id=+k,ln=a[k];if(id>=0&&id<NA&&ln&&Array.isArray(ln.pts))o[id]={m:ln.m==='h'?'h':'s',pts:ln.pts.filter(x=>x&&isFinite(x.t)&&isFinite(x.v)).map(x=>({t:x.t|0,v:id<NP?clamp(Math.round(x.v),P[id][2],P[id][3]):Math.round(x.v)})).sort((a,b)=>a.t-b.t)};}return o;}
 function loadSong(o){
   if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST10 song');
-  const fx=f=>{if(!f||!FXDEF[f.type])return null;const p=Object.assign(mkFx(f.type).p,f.p||{});
-    for(const pp of FXDEF[f.type].p)if(pp[5])p[pp[0]]=clamp(p[pp[0]],pp[2],pp[3]);return {type:f.type,on:f.on!==false,p};};
+  const fx=fxIn;
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
     (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);tr.exact=!!t.exact;
-    if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.vol=clamp(Math.round(d.vol??127),0,127);m.pan=clamp(Math.round(d.pan??64),0,127);m.exact=!!d.exact;m.mute=!!d.mute;return m;});
+    if(Array.isArray(t.drums))tr.drums=kitIn(t.drums);
     if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];
     const px=t.padX??o.padX,py=t.padY??o.padY,pm=t.padMode??o.padMode;if(px!=null)tr.padX=clamp(px|0,0,NA-1);if(py!=null)tr.padY=clamp(py|0,0,NA-1);if(pm)tr.padMode=pm==='h'?'h':'s';return tr;});
   while(S.tracks.length<8)S.tracks.push(mkTrack('Track '+(S.tracks.length+1),{},1));
@@ -1605,8 +1610,12 @@ function autosave(){
   catch(e){saveState='not saved: storage off';}
   dirty=true;
 }
-async function saveJSON(){
-  const data=JSON.stringify(songObj());const filename=(S.songName||'song').replace(/[^\w-]+/g,'_')+'.json';
+const fileName=(n,ext)=>(n||'untitled').replace(/[^\w-]+/g,'_')+ext;
+function saveJSON(){saveFile(fileName(S.songName||'song','.json'),JSON.stringify(songObj()));}
+// a JSON file chosen by the user, parsed, handed to ok(object, file name); bad files end in a dialog
+function openFile(ok,what){const f=document.createElement('input');f.type='file';f.accept='.json,application/json';
+  f.onchange=()=>{const file=f.files[0];if(!file)return;file.text().then(t=>ok(JSON.parse(t),file.name)).catch(err=>dialog(['That file is not '+what+'.',String(err.message||'').slice(0,34)]));};f.click();}
+async function saveFile(filename,data){
   try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
     if(dl){await dl.save({filename,data});flashMsg('Saved '+filename);return;}}
   catch(e){if(e&&e.code==='declined'){flashMsg('Save cancelled');return;}}
@@ -2435,6 +2444,8 @@ function drawKit(ti){
   INTERP.forEach((l,i)=>{const bx=346+i*44,on=(t.interp??1)===i;box(bx,40,42,14,on?B:WH);T(l,bx+21,47,on?WH:B,'center',14);
     reg(bx,40,42,14,{down:()=>setInterp(ti,i),hint:['Sample interpolation: '+l,['Linear: cheapest, with a gritty top when pitched.','Cubic (4-point Hermite): smoother, still aliases when pitched far up.','Windowed sinc: band-limited, clean when pitched up, uses the most CPU.'][i],'']});});
   kindSwitch(ti,W-82);
+  {const on=S.presetPick;box(236,40,56,14,on?B:WH);T('KITS',264,47,on?WH:B,'center');reg(236,40,56,14,{down:()=>{S.presetPick=!S.presetPick;dirty=true;},hint:['Kit library','Your saved drum kits: save this kit, load one into this track, or save and load kits as .json files.','']});}
+  if(S.presetPick)return drawLibrary(null,ti);
   for(let d=0;d<NDRUM;d++){const dr=t.drums[d],y=60+d*34;
     box(4,y,22,28,dr.mute?B:WH);T(String(d+1),15,y+(dr.mute?9:14),dr.mute?WH:B,'center');if(dr.mute)T('M',15,y+21,WH,'center',13);
     reg(4,y,22,28,{down:()=>toggleDrumMute(ti,d),hint:['Drum '+(d+1)+' mute','Silences this drum in the whole kit, in every part and when played live, at once. Saved with the song.',String(d+1)]});
@@ -2507,28 +2518,40 @@ function drawPatch(T_){
       wheel:d=>T_.set(sk,clamp(sv-d,0,6)),hint:[P[sk][1],'Click to choose what modulates '+title.toLowerCase()+': SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate.','']});
     if(c<5)dotV(x+cw-2,262,74,2);
   });
-  if(S.presetPick){
+  if(S.presetPick)drawLibrary(T_,ti);
+}
+// the patch library over the Synth window or the drum editor; with T_ null it is the kit library of drum track ti
+function drawLibrary(T_,ti){
+  const kit=!T_,dr=T_&&T_.dr;
     clr(0,56,W,TBY-56,WH);hl(0,56,W);
     reg(0,56,W,TBY-56,{down:()=>{S.presetPick=false;},hint:['Patch library','Click a patch to load it, or click elsewhere to close.','Esc']});
-    const LIBG=libGroups(),LW=200,RH=15,vis=Math.floor((TBY-76)/RH);
+    const LIBG=kit?[['USER KITS',userKits]]:libGroups(),LW=200,RH=15,vis=Math.floor((TBY-76)/RH);
     S.pbScroll=clamp(S.pbScroll||0,0,Math.max(0,LIBG.length-vis));
-    if(S.pbSrc==null||S.pbSrc>=LIBG.length)S.pbSrc=userPatches.length?0:1;
+    if(kit)S.pbSrc=0;else if(S.pbSrc==null||S.pbSrc>=LIBG.length)S.pbSrc=userPatches.length?0:1;
     T('SOURCE  '+LIBG.length,6,66,B,'left',14);vl(LW,57,TBY-57);
     reg(0,58,LW,TBY-58,{down:()=>{},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Sources','USER (your saved patches), the DS-10 factory set, the saved patch banks, then every song in the six ds10emu saves. Scroll the list.','']});
     for(let r=0;r<vis;r++){const gi=S.pbScroll+r;if(gi>=LIBG.length)break;const y=74+r*RH,on=gi===S.pbSrc;
       if(on)clr(1,y,LW-2,RH,B);T(LIBG[gi][0].replace('/',' / '),6,y+RH/2,on?WH:B,'left',14);T(String(LIBG[gi][1].length),LW-6,y+RH/2,on?WH:B,'right',14);
-      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;S.pgScroll=0;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Source',gi===0?'Your own patches, kept in this browser. Click to list them; SAVE stores the current patch here.':LIBG[gi][0]+': '+LIBG[gi][1].length+' patches. Click to list them.','']});}
+      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;S.pgScroll=0;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Source',kit?'Your own drum kits, kept in this browser. SAVE KIT stores all 8 drums of this track here.':gi===0?'Your own patches, kept in this browser. Click to list them; SAVE stores the current patch here.':LIBG[gi][0]+': '+LIBG[gi][1].length+' patches. Click to list them.','']});}
     if(S.pbScroll>0)T('▲ more',LW/2,TBY-2-RH*vis-2,B,'center',13);
-    const user=S.pbSrc===0,g=LIBG[S.pbSrc];T((user?'USER':g[0])+'  ·  click to load into '+(dr?'drum '+(T_.d+1):'T'+(ti+1)),LW+8,66,B,'left',14);
-    const tiles=(user?[null]:[]).concat(g[1]),rows=Math.ceil(tiles.length/3),vrows=Math.floor((TBY-74)/31);
+    const user=S.pbSrc===0,g=LIBG[S.pbSrc];T((user?g[0]:g[0])+'  ·  click to load into '+(kit?'the kit of T'+(ti+1):dr?'drum '+(T_.d+1):'T'+(ti+1)),LW+8,66,B,'left',14);
+    const tiles=(user?['save','sfile','lfile']:[]).concat(g[1]),rows=Math.ceil(tiles.length/3),vrows=Math.floor((TBY-74)/31);
     S.pgScroll=clamp(S.pgScroll||0,0,Math.max(0,rows-vrows));
-    reg(LW+1,58,W-LW-1,TBY-58,{down:()=>{},wheel:d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;},hint:['Patches','Click a patch to load it. Scroll for more.','']});
+    reg(LW+1,58,W-LW-1,TBY-58,{down:()=>{},wheel:d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;},hint:[kit?'Kits':'Patches',kit?'Click a kit to load it into this track (asks first). Scroll for more.':'Click a patch to load it. Scroll for more.','']});
     if(S.pgScroll>0)T('▲ more',W-8,66,B,'right',13);
     if(rows-S.pgScroll>vrows)T('▼ more',W-8,TBY-6,B,'right',13);
     tiles.forEach((tile,i)=>{const r=Math.floor(i/3)-S.pgScroll;if(r<0||r>=vrows)return;const cx=LW+6+(i%3)*144,cy=74+r*31;
       const wheel=d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;};
-      if(!tile){box(cx,cy,140,28);T('+ SAVE CURRENT',cx+70,cy+14,B,'center');
-        reg(cx,cy,140,28,{down:()=>savePatchAs(T_),wheel,hint:['Save patch','Stores the current patch (31 synth knobs and the highpass) as a user patch in this browser. Saving under an existing name asks before replacing it.','']});return;}
+      if(typeof tile==='string'){const A=kit?{save:['+ SAVE KIT',()=>saveKitAs(ti),'Save kit','Stores all 8 drums of this track (voices, HOLD, NOTE, VOL, PAN, effects) as a user kit in this browser. Saving under an existing name asks before replacing it.'],
+            sfile:['SAVE FILE…',()=>saveKitFile(ti),'Save kit as a file','Writes all 8 drums of this track to a .json file.'],
+            lfile:['LOAD FILE…',()=>openFile(o=>loadKitFile(ti,o),'a drum kit'),'Load kit from a file','Reads a kit .json file into this track, replacing all 8 drums (asks first).']}
+          :{save:['+ SAVE CURRENT',()=>savePatchAs(T_),'Save patch','Stores the current patch (31 synth knobs and the highpass) as a user patch in this browser. Saving under an existing name asks before replacing it.'],
+            sfile:['SAVE FILE…',()=>savePatchFile(T_),'Save patch as a file','Writes the current patch (31 synth knobs and the highpass) to a .json file.'],
+            lfile:['LOAD FILE…',()=>openFile(o=>loadPatchFile(T_,o),'a patch'),'Load patch from a file','Reads a patch .json file into '+(dr?'this drum':'this track')+'.']};
+        const [l,f,h1,h2]=A[tile];box(cx,cy,140,28);T(l,cx+70,cy+14,B,'center');reg(cx,cy,140,28,{down:f,wheel,hint:[h1,h2,'']});return;}
+      if(kit){const xi=userKits.indexOf(tile);box(cx,cy,140,28);T(tile.name,cx+6,cy+14,B,'left',tile.name.length>12?14:16);
+        reg(cx,cy,140,28,{down:()=>loadKit(ti,tile.name,tile.drums),wheel,hint:[tile.name,'User kit: '+tile.drums.map(d=>d.name).join(' ')+'. Click to load it into this track (asks first).','']});
+        box(cx+122,cy+4,14,14);T('x',cx+129,cy+10,B,'center',14);reg(cx+122,cy+4,14,14,{down:()=>deleteUserKit(xi),wheel,hint:['Delete user kit','Removes '+tile.name+' from your user kits (asks first).','']});return;}
       const [n,isDr,k]=tile,leg=isLegacy(tile,user),conv=leg&&!targetExact(T_);
       const ck=conv?zdfCutoff(k[11],k[12]):k[11];
       const same=k.every((v,j)=>T_.k[j]===(j===11?ck:v));box(cx,cy,140,28,same?B:WH);T(n,cx+6,cy+14,same?WH:B,'left',n.length>12?14:16);
@@ -2540,7 +2563,6 @@ function drawPatch(T_){
       if(user){const xi=user?userPatches.indexOf(tile):-1;box(cx+122,cy+4,14,14,same?WH:WH);T('x',cx+129,cy+10,B,'center',14);
         reg(cx+122,cy+4,14,14,{down:()=>deleteUserPatch(xi),wheel,hint:['Delete user patch','Removes '+n+' from your user patches (asks first).','']});}
     });
-  }
 }
 /* user patches: kept in this browser's localStorage, shown as the USER source of the patch library */
 const UP_KEY='arranger-st.patches';
@@ -2576,6 +2598,29 @@ function savePatchAs(T_){
       saveUserPatches();S.pbSrc=0;S.presetPick=true;flashMsg('Saved patch '+name);dirty=true;};
     if(i>=0)dialog(['A user patch called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:put}]);else put();});
 }
+/* patch and kit files, and user kits (localStorage, the USER KITS library of the kit view) */
+const UK_KEY='arranger-st.kits';
+let userKits=[];try{userKits=JSON.parse(localStorage.getItem(UK_KEY)||'[]').filter(k=>k&&typeof k.name==='string'&&Array.isArray(k.drums));}catch(e){userKits=[];}
+function saveUserKits(){try{localStorage.setItem(UK_KEY,JSON.stringify(userKits));}catch(e){flashMsg('Could not save: browser storage unavailable');}}
+const kitOut=t=>t.drums.map(drumOut);
+function saveKitAs(ti){const t=S.tracks[ti];
+  askText('Save kit as',t.name,12,name=>{name=name.toUpperCase();const i=userKits.findIndex(k=>k.name===name),put=()=>{
+      const e={name,drums:kitOut(t)};if(i>=0)userKits[i]=e;else userKits.push(e);saveUserKits();S.presetPick=true;flashMsg('Saved kit '+name);dirty=true;};
+    if(i>=0)dialog(['A user kit called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:put}]);else put();});}
+function deleteUserKit(i){const n=userKits[i].name;
+  dialog(['Delete the user kit',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{userKits.splice(i,1);saveUserKits();S.presetPick=true;flashMsg('Deleted kit '+n);dirty=true;}}]);}
+// replaces all 8 drums of track ti; the drum mutes are cleared, the kit is recorded again
+function loadKit(ti,name,drums){
+  dialog(['Replace all 8 drums of T'+(ti+1),'with the kit '+name+'?'],[{l:'Cancel'},{l:'Load',def:true,a:()=>{const t=S.tracks[ti];allOff();
+    t.drums=kitIn(drums.map(d=>({...d,mute:false})));post({t:'kind',tr:ti,kind:'drum',drums:t.drums.map(drumDef)});
+    S.presetPick=false;flashMsg('Loaded kit '+name+' into T'+(ti+1));songChanged();dirty=true;}}]);}
+function saveKitFile(ti){const t=S.tracks[ti];saveFile(fileName(t.name,'.kit.json'),JSON.stringify({app:'arranger-st10',type:'kit',name:t.name,drums:kitOut(t)}));}
+function loadKitFile(ti,o){if(!o||o.type!=='kit'||!Array.isArray(o.drums))throw new Error('No kit in this file');loadKit(ti,String(o.name||'KIT').slice(0,12).toUpperCase(),o.drums);}
+function savePatchFile(T_){const name=T_.dr?T_.dr.name:S.tracks[T_.ti].name;
+  saveFile(fileName(name,'.patch.json'),JSON.stringify({app:'arranger-st10',type:'patch',name,drum:!!T_.dr,voice:targetExact(T_)?'ds10':'zdf',k:T_.k.slice(0,33)}));}
+function loadPatchFile(T_,o){if(!o||o.type!=='patch'||!Array.isArray(o.k))throw new Error('No patch in this file');
+  const k=Array.from({length:33},(_,i)=>clamp(Math.round(+o.k[i]||0),i<31?P[i][2]:0,i<31?P[i][3]:127));
+  loadPreset(T_,'file',String(o.name||'PATCH').slice(0,12),k,o.voice!=='zdf');}
 function deleteUserPatch(i){const n=userPatches[i][0];
   dialog(['Delete the user patch',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{userPatches.splice(i,1);saveUserPatches();S.presetPick=true;flashMsg('Deleted patch '+n);dirty=true;}}]);}
 function loadPreset(T_,src,n,k,legacy){
