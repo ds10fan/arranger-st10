@@ -131,6 +131,8 @@ const isDrumT=ti=>!!(S.tracks[ti]&&S.tracks[ti].kind==='drum');
 function mkDrum(name,k31,hold,note){return {name,k:(k31||INIT_K.slice(0,31)).slice(0,31).concat([0,0]),hold:hold??DRUM_INIT_HOLD,note:note??60,vol:127,pan:64,ins:[null,null],wave:null};}
 const DRUM_NOTE_MIN=12,DRUM_NOTE_MAX=108;
 const holdMs=k=>Math.round(10*Math.pow(200,k/127));
+// a new drum track starts with 8 init patches; the demo song keeps its RESIN# kit
+function initKit(){return Array.from({length:NDRUM},(_,i)=>mkDrum('DRUM'+(i+1)));}
 function defaultKit(){return [mkDrum('KICK',lib('DS10PLUS/RESIN#','DR1')),mkDrum('SNARE',lib('DS10PLUS/RESIN#','DR2')),mkDrum('HAT',lib('DS10PLUS/RESIN#','DR3'),30),
   mkDrum('OPENHAT',fac('HIHAT'),80),mkDrum('TOM',fac('TOM')),mkDrum('SNARE2',fac('SNARE2')),mkDrum('PERC',lib('DS10PLUS/HATER','DR4')),mkDrum('ZAP',fac('ZAP'))];}
 const NOTE_LANES={vel:['VEL','VELOCITY',1,127,100,'v'],pt:['PITCH','DRUM PITCH (semitones)',-24,24,0,'pt'],pn:['PAN','DRUM PAN',0,127,64,'pn'],st:['START','SAMPLE START',0,127,0,'st']};
@@ -319,7 +321,7 @@ function setKind(ti,kind){
     [{l:'Cancel'},{l:kind==='drum'?'Drum kit':'Synth',def:true,a:()=>{
       snapshot();allOff();
       for(const pt of S.parts)if(pt.track===ti)for(const n of pt.notes)n.p=kind==='drum'?((n.p%NDRUM)+NDRUM)%NDRUM:60+n.p;
-      t.kind=kind;if(kind==='drum'&&!t.drums)t.drums=defaultKit();
+      t.kind=kind;if(kind==='drum'&&!t.drums)t.drums=initKit();
       for(const pt of S.parts)if(pt.track===ti)for(const id in pt.auto)if(PD(ti,+id)[6])delete pt.auto[id];
       post({t:'kind',tr:ti,kind,drums:t.drums&&t.drums.map(drumDef)});songChanged();dirty=true;}}]);
 }
