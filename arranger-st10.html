@@ -1289,7 +1289,7 @@ const MANUAL=[
 ['k','TIE','The note is slightly longer than a step, so it overlaps the next note. Mono tracks then play legato and glide without retriggering.'],
 ['k','NEW VEL','Velocity for new notes. Scroll or drag it.'],
 ['p','Step input: in Key Edit while stopped, press Enter. Each note you play is entered at the step cursor, and the cursor then moves on by a 16th (or by the quantize value with the FREE gate). Space enters a rest and Backspace steps back. Chords work: hold the keys together. Esc or Enter ends step input.'],
-['p','Velocity lane: drag across the bars to draw velocities. With notes selected, only those change; with none selected, any note under the pointer. Drum parts also have PITCH, PAN and START lanes (see Drums).'],
+['p','Velocity lane: drag across the bars to draw velocities. With notes selected, only those change; with none selected, any note under the pointer. Drum parts also have PITCH, PAN and START lanes (see Drums). The lane is short, so the mouse skips values: hold Shift while drawing (here and in automation lanes with the pencil) and the value moves 8 times slower from where Shift was pressed, which reaches every value.'],
 ['p','Automation lanes: click the lane name to switch between velocity, the part\'s automation lanes and the pad\'s targets. Scroll over the name to reach any knob of the track. The box under the name switches the lane between SMT (smooth line) and HLD (hold each value). The dotted line shows the patch value.'],
 ['k','Pencil (lane)','Drag to draw values on the quantize grid.'],
 ['k','Eraser (lane)','Click or drag over points to delete them.'],
@@ -2787,7 +2787,13 @@ function cursorFor(x,y){
 }
 
 /* ---------- canvas interaction ---------- */
-function mpos(e){const r=cv.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*W/r.width),y:Math.floor((e.clientY-r.top)*H/r.height)};}
+function mpos(e){const r=cv.getBoundingClientRect(),fy=(e.clientY-r.top)*H/r.height;S.fy=fy;return {x:Math.floor((e.clientX-r.left)*W/r.width),y:Math.floor(fy)};}
+// value under the pointer in the Key Edit lane, from the sub-pixel position; with Shift held it moves 8x slower
+// from where Shift was first held, so every value of PITCH, PAN, START and VEL can be reached
+let laneFine=null;
+function laneVal(y,mn,mx,e){const fy=S.fy!=null&&Math.floor(S.fy)===y?S.fy:y+0.5,a=mn+(VY+VH-0.5-fy)/(VH-2)*(mx-mn);
+  if(!(e&&e.shiftKey)){laneFine=null;return clamp(Math.round(a),mn,mx);}
+  if(!laneFine)laneFine={a0:a};return clamp(Math.round(laneFine.a0+(a-laneFine.a0)/8),mn,mx);}
 const inR=(r,x,y)=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;
 function regionAt(x,y){for(let i=regions.length-1;i>=0;i--)if(inR(regions[i],x,y))return regions[i];return null;}
 let lastDown={t:0,x:0,y:0};
@@ -2906,9 +2912,9 @@ function editDown(x,y,e,dbl){
     let snap=false;
     const NL=NOTE_LANES[S.lane];
     if(NL){
-      const [,,mn,mx,,f]=NL,set=(x2,y2)=>{const v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
+      laneFine=null;const [,,mn,mx,,f]=NL,set=(x2,y2,ev)=>{const v=laneVal(y2,mn,mx,ev);
         for(const n of p.notes){const nx=Math.round(GX+(n.t-ES)*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;S.laneNote=n;}}};
-      set(x,y);S.drag={move:set,up:()=>{S.laneNote=null;songChanged();dirty=true;}};return;}
+      set(x,y,e);S.drag={move:set,up:()=>{S.laneNote=null;songChanged();dirty=true;}};return;}
     const id=+S.lane,mn=PD(p.track,id)[2],mx=PD(p.track,id)[3];if(PD(p.track,id)[6])return;
     const ln=()=>p.auto[id]||(p.auto[id]={m:S.tracks[p.track].padMode,pts:[]});
     if(S.tool==='eraser'){const er=x2=>{const L=p.auto[id];if(!L)return;const t=((x2-GX)/ppt+ES);const before=L.pts.length;L.pts=L.pts.filter(pt=>Math.abs(pt.t-t)>q()/2);if(L.pts.length!==before&&!snap){snap=true;}};snapshot();er(x);S.drag={move:er};return;}
@@ -2932,14 +2938,14 @@ function editDown(x,y,e,dbl){
           S.ptSel=new Set(keep);if(L)for(const pt of L.pts){const py=yv(pt.v);if(pt.t>=t0&&pt.t<=t1&&py>=ya-1&&py<=yb+1)S.ptSel.add(pt);}},
         up:()=>{S.band=null;dirty=true;}};
       return;}
-    snapshot();let lastT=null;
-    const setA=(x2,y2)=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/q())*q(),0,p.len-1),v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
+    snapshot();let lastT=null;laneFine=null;
+    const setA=(x2,y2,ev)=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/q())*q(),0,p.len-1),v=laneVal(y2,mn,mx,ev);
       const L=ln();const lo=lastT==null?t:Math.min(lastT,t),hi=lastT==null?t:Math.max(lastT,t);
       L.pts=L.pts.filter(pt=>pt.t<lo||pt.t>hi);
       if(lastT!=null&&lastT!==t){const lv=L._lv;for(let tt=lo;tt<=hi;tt+=q()){const f=(tt-lastT)/(t-lastT);L.pts.push({t:tt,v:Math.round(lv+(v-lv)*f)});}}
       else L.pts.push({t,v});
       L.pts.sort((a,b)=>a.t-b.t);L._lv=v;lastT=t;};
-    setA(x,y);S.drag={move:setA,up:()=>{const L=p.auto[id];if(L)delete L._lv;songChanged();}};return;
+    setA(x,y,e);S.drag={move:setA,up:()=>{const L=p.auto[id];if(L)delete L._lv;songChanged();}};return;
   }
   if(!(x>=GX&&y>=GY&&y<GY+GH))return;
   const tk=((x-GX)/ppt+ES),pitch=pAtY(y),n=noteAtXY(x,y),tool=S.tool,G=eg();
@@ -3003,7 +3009,7 @@ function canvasHint(x,y){
     if(y<56)return x<GX?['Pitch readout','Shows the pitch under the pointer.','']:['Ruler','Click to set the song position inside this part. Double-click to fit the whole part. Wheel scrolls, Ctrl+wheel zooms in whole bars, Shift+wheel scrolls pitch.',''];
     if(x<GX&&y<GY+GH)return eg().dr?['Drums','Click a row to hear that drum. Notes in a row play that drum.','']:['Keyboard','Click a key to hear the pitch on this track.',''];
     if(x<GX&&y>=VY-2)return ['Lane','Click the name to switch between velocity and this part\'s automation lanes; scroll it to pick any knob. The box below switches smooth or hold.',''];
-    if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With notes selected, only those change; with none selected, any note under the pointer.','']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid. The dotted line is the patch value. Right-press to switch tools.','Tab'];
+    if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With notes selected, only those change; with none selected, any note under the pointer. Hold Shift for fine steps.','Shift']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid (Shift: fine steps). The dotted line is the patch value. Right-press to switch tools.','Tab'];
     const tl={pointer:['Pointer','Drag on empty grid to select a group; Shift-click adds or removes a note; Ctrl+A selects all. Dragging a selected note moves or stretches the whole group (Alt: no snap). Ctrl+C/X/V copy, cut, paste at the song position. Double-click empty grid adds a note.'],
       pencil:['Pencil','Click to draw a note one quantize step long; drag to stretch it.'],eraser:['Eraser','Click or drag over notes to delete them.']}[S.tool]||['',''];
     return [tl[0],tl[1]+(S.step?' Step input is on: play notes to enter them, Space for a rest, Backspace to step back.':' Enter while stopped starts step input.'),'Tab'];

@@ -81,7 +81,7 @@ const MANUAL=[
 ['k','TIE','The note is slightly longer than a step, so it overlaps the next note. Mono tracks then play legato and glide without retriggering.'],
 ['k','NEW VEL','Velocity for new notes. Scroll or drag it.'],
 ['p','Step input: in Key Edit while stopped, press Enter. Each note you play is entered at the step cursor, and the cursor then moves on by a 16th (or by the quantize value with the FREE gate). Space enters a rest and Backspace steps back. Chords work: hold the keys together. Esc or Enter ends step input.'],
-['p','Velocity lane: drag across the bars to draw velocities. With notes selected, only those change; with none selected, any note under the pointer. Drum parts also have PITCH, PAN and START lanes (see Drums).'],
+['p','Velocity lane: drag across the bars to draw velocities. With notes selected, only those change; with none selected, any note under the pointer. Drum parts also have PITCH, PAN and START lanes (see Drums). The lane is short, so the mouse skips values: hold Shift while drawing (here and in automation lanes with the pencil) and the value moves 8 times slower from where Shift was pressed, which reaches every value.'],
 ['p','Automation lanes: click the lane name to switch between velocity, the part\'s automation lanes and the pad\'s targets. Scroll over the name to reach any knob of the track. The box under the name switches the lane between SMT (smooth line) and HLD (hold each value). The dotted line shows the patch value.'],
 ['k','Pencil (lane)','Drag to draw values on the quantize grid.'],
 ['k','Eraser (lane)','Click or drag over points to delete them.'],
