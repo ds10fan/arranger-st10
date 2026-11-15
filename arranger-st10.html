@@ -33,7 +33,7 @@ body{font-family:var(--f-screen);margin:0;overflow:hidden}
 
 <div class="app">
   <canvas id="screen" width="640" height="400"></canvas>
-  <div class="status" id="status"><b id="hintT">ARRANGER ST10</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="saveLbl"></em></div>
+  <div class="status" id="status"><b id="hintT">ARRANGER ST10</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="cpuLbl" title="CPU load: DSP is the audio engine (100% = it cannot keep up and the sound drops out), UI is drawing and the sequencer on the page"></em><em id="saveLbl"></em></div>
   <div class="kb" id="kb"></div>
   <input type="file" id="fileIn" accept=".json,application/json" hidden>
 </div>
@@ -1166,17 +1166,22 @@ class Engine {
   }
 }
 
+// worklets may lack performance.now(); Date.now() steps by 1 ms, but summed over many blocks it averages out
+const NOW = typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();
 if (typeof registerProcessor !== 'undefined') {
   registerProcessor('arranger-st10', class extends AudioWorkletProcessor {
     constructor() {
       super();
-      this.e = new Engine();
+      this.e = new Engine(); this.busy = 0; this.fr = 0;
       this.e.post = m => this.port.postMessage(m);
       this.port.onmessage = ev => this.e.msg(ev.data);
     }
     process(inputs, outputs) {
-      const o = outputs[0];
-      this.e.render(o[0], o[1], o[0].length, currentFrame);
+      const o = outputs[0], n = o[0].length, t0 = NOW();
+      this.e.render(o[0], o[1], n, currentFrame);
+      // CPU meter: time spent rendering against the audio time rendered, reported every half second
+      this.busy += NOW() - t0; this.fr += n;
+      if (this.fr >= sampleRate / 2) { this.port.postMessage({ t: 'cpu', v: this.busy / (this.fr / sampleRate * 1000) }); this.busy = 0; this.fr = 0; }
       return true;
     }
   });
@@ -1255,7 +1260,7 @@ const MANUAL=[
 ['k','Scissors','Click a part to split it at the dotted line (quantize grid).'],
 ['k','Glue','Click a part to join it with the next part on the same track.'],
 ['k','Mute','Click a part to mute or unmute it.'],
-['p','A small box in a part\'s corner means the part has automation. The Structure menu has Repeat Part x4, Split Part at Position, Glue Part to Next and Locators to Part. Functions has Quantize Part, Transpose +12 and -12, Clear Notes and Clear Automation.'],
+['p','A small box in a part\'s corner means the part has automation. The Structure menu has Repeat Part x4, Split Part at Position, Glue Part to Next and Locators to Part (L: sets L and R around the selected part, or the part open in Key Edit, and turns cycle on). Functions has Quantize Part, Transpose +12 and -12, Clear Notes and Clear Automation.'],
 
 ['h','Key Edit window'],
 ['p','Key Edit shows the selected part. The piano keys are on the left (click one to hear it), the note grid fills the middle, and a lane underneath shows velocity or one automation lane.'],
@@ -1351,6 +1356,7 @@ const MANUAL=[
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],
 
 ['h','Latency'],
+['p','CPU meter: the right end of the status line shows DSP and UI load. DSP is the audio engine\'s share of the time it has for each block of sound; near 100% it cannot keep up and the sound breaks up. UI is the time the page spends drawing the screen and running the sequencer. Both update twice a second.'],
 ['p','From a key press to sound takes the browser\'s processing, one 128-sample audio block, up to one 2 ms DS-10 control frame, and the operating system\'s audio output. The last part is usually the largest. Options > Audio Latency shows what your system reports.'],
 ['k','Record Latency Compensation','On by default (Options). While recording, notes, their lengths and pad or knob moves are placed where the music you heard was, not where the engine was rendering. That removes the lag of the audio output from recordings.'],
 ['p','Lowering the system latency on Linux with PipeWire: check the current buffer size with pw-top (the QUANT column). For a session, run pw-metadata -n settings 0 clock.force-quantum 128, and set it back with 0. Permanently, put context.properties = { default.clock.quantum = 128 default.clock.min-quantum = 64 } into ~/.config/pipewire/pipewire.conf.d/10-lowlatency.conf, and pulse.properties = { pulse.min.req = 128/48000 pulse.min.quantum = 128/48000 } into ~/.config/pipewire/pipewire-pulse.conf.d/10-lowlatency.conf, then run systemctl --user restart pipewire pipewire-pulse. Browsers talk to PipeWire through its PulseAudio layer, so starting the browser with PULSE_LATENCY_MSEC=3 also lowers its buffer. Smaller values need a faster machine: crackles mean go back up (256 is a safe middle).'],
@@ -1373,6 +1379,7 @@ const MANUAL=[
 ['k','Space','Play / stop; a rest in step input'],
 ['k','Enter','Record; step input in Key Edit while stopped'],
 ['k','/','Cycle'],
+['k','L','Locators to Part: L and R around the selected part (in Key Edit the part being edited), cycle on'],
 ['k','Home','Bar 1'],
 ['k','Left / Right','Page Arrange and Key Edit (Shift: song position by a bar)'],
 ['k','Up / Down','Active track; in Key Edit, transpose the selection or go to the next track\'s part'],
@@ -1631,6 +1638,7 @@ function sendCfg(){S.tracks.forEach(syncFx);post({t:'cfg',c:cfgObj()});}
 const meters={tr:new Array(8).fill(0),l:0,r:0,v:new Array(8).fill(0)};
 function onEngine(m){if(m.t==='dw'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){const dr=t.drums[m.d];dr.wave=m.w;dr.dirty=false;dr.recording=false;dirty=true;}return;}
   if(m.t==='drec'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){t.drums[m.d].recording=true;dirty=true;}return;}
+  if(m.t==='cpu'){cpu.dsp=m.v;return;}
   if(m.t==='m'){for(let i=0;i<8;i++){meters.tr[i]=Math.max(m.tr[i],meters.tr[i]*0.6);meters.v[i]=m.v[i];}meters.l=Math.max(m.l,meters.l*0.6);meters.r=Math.max(m.r,meters.r*0.6);}}
 
 /* parameter changes. `perm` writes the patch; otherwise only the live value moves (automation, pad) */
@@ -1809,7 +1817,7 @@ function glue(p){
 function repeatPart(){const p=needSel();if(!p)return;snapshot();for(let i=1;i<=3;i++){const c=clonePart(p);c.start=p.start+p.len*i;S.parts.push(c);}dirty=true;}
 function splitAtSPP(){const p=needSel();if(!p)return;snapshot();split(p,Math.round(S.pos));dirty=true;}
 function gluePart(){const p=needSel();if(!p)return;snapshot();glue(p);dirty=true;}
-function locToPart(){const p=needSel();if(!p)return;S.L=p.start;S.R=p.start+p.len;S.cycle=true;dirty=true;}
+function locToPart(){const p=curPartFn();if(!p)return;S.L=p.start;S.R=p.start+p.len;S.cycle=true;dirty=true;}
 function curPartFn(){return S.view==='edit'?part(S.editPart):needSel();}
 function quantizePart(){const p=curPartFn();if(!p)return;snapshot();(S.view==='edit'&&S.selSet.size?selList():p.notes).forEach(n=>n.t=Math.round(n.t/q())*q());dirty=true;}
 function transposePart(d){const p=curPartFn();if(!p)return;snapshot();p.notes.forEach(n=>n.p=clamp(n.p+d,0,127));dirty=true;}
@@ -2021,6 +2029,7 @@ document.addEventListener('keydown',e=>{
     case 'ArrowUp':case 'ArrowDown':{handled();const d=c==='ArrowUp'?1:-1;
       if(S.view==='edit'){if(S.selSet.size){snapshot();const mxp=eg().maxP;for(const m of S.selSet)m.p=clamp(m.p+d*(e.shiftKey&&mxp>12?12:1),0,mxp);const a=S.selNote||selList()[0];audition(a.p,a.v);}else editTrackStep(-d);}
       else setActive(S.active-d);dirty=true;break;}
+    case 'KeyL':handled();locToPart();break;
     case 'BracketLeft':handled();setQ(S.qi-1);break;
     case 'BracketRight':handled();setQ(S.qi+1);break;
     case 'Minus':case 'NumpadSubtract':handled();octave(-1);break;
@@ -2161,10 +2170,10 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','1-8   mute track (Mixer) / drum (kit)','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','L   locators to part (and cycle on)','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','1-8   mute track (Mixer) / drum (kit)','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
   {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON},{l:'-'},{l:'Rename Song…',a:renameSong}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
-  {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',a:locToPart}]},
+  {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',k:'L',a:locToPart}]},
   {name:'Functions',items:[{l:'Quantize Part',k:()=>QS[S.qi][0],a:quantizePart},{l:'Transpose +12',a:()=>transposePart(12)},{l:'Transpose -12',a:()=>transposePart(-12)},{l:'Clear Notes',a:clearPart},{l:'Clear Automation',a:clearAuto}]},
   {name:'View',items:[{l:'Arrange',k:'F1',a:()=>setView('arr')},{l:'Key Edit',k:'F2',a:()=>setView('edit')},{l:'Synth',k:'F3',a:()=>setView('syn')},{l:'Mixer',k:'F4',a:()=>setView('mix')},{l:'Effect',k:'F5',a:()=>setView('fx')},{l:'KAOSS Pad',k:'F6',a:()=>setView('pad')},{l:'Manual',k:'F9',a:()=>setView('man')}]},
   {name:'Options',items:[{l:()=>(S.click?'√ ':'  ')+'Metronome',a:()=>{S.click=!S.click;}},{l:()=>(S.autoQ?'√ ':'  ')+'Auto Quantize',a:()=>{S.autoQ=!S.autoQ;}},
@@ -3154,7 +3163,15 @@ function setScale(m){scaleMode=m;try{localStorage.setItem('arranger-st.scale2',m
 window.addEventListener('resize',fit);
 document.addEventListener('pointerdown',()=>ensureAudio(),{once:true});
 
+// CPU meter: the audio engine reports its share; the UI's is the time spent in frame() per second
+const cpu={dsp:-1,ui:0,busy:0,t0:0,shown:''};
+function cpuMeter(){const now=performance.now();if(!cpu.t0)cpu.t0=now;if(now-cpu.t0<500)return;
+  cpu.ui=cpu.busy/(now-cpu.t0);cpu.busy=0;cpu.t0=now;
+  const s='DSP '+(cpu.dsp<0?'--':Math.round(cpu.dsp*100)+'%')+'  UI '+Math.round(cpu.ui*100)+'%';
+  if(s!==cpu.shown){cpu.shown=s;$('#cpuLbl').textContent=s;}}
+let meterPx='';
 function frame(){
+  const fT=performance.now();
   savePrefs();
   if(S.playing&&ac){
     const cur=curTick();
@@ -3168,9 +3185,12 @@ function frame(){
     liveQ.sort((a,b)=>a.at-b.at);
     dirty=true;
   }
-  if(gate.some(g=>g>0)||S.step||S.input||held.size||S.view==='drum'||performance.now()-S.inFlash<500||meters.l>0.001)dirty=true;
+  if(gate.some(g=>g>0)||S.step||S.input||held.size||S.view==='drum'||performance.now()-S.inFlash<500)dirty=true;
   meters.l*=0.97;meters.r*=0.97;for(let i=0;i<8;i++)meters.tr[i]*=0.97;
+  // the level meters are only drawn in the Mixer: redraw for them only there, and only when a bar changes height
+  if(S.view==='mix'){const px=meters.tr.map(v=>Math.round(Math.min(1,v*2)*96)).join()+','+Math.round(Math.min(1,Math.max(meters.l,meters.r))*96);if(px!==meterPx){meterPx=px;dirty=true;}}
   if(dirty){dirty=false;render();}
+  cpu.busy+=performance.now()-fT;cpuMeter();
   requestAnimationFrame(frame);
 }
 /* settings (the Options menu, keyboard octave, note gate) are kept in this browser apart from the song;

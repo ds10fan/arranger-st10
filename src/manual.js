@@ -59,7 +59,7 @@ const MANUAL=[
 ['k','Scissors','Click a part to split it at the dotted line (quantize grid).'],
 ['k','Glue','Click a part to join it with the next part on the same track.'],
 ['k','Mute','Click a part to mute or unmute it.'],
-['p','A small box in a part\'s corner means the part has automation. The Structure menu has Repeat Part x4, Split Part at Position, Glue Part to Next and Locators to Part. Functions has Quantize Part, Transpose +12 and -12, Clear Notes and Clear Automation.'],
+['p','A small box in a part\'s corner means the part has automation. The Structure menu has Repeat Part x4, Split Part at Position, Glue Part to Next and Locators to Part (L: sets L and R around the selected part, or the part open in Key Edit, and turns cycle on). Functions has Quantize Part, Transpose +12 and -12, Clear Notes and Clear Automation.'],
 
 ['h','Key Edit window'],
 ['p','Key Edit shows the selected part. The piano keys are on the left (click one to hear it), the note grid fills the middle, and a lane underneath shows velocity or one automation lane.'],
@@ -155,6 +155,7 @@ const MANUAL=[
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],
 
 ['h','Latency'],
+['p','CPU meter: the right end of the status line shows DSP and UI load. DSP is the audio engine\'s share of the time it has for each block of sound; near 100% it cannot keep up and the sound breaks up. UI is the time the page spends drawing the screen and running the sequencer. Both update twice a second.'],
 ['p','From a key press to sound takes the browser\'s processing, one 128-sample audio block, up to one 2 ms DS-10 control frame, and the operating system\'s audio output. The last part is usually the largest. Options > Audio Latency shows what your system reports.'],
 ['k','Record Latency Compensation','On by default (Options). While recording, notes, their lengths and pad or knob moves are placed where the music you heard was, not where the engine was rendering. That removes the lag of the audio output from recordings.'],
 ['p','Lowering the system latency on Linux with PipeWire: check the current buffer size with pw-top (the QUANT column). For a session, run pw-metadata -n settings 0 clock.force-quantum 128, and set it back with 0. Permanently, put context.properties = { default.clock.quantum = 128 default.clock.min-quantum = 64 } into ~/.config/pipewire/pipewire.conf.d/10-lowlatency.conf, and pulse.properties = { pulse.min.req = 128/48000 pulse.min.quantum = 128/48000 } into ~/.config/pipewire/pipewire-pulse.conf.d/10-lowlatency.conf, then run systemctl --user restart pipewire pipewire-pulse. Browsers talk to PipeWire through its PulseAudio layer, so starting the browser with PULSE_LATENCY_MSEC=3 also lowers its buffer. Smaller values need a faster machine: crackles mean go back up (256 is a safe middle).'],
@@ -177,6 +178,7 @@ const MANUAL=[
 ['k','Space','Play / stop; a rest in step input'],
 ['k','Enter','Record; step input in Key Edit while stopped'],
 ['k','/','Cycle'],
+['k','L','Locators to Part: L and R around the selected part (in Key Edit the part being edited), cycle on'],
 ['k','Home','Bar 1'],
 ['k','Left / Right','Page Arrange and Key Edit (Shift: song position by a bar)'],
 ['k','Up / Down','Active track; in Key Edit, transpose the selection or go to the next track\'s part'],

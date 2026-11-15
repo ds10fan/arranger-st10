@@ -1124,17 +1124,22 @@ class Engine {
   }
 }
 
+// worklets may lack performance.now(); Date.now() steps by 1 ms, but summed over many blocks it averages out
+const NOW = typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();
 if (typeof registerProcessor !== 'undefined') {
   registerProcessor('arranger-st10', class extends AudioWorkletProcessor {
     constructor() {
       super();
-      this.e = new Engine();
+      this.e = new Engine(); this.busy = 0; this.fr = 0;
       this.e.post = m => this.port.postMessage(m);
       this.port.onmessage = ev => this.e.msg(ev.data);
     }
     process(inputs, outputs) {
-      const o = outputs[0];
-      this.e.render(o[0], o[1], o[0].length, currentFrame);
+      const o = outputs[0], n = o[0].length, t0 = NOW();
+      this.e.render(o[0], o[1], n, currentFrame);
+      // CPU meter: time spent rendering against the audio time rendered, reported every half second
+      this.busy += NOW() - t0; this.fr += n;
+      if (this.fr >= sampleRate / 2) { this.port.postMessage({ t: 'cpu', v: this.busy / (this.fr / sampleRate * 1000) }); this.busy = 0; this.fr = 0; }
       return true;
     }
   });
