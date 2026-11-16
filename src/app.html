@@ -1077,6 +1077,8 @@ function paramCell(T_,id,x,y,w){
   else knobCell(x,y,w,p[0],v,p[2],p[3],p[4],set,hintFor(id),pfmt(id,v));
 }
 const NVOPTS=[1,2,3,4,6,8];
+function soloBtn(ti,x){const t=S.tracks[ti];box(x,40,16,14,t.solo?B:WH);T('S',x+8,47,t.solo?WH:B,'center');
+  reg(x,40,16,14,{down:()=>{t.solo=!t.solo;sendMute(ti);dirty=true;},hint:['Solo','Plays only soloed tracks. The same as S in the arrange window and the mixer.','']});}
 function kindSwitch(ti,x){const t=S.tracks[ti];[['SYNTH','synth'],['DRUM','drum']].forEach(([l,k],i)=>{const bx=x+i*40,on=t.kind===k;box(bx,40,38,14,on?B:WH);T(l,bx+19,47,on?WH:B,'center',14);
   reg(bx,40,38,14,{down:()=>setKind(ti,k),hint:['Track type','SYNTH plays one DS-10 voice. DRUM makes the track a kit of 8 drums, each recorded from its own DS-10 voice and effects into a 2-second sample.','']});});}
 function drawSynth(){if(isDrumT(S.active))return drawKit(S.active);drawPatch(synthTarget(S.active));}
@@ -1086,6 +1088,7 @@ function drawKit(ti){
   box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>setActive(ti-1),hint:['Previous track','','↑']});
   box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
   T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);reg(42,40,tw('T'+(ti+1)+' '+t.name.toUpperCase())+6,14,{down:()=>renameTrack(ti),hint:['Track name','Click to rename this track.','']});
+  soloBtn(ti,214);
   T('INTERP',300,47,B,'left',14);
   INTERP.forEach((l,i)=>{const bx=346+i*44,on=(t.interp??1)===i;box(bx,40,42,14,on?B:WH);T(l,bx+21,47,on?WH:B,'center',14);
     reg(bx,40,42,14,{down:()=>setInterp(ti,i),hint:['Sample interpolation: '+l,['Linear: cheapest, with a gritty top when pitched.','Cubic (4-point Hermite): smoother, still aliases when pitched far up.','Windowed sinc: band-limited, clean when pitched up, uses the most CPU.'][i],'']});});
@@ -1130,6 +1133,7 @@ function drawPatch(T_){
   box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>setActive(ti-1),hint:['Previous track','','↑']});
   box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
   T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);reg(42,40,tw('T'+(ti+1)+' '+t.name.toUpperCase())+6,14,{down:()=>renameTrack(ti),hint:['Track name','Click to rename this track.','']});
+  soloBtn(ti,214);
   }
   const bx=[[240,'PRESET',()=>{S.presetPick=!S.presetPick;},'Patch library','Browse the DS-10 factory set and 502 patches from the ds10emu song saves. Legacy patches (L) get their CUTOFF converted when loaded into a ZDF voice.'],[300,'INIT',initPatch,'Init patch','Resets all synth knobs to the DS-10 init patch.'],[352,'COPY',copyPatch,'Copy patch','Copies this track\'s synth knobs.'],[404,'PASTE',pastePatch,'Paste patch','Pastes copied knobs onto this track.']];
   for(const [x,l,f,h1,h2] of bx){const on=l==='PRESET'&&S.presetPick,bw=l==='PRESET'?56:48;box(x,40,bw,14,on?B:WH);T(l,x+bw/2,47,on?WH:B,'center');reg(x,40,bw,14,{down:f,hint:[h1,h2,'']});}
