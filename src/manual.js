@@ -22,7 +22,7 @@ const MANUAL=[
 ['p','The transport bar at the bottom of the screen works in every window.'],
 ['k','Play','Space or Numpad Enter. Plays from the song position.'],
 ['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop also returns automated knobs to their patch values.'],
-['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. In Key Edit while stopped, Record arms step input instead.'],
+['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. A part grows by whole bars so it holds the end of every note, not just its start, up to the next part on the track; drawing, moving, stretching and pasting notes in Key Edit grow it the same way. In Key Edit while stopped, Record arms step input instead.'],
 ['k','Cycle','/ or Numpad /. Loops between the L and R locators. Recording in cycle layers each pass onto the last.'],
 ['k','Return to zero','Home or Numpad . jumps to bar 1.'],
 ['k','Position','Shift+Left/Right moves the song position by a bar. Plain Left/Right page the Arrange and Key Edit views a screen at a time (in the other windows they move the position). Scrolling over the position display steps by the quantize value.'],

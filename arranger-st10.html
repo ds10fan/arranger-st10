@@ -1230,7 +1230,7 @@ const MANUAL=[
 ['p','The transport bar at the bottom of the screen works in every window.'],
 ['k','Play','Space or Numpad Enter. Plays from the song position.'],
 ['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop also returns automated knobs to their patch values.'],
-['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. In Key Edit while stopped, Record arms step input instead.'],
+['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. A part grows by whole bars so it holds the end of every note, not just its start, up to the next part on the track; drawing, moving, stretching and pasting notes in Key Edit grow it the same way. In Key Edit while stopped, Record arms step input instead.'],
 ['k','Cycle','/ or Numpad /. Loops between the L and R locators. Recording in cycle layers each pass onto the last.'],
 ['k','Return to zero','Home or Numpad . jumps to bar 1.'],
 ['k','Position','Shift+Left/Right moves the song position by a bar. Plain Left/Right page the Arrange and Key Edit views a screen at a time (in the other windows they move the position). Scrolling over the position display steps by the quantize value.'],
@@ -1837,7 +1837,7 @@ function splitAtSPP(){const p=needSel();if(!p)return;snapshot();split(p,Math.rou
 function gluePart(){const p=needSel();if(!p)return;snapshot();glue(p);dirty=true;}
 function locToPart(){const p=curPartFn();if(!p)return;S.L=p.start;S.R=p.start+p.len;S.cycle=true;dirty=true;}
 function curPartFn(){return S.view==='edit'?part(S.editPart):needSel();}
-function quantizePart(){const p=curPartFn();if(!p)return;snapshot();(S.view==='edit'&&S.selSet.size?selList():p.notes).forEach(n=>n.t=Math.round(n.t/q())*q());dirty=true;}
+function quantizePart(){const p=curPartFn();if(!p)return;snapshot();(S.view==='edit'&&S.selSet.size?selList():p.notes).forEach(n=>n.t=Math.round(n.t/q())*q());fitPart(p);dirty=true;}
 function transposePart(d){const p=curPartFn();if(!p)return;snapshot();p.notes.forEach(n=>n.p=clamp(n.p+d,0,127));dirty=true;}
 function clearPart(){const p=curPartFn();if(!p)return;snapshot();p.notes=[];dirty=true;}
 function clearAuto(){const p=curPartFn();if(!p)return;snapshot();p.auto={};S.lane='vel';dirty=true;}
@@ -1888,7 +1888,7 @@ function noteCmd(c){
     const na=Object.keys(auto).length;flashMsg((c==='KeyX'?'Cut ':'Copied ')+L.length+' notes'+(na?' and '+na+' automation lane'+(na>1?'s':''):''));}
   else if(c==='KeyV'){if(!noteClip)return flashMsg('Copy notes first');snapshot();
     const at=clamp(Math.round((S.pos-p.start)/q())*q(),0,p.len-1),add=noteClip.notes.filter(n=>at+n.t<p.len).map(n=>({...n,t:at+n.t}));
-    p.notes.push(...add);S.selSet=new Set(add);S.selNote=add[0]||null;
+    p.notes.push(...add);S.selSet=new Set(add);S.selNote=add[0]||null;fitPart(p);
     // automation replaces what was there over the pasted span; lanes that do not apply to this track (e.g. synth knobs on a drum kit) are skipped
     const end=Math.min(p.len,at+noteClip.len);let na=0;
     for(const id in noteClip.auto){if(PD(p.track,+id)[6])continue;const src=noteClip.auto[id],ln=p.auto[id]||(p.auto[id]={m:src.m,pts:[]});
@@ -1927,7 +1927,7 @@ function noteOn(key,p,v,drumIdx){
   gate[tr]++;S.lastIn={p,v};S.inFlash=performance.now();
   let rn=null;
   if(S.playing&&S.rec)rn=recordStart(tr,p,v);
-  else if(S.step&&S.view==='edit'){const pt=part(S.editPart);if(pt){pt.notes.push({t:S.stepPos,p,v,d:gateLen()||q()});S.stepHeld++;}}
+  else if(S.step&&S.view==='edit'){const pt=part(S.editPart);if(pt){pt.notes.push({t:S.stepPos,p,v,d:gateLen()||q()});fitPart(pt);S.stepHeld++;}}
   held.set(key,{p,kp,rn,tr,step:S.step,id});
   kbLight(kp,true);dirty=true;
 }
@@ -1940,6 +1940,11 @@ function noteOff(key){
   kbLight(h.kp,[...held.values()].some(x=>x.kp===h.kp));dirty=true;
 }
 function allOff(){[...held.keys()].forEach(noteOff);}
+// grow a part by whole bars until it holds the end of every note, up to the next part on its track
+function fitPart(p){if(!p)return;let e=0;for(const n of p.notes)if(n.t<p.len)e=Math.max(e,n.t+n.d);
+  let L=Math.ceil(e/BAR)*BAR;if(L<=p.len)return;
+  const nx=partsOn(p.track).filter(o=>o!==p&&o.start>=p.start+p.len).reduce((m,o)=>Math.min(m,o.start),Infinity);
+  L=Math.min(L,nx-p.start);if(L>p.len)p.len=L;}
 function recPartAt(tr,st){
   let pt=S.parts.find(x=>x.track===tr&&!x.mute&&st>=x.start&&st<x.start+x.len);
   if(!pt){
@@ -1972,10 +1977,10 @@ function recordStart(tr,p,v){
   if(cycOn()&&st>=S.R)st=S.L;
   const pt=recPartAt(tr,st);
   const n={t:st-pt.start,p,v,d:6,take:S.takeId,fresh:curPass()};pt.notes.push(n);
-  return {n,raw};
+  return {n,raw,pt};
 }
 function recLen(rn){let d=recTick()-rn.raw;if(d<0)d+=S.R-S.L;return Math.max(6,Math.round(d));}
-function finalizeRec(rn){rn.n.d=recLen(rn);songChanged();}
+function finalizeRec(rn){rn.n.d=recLen(rn);fitPart(rn.pt);songChanged();}
 function finalizeHeld(){for(const h of held.values())if(h.rn){finalizeRec(h.rn);h.rn=null;}}
 function eraseReplace(a,b){
   const tr=S.active;
@@ -2038,7 +2043,7 @@ document.addEventListener('keydown',e=>{
     case 'Home':case 'NumpadDecimal':handled();rtz();break;
     case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick||S.padPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;S.padPick=null;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
     case 'Tab':handled();nextTool(e.shiftKey?-1:1);break;
-    case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
+    case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();fitPart(part(S.editPart));}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
     case 'ArrowLeft':case 'ArrowRight':{handled();const d=c==='ArrowLeft'?-1:1;
       // Arrange and Key Edit page the view a screen at a time; Shift (and the other windows) move the song position by a bar
       if(!e.shiftKey&&S.view==='arr'){S.scroll=clamp(S.scroll+d*VIS,0,NBARS-VIS);dirty=true;}
@@ -2373,7 +2378,7 @@ function drawEdit(){
   // lane: a per-note value (velocity; pitch, pan, start on drums) or one automation lane
   {const ty=GY+GH;clr(0,ty,W,VY-2-ty,WH);hl(0,ty,W);T('GATE',4,ty+11);
     GATES.forEach(([l],i)=>{const bx=40+i*40,on=(S.gate||0)===i;box(bx,ty+3,38,16,on?B:WH);T(l,bx+19,ty+11,on?WH:B,'center');
-      reg(bx,ty+3,38,16,{down:()=>{S.gate=i;if(i&&S.selSet.size){snapshot();for(const m of S.selSet)m.d=GATES[i][1];}dirty=true;},hint:['Gate '+l,i?'Pencil and step input enter 16th notes '+(i===5?'tied into the next step (legato: mono tracks glide without retriggering)':'held for '+l+' of the step')+'. With notes selected, clicking sets their length.':'Pencil uses the quantize grid and you drag to set the length.','`']});});
+      reg(bx,ty+3,38,16,{down:()=>{S.gate=i;if(i&&S.selSet.size){snapshot();for(const m of S.selSet)m.d=GATES[i][1];fitPart(part(S.editPart));}dirty=true;},hint:['Gate '+l,i?'Pencil and step input enter 16th notes '+(i===5?'tied into the next step (legato: mono tracks glide without retriggering)':'held for '+l+' of the step')+'. With notes selected, clicking sets their length.':'Pencil uses the quantize grid and you drag to set the length.','`']});});
     T('NEW VEL',300,ty+11);box(358,ty+3,34,16);T(String(S.newVel),375,ty+11,B,'center');
     reg(300,ty+3,92,16,{wheel:d=>{S.newVel=clamp(S.newVel-d*4,1,127);dirty=true;},drag:d=>{S.newVel=clamp(Math.round(S.newVel+d),1,127);dirty=true;},hint:['New note velocity','Scroll or drag. Used by the pencil and step input.',''],cur:'vert'});
     if(S.gate)T('pencil: click/drag fills 16ths',W-6,ty+11,B,'right',14);}
@@ -3003,10 +3008,10 @@ function editDown(x,y,e,dbl){
   if(tool==='eraser'){let snap=false;const er=(x2,y2)=>{const nn=noteAtXY(x2,y2);if(nn){if(!snap){snapshot();snap=true;}p.notes=p.notes.filter(o=>o!==nn);S.selSet.delete(nn);if(S.selNote===nn)S.selNote=null;}};er(x,y);S.drag={move:er};return;}
   if(tool==='pencil'&&S.gate){
     const g=gateLen();snapshot();
-    if(n){n.d=g;selOnly(n);audition(n.p,n.v,n);songChanged();return;}
+    if(n){n.d=g;selOnly(n);audition(n.p,n.v,n);fitPart(p);songChanged();return;}
     let last=-1;const paint=x2=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/24)*24,0,p.len-24);if(t===last)return;last=t;
       if(!p.notes.some(o=>o.t===t&&o.p===pitch)){const nn={t,p:pitch,v:S.newVel,d:g};p.notes.push(nn);selOnly(nn);}};
-    paint(x);audition(pitch,S.newVel);S.drag={move:x2=>paint(x2),up:songChanged};return;}
+    paint(x);audition(pitch,S.newVel);S.drag={move:x2=>paint(x2),up:()=>{fitPart(p);songChanged();}};return;}
   if(n){
     if(e.shiftKey&&tool==='pointer'){if(isSel(n)){S.selSet.delete(n);if(S.selNote===n)S.selNote=null;}else{S.selSet.add(n);S.selNote=n;}return;}
     if(!isSel(n))selOnly(n);else S.selNote=n;
@@ -3023,7 +3028,7 @@ function editDown(x,y,e,dbl){
         let dT=Math.round((ot+dt)/g)*g-ot,dP=-Math.round((y2-oy)/G.rh);
         const minT=Math.min(...grp.map(o=>o.t)),maxT=Math.max(...grp.map(o=>o.t)),minP=Math.min(...grp.map(o=>o.p)),maxP=Math.max(...grp.map(o=>o.p));
         dT=clamp(dT,-minT,p.len-1-maxT);dP=clamp(dP,-minP,G.maxP-maxP);
-        const moved=rn.p!==op+dP;for(const o of grp){o.m.t=o.t+dT;o.m.p=o.p+dP;}if(moved)audition(rn.p,rn.v,rn);}},up:()=>{if(started)songChanged();}};
+        const moved=rn.p!==op+dP;for(const o of grp){o.m.t=o.t+dT;o.m.p=o.p+dP;}if(moved)audition(rn.p,rn.v,rn);}},up:()=>{if(started){fitPart(p);songChanged();}}};
     return;}
   if(tool==='pointer'&&!dbl){
     if(!e.shiftKey)selOnly(null);
@@ -3035,7 +3040,7 @@ function editDown(x,y,e,dbl){
     return;}
   selOnly(null);
   if(tool==='pencil'||dbl){snapshot();const st=clamp(Math.floor(tk/q())*q(),0,p.len-1);const nn={t:st,p:pitch,v:100,d:q()};p.notes.push(nn);selOnly(nn);audition(pitch,100);
-    S.drag={move:x2=>{nn.d=Math.max(q(),Math.ceil((((x2-GX)/ppt+ES)-st)/q())*q());}};}
+    S.drag={move:x2=>{nn.d=Math.max(q(),Math.ceil((((x2-GX)/ppt+ES)-st)/q())*q());},up:()=>{fitPart(p);songChanged();}};}
 }
 
 /* ---------- hints ---------- */
