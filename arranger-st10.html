@@ -1276,7 +1276,7 @@ const MANUAL=[
 ['k','Shift+wheel','Scrolls the pitch range.'],
 ['k','Double-click the ruler','Fits the whole part again.'],
 ['k','Left / Right','Page the view one screen.'],
-['k','Pointer','Drum parts work the same way, with one row per drum. Click a note to select it; Shift-click adds or removes notes. Drag on empty grid to select a group with a box. Drag a selected note to move the whole group (Alt: no snapping). Drag a note\'s right end to stretch the group. Double-click empty grid to add a note.'],
+['k','Pointer','Drum parts work the same way, with one row per drum. Click a note to select it; Shift-click adds or removes notes. Drag on empty grid to select a group with a box. Drag a selected note to move the whole group (hold Shift while dragging for no snapping). Alt-drag a note to copy it, or the whole selected group; the copies move and the originals stay. Drag a note\'s right end to stretch the group. Double-click empty grid to add a note.'],
 ['k','Pencil','Draws notes. See Gate below.'],
 ['k','Eraser','Click or drag over notes to delete them.'],
 ['k','Ctrl+A','Selects all notes in the part.'],
@@ -3008,15 +3008,18 @@ function editDown(x,y,e,dbl){
     if(!isSel(n))selOnly(n);else S.selNote=n;
     audition(n.p,n.v,n);
     // the clicked note is the reference; every selected note moves or stretches by the same amount
-    const edge=tool==='pencil'||x>=noteRight(n)-3,ox=x,oy=y,ot=n.t,op=n.p,od=n.d,grp=selList().map(m=>({m,t:m.t,p:m.p,d:m.d}));let started=false;
-    S.drag={move:(x2,y2,ev)=>{if(!started&&Math.abs(x2-ox)<3&&Math.abs(y2-oy)<3)return;if(!started){snapshot();started=true;}
-      const g=ev.altKey?1:q(),dt=(x2-ox)/ppt;
+    // Alt-drag on a note's body copies the note or the selected group; the copies move and the originals stay
+    const edge=tool==='pencil'||x>=noteRight(n)-3,copy=e.altKey&&!edge,ox=x,oy=y,ot=n.t,op=n.p,od=n.d,grp=selList().map(m=>({m,t:m.t,p:m.p,d:m.d}));let started=false,rn=n;
+    S.drag={move:(x2,y2,ev)=>{if(!started&&Math.abs(x2-ox)<3&&Math.abs(y2-oy)<3)return;
+      if(!started){snapshot();started=true;
+        if(copy){S.selSet=new Set();for(const o of grp){const c={...o.m};p.notes.push(c);S.selSet.add(c);if(o.m===n)rn=c;o.m=c;}S.selNote=rn;}}
+      const g=ev.shiftKey?1:q(),dt=(x2-ox)/ppt;
       if(edge){const dd=Math.round((od+dt)/g)*g-od;for(const o of grp)o.m.d=Math.max(Math.min(g,q()),o.d+dd);}
       else{
         let dT=Math.round((ot+dt)/g)*g-ot,dP=-Math.round((y2-oy)/G.rh);
         const minT=Math.min(...grp.map(o=>o.t)),maxT=Math.max(...grp.map(o=>o.t)),minP=Math.min(...grp.map(o=>o.p)),maxP=Math.max(...grp.map(o=>o.p));
         dT=clamp(dT,-minT,p.len-1-maxT);dP=clamp(dP,-minP,G.maxP-maxP);
-        const moved=n.p!==op+dP;for(const o of grp){o.m.t=o.t+dT;o.m.p=o.p+dP;}if(moved)audition(n.p,n.v,n);}},up:()=>{if(started)songChanged();}};
+        const moved=rn.p!==op+dP;for(const o of grp){o.m.t=o.t+dT;o.m.p=o.p+dP;}if(moved)audition(rn.p,rn.v,rn);}},up:()=>{if(started)songChanged();}};
     return;}
   if(tool==='pointer'&&!dbl){
     if(!e.shiftKey)selOnly(null);
@@ -3057,7 +3060,7 @@ function canvasHint(x,y){
     if(x<GX&&y<GY+GH)return eg().dr?['Drums','Click a row to hear that drum. Notes in a row play that drum.','']:['Keyboard','Click a key to hear the pitch on this track.',''];
     if(x<GX&&y>=VY-2)return ['Lane','Click the name to switch between velocity and this part\'s automation lanes; scroll it to pick any knob. The box below switches smooth or hold.',''];
     if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With notes selected, only those change; with none selected, any note under the pointer. Hold Shift for fine steps.','Shift']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid (Shift: fine steps). The dotted line is the patch value. Right-press to switch tools.','Tab'];
-    const tl={pointer:['Pointer','Drag on empty grid to select a group; Shift-click adds or removes a note; Ctrl+A selects all. Dragging a selected note moves or stretches the whole group (Alt: no snap). Ctrl+C/X/V copy, cut, paste at the song position. Double-click empty grid adds a note.'],
+    const tl={pointer:['Pointer','Drag on empty grid to select a group; Shift-click adds or removes a note; Ctrl+A selects all. Dragging a selected note moves or stretches the whole group (Shift: no snap); Alt-drag copies it. Ctrl+C/X/V copy, cut, paste at the song position. Double-click empty grid adds a note.'],
       pencil:['Pencil','Click to draw a note one quantize step long; drag to stretch it.'],eraser:['Eraser','Click or drag over notes to delete them.']}[S.tool]||['',''];
     return [tl[0],tl[1]+(S.step?' Step input is on: play notes to enter them, Space for a rest, Backspace to step back.':' Enter while stopped starts step input.'),'Tab'];
   }

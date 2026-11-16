@@ -68,7 +68,7 @@ const MANUAL=[
 ['k','Shift+wheel','Scrolls the pitch range.'],
 ['k','Double-click the ruler','Fits the whole part again.'],
 ['k','Left / Right','Page the view one screen.'],
-['k','Pointer','Drum parts work the same way, with one row per drum. Click a note to select it; Shift-click adds or removes notes. Drag on empty grid to select a group with a box. Drag a selected note to move the whole group (Alt: no snapping). Drag a note\'s right end to stretch the group. Double-click empty grid to add a note.'],
+['k','Pointer','Drum parts work the same way, with one row per drum. Click a note to select it; Shift-click adds or removes notes. Drag on empty grid to select a group with a box. Drag a selected note to move the whole group (hold Shift while dragging for no snapping). Alt-drag a note to copy it, or the whole selected group; the copies move and the originals stay. Drag a note\'s right end to stretch the group. Double-click empty grid to add a note.'],
 ['k','Pencil','Draws notes. See Gate below.'],
 ['k','Eraser','Click or drag over notes to delete them.'],
 ['k','Ctrl+A','Selects all notes in the part.'],
