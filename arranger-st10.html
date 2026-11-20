@@ -35,7 +35,6 @@ body{font-family:var(--f-screen);margin:0;overflow:hidden}
   <canvas id="screen" width="640" height="400"></canvas>
   <div class="status" id="status"><b id="hintT">ARRANGER ST10</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="cpuLbl" title="CPU load: DSP is the audio engine (100% = it cannot keep up and the sound drops out), UI is drawing and the sequencer on the page"></em><em id="saveLbl"></em></div>
   <div class="kb" id="kb"></div>
-  <input type="file" id="fileIn" accept=".json,application/json" hidden>
 </div>
 
 <script type="text/plain" id="wk">const T={"env_rate":[16777215,14735831,12942834,11368002,9984789,8769879,7702795,6765550,5942345,5219304,4584240,4026448,3536526,3106215,2728264,2396299,2104727,1848632,1623698,1426133,1252607,1136242,1078832,1022734,968173,915372,864556,815947,769770,726248,685607,648003,613340,581452,552177,525350,500809,478389,457927,439260,422223,412639,392387,372069,353698,337136,322248,308896,296945,286257,276697,268128,260414,253417,247002,241033,235371,229883,224430,218901,213283,207586,201823,196005,190142,184247,178330,172403,166477,160564,154674,148820,143011,137261,131579,125978,120468,115061,109768,104601,99571,94686,89948,85355,80904,76595,72425,68393,64498,60736,57107,53610,50241,47000,43885,40893,38024,35276,32647,30134,27738,25455,23284,21223,19271,17426,15686,14050,12515,11081,9744,8504,7359,6306,5344,4471,3683,2981,2361,1821,1360,975,665,427,260,161,129,50],"lfo_bpm":[2239695,4479391,8958783,17917568,23890091,35835137,47780183,53752706,71670276,95560368,107505414,143340552,215010829,286681105,430021658,573362210],"lfo_free":[88,29084,59836,92451,127043,163730,202641,243908,287676,334096,383329,435544,490923,549657,611950,678017,748087,822402,901220,984813,1073471,1167501,1267228,1372997,1485174,1604148,1730331,1864158,2006094,2156629,2316285,2485615,2665204,2855673,3057683,3271932,3499163,3740160,3995759,4266845,4554355,4859284,5182689,5525688,5889469,6275291,6684489,7118479,7578764,8066937,8584687,9133807,9716197,10333872,10988972,11683762,12420649,13202182,14031067,14910172,15842541,16831400,17880172,18992487,20172195,21423379,22750370,24157761,25650424,27233523,28912540,30693285,32581921,34584987,36709414,38962557,41352213,43886653,46574651,49425509,52449094,55655874,59056945,62664081,66489766,70547243,74850553,79414594,84255160,89389007,94833904,100608696,106733372,113229131,120118454,127425189,135174624,143393583,152110512,161355583,171160795,181560086,192589450,204287062,216693409,229851433,243806676,258607440,274304953,290953549,308610851,327337974,347199738,368264887,390606333,414301403,439432112,466085442,494353646,524334565,556131970,589855919,625623136,663557419,703790067,746460333,791715907,839713430],"porta":[32767,31145,27820,24687,21973,19485,17033,14497,12037,9886,8218,6981,6067,5369,4792,4312,3918,3599,3344,3144,2987,2864,2765,2678,2594,2513,2435,2358,2283,2210,2140,2071,2004,1939,1875,1814,1754,1695,1639,1584,1530,1478,1427,1378,1330,1283,1237,1193,1150,1108,1067,1027,988,951,914,878,844,810,778,746,715,685,656,628,601,575,549,524,500,477,454,433,412,391,371,352,334,316,299,283,267,251,237,222,209,196,183,171,159,148,137,127,117,107,98,90,82,74,67,60,53,47,42,37,32,30,29,28,27,26,25,24,23,22,21,20,19,18,18,17,17,17,16,16,9,7,5,3],"peak":[0,33682843,67099419,100249728,133133769,165751543,198103049,230188287,262007258,293559961,324846397,355866565,386620466,417108099,447329465,477284563,506973394,536395957,565552252,594442280,623066041,651423534,679514759,707339717,734898407,762190830,789216985,815976873,842470493,868697845,894658930,920353748,945782298,970944580,995840595,1020470343,1044833822,1068931035,1092761979,1116326657,1139625066,1162657208,1185423083,1207922690,1230156030,1252123102,1273823906,1295258443,1316426712,1337328714,1357964448,1378333915,1398437114,1418274046,1437844710,1457149107,1476187236,1494959097,1513464691,1531704017,1549677076,1567383868,1584824392,1601998648,1618906637,1635548358,1651923811,1668032997,1683875916,1699452567,1714762951,1729807066,1744584915,1759096496,1773341809,1787320855,1801033633,1814480144,1827660387,1840574363,1853222071,1865603511,1877718684,1889567590,1901150228,1912466598,1923516701,1934300536,1944818104,1955069404,1965054437,1974773202,1984225700,1993411930,2002331893,2010985588,2019373015,2027494175,2035349067,2042937692,2050260050,2057316139,2064105962,2070629516,2076886804,2082877823,2088602575,2094061060,2099253277,2104179226,2108838908,2113232323,2117359469,2121220349,2124814961,2128143305,2131205382,2134001191,2136530732,2138794006,2140791013,2142521752,2143986223,2145184427,2146116364,2146782033,2147181434,2147314568],"pitch":[1072928,1136727,1204321,1275933,1351804,1432187,1517349,1607575,1703167,1804442,1911740,2025418,2145856,2273455,2408642,2551867,2703609,2864374,3034698,3215151,3406334,3608885,3823480,4050836,4291712,4546910,4817284,5103734,5407218,5728748,6069397,6430302,6812668,7217770,7646961,8101673,8583424,9093821,9634568,10207469,10814437,11457496,12138795,12860605,13625336,14435541,15293923,16203347,17166848,18187642,19269136,20414938,21628874,22914993,24277590,25721210,27250673,28871083,30587846,32406694,34333697,36375285,38538272,40829877,43257748,45829987,48555180,51442421,54501347,57742166,61175693,64813389,68667394,72750570,77076544,81659754,86515496,91659975,97110360,102884843,109002694,115484332,122351387,129626779,137334789,145501140,154153088,163319508,173030992,183319950,194220721,205769686,218005389,230968664,244702775,259253559,274669578,291002281,308306177,326639017,346061984,366639900,388441443,411539373,436010778,461937328,489405551,518507119,549339157,582004563,616612355,653278034,692123968,733279800,776882886,823078747,872021556,923874656,978811102,1037014239,1077879110,1098678315,-32768,-32768,-31786,-30744,-29720,-28713,-27724,-26753],"depth":[-32768,-32768,-31786,-30744,-29720,-28713,-27724,-26753,-25800,-24576,-23946,-23046,-22164,-21299,-20451,-19622,-18809,-18015,-17238,-16384,-15737,-15012,-14305,-13616,-12944,-12289,-11652,-11032,-10429,-9844,-9276,-8725,-8192,-7676,-7177,-6695,-6230,-5783,-5352,-4779,-4542,-4163,-3800,-3454,-3126,-2814,-2518,-2240,-2048,-1733,-1505,-1292,-1097,-918,-755,-608,-478,-363,-265,-182,-115,-64,-28,-7,0,7,28,64,115,182,265,363,478,608,755,918,1097,1292,1505,1733,2048,2240,2518,2814,3126,3454,3800,4163,4542,4779,5352,5783,6230,6695,7177,7676,8192,8725,9276,9844,10429,11032,11652,12289,12944,13616,14305,15012,15737,16384,17238,18015,18809,19622,20451,21299,22164,23046,23946,24576,25800,26753,27724,28713,29720,30744,31786,32767],"mod_a":[-32767,-32767,-31991,-31224,-30464,-29713,-28970,-28235,-27508,-26790,-26080,-25378,-24685,-24000,-23323,-22654,-21993,-21341,-20697,-20062,-19434,-18815,-18204,-17601,-17007,-16421,-15843,-15273,-14712,-14159,-13614,-13077,-12549,-12028,-11517,-11013,-10518,-10031,-9552,-9081,-8619,-8165,-7719,-7281,-6852,-6431,-6018,-5614,-5217,-4829,-4449,-4078,-3715,-3360,-3013,-2674,-2344,-2022,-1708,-1403,-1106,-817,-536,-264,0,264,536,817,1106,1403,1708,2022,2344,2674,3013,3360,3715,4078,4449,4829,5217,5614,6018,6431,6852,7281,7719,8165,8619,9081,9552,10031,10518,11013,11517,12028,12549,13077,13614,14159,14712,15273,15843,16421,17007,17601,18204,18815,19434,20062,20697,21341,21993,22654,23323,24000,24685,25378,26080,26790,27508,28235,28970,29713,30464,31224,31991,32767],"mod_b":[0,0,131,264,399,536,675,817,960,1106,1253,1403,1555,1708,1864,2022,2182,2344,2508,2674,2843,3013,3185,3360,3536,3715,3895,4078,4263,4449,4638,4829,5022,5217,5414,5614,5815,6018,6223,6431,6640,6852,7066,7281,7499,7719,7941,8165,8391,8619,8849,9081,9315,9552,9790,10031,10273,10518,10764,11013,11264,11517,11772,12028,12288,12549,12812,13077,13344,13614,13885,14159,14434,14712,14991,15273,15557,15843,16131,16421,16713,17007,17303,17601,17902,18204,18508,18815,19123,19434,19747,20062,20378,20697,21018,21341,21666,21993,22323,22654,22987,23323,23660,24000,24341,24685,25031,25378,25728,26080,26434,26790,27148,27508,27871,28235,28601,28970,29340,29713,30087,30464,30843,31224,31607,31991,32378,32767],"coef":[2123409,2249673,2383446,2525173,2675327,2834411,3002953,3181518,3370701,3571133,3783484,4008461,4246816,4499345,4766889,5050343,5350651,5668817,6005901,6363030,6741394,7142257,7566956,8016909,8493616,8998670,9533756,10100658,10701270,11337595,12011756,12726004,13482722,14284435,15133818,16033706,16987100,17997183,19067324,20201093,21402274,22674874,24023137,25451562,26964914,28568239,30266886,32066518,33973138,35993102,38133145,40400400,42802423,45347220,48043269,50899550,53925576,57131422,60527759,64125887,67937774,71976093,76254265,80786500,85587841,90674218,96062489,101770502,107817144,114222403,121007425,128194582,135807536,143871309,152412354,161458630,171039680,181186707,191932661,203312313,215362346,228121434,241630328,255931932,271071389,287096145,304056023,322003276,340992631,361081321,382329090,404798176,428553263,453661388,480191805,508215787,537806354,569037915,601985804,636725685,673332814,711881108,752442002,795083053,839866235,886845874,936066169,987558212,1041336439,1097394403,1155699781,1216188487,1278757771,1343258158,1409484092,1477163139,1545943597,1615380400,1684919210,1753878656,1821430768,1837986209,1854375049,1870579189,1886579739,1902357000,1917890437,1933158656,1948139385,1962809446,1977144736,1991120204,2004709830,2017886601,2030622493,2042888450,2054654367,2065889070,2076560300,2086634699,2096077796,2104853994,2112926564,2120257632,2126808180,2132538042,2137405902,2141369305,2144384658,2146407249,2147391259,1092638790],"fx_lfo_phase":[0,2147483647,238609294],"fx_flanger_fb":[0,518,1031,1541,2047,2549,3046,3539,4028,4513,4994,5471,5944,6412,6877,7337,7793,8245,8693,9137,9576,10012,10443,10871,11294,11713,12128,12538,12945,13347,13746,14140,14530,14916,15298,15676,16049,16419,16784,17145,17502,17855,18204,18549,18889,19226,19558,19886,20210,20530,20846,21158,21465,21768,22068,22363,22654,22941,23224,23502,23777,24047,24313,24576,24833,25087,25337,25583,25824,26062,26295,26524,26749,26970,27186,27399,27608,27812,28012,28208,28400,28588,28772,28951,29127,29298,29465,29628,29787,29942,30093,30239,30382,30520,30654,30784,30910,31032,31149,31263,31372,31478,31579,31676,31769,31857,31942,32022,32099,32171,32239,32303,32363,32419,32470,32518,32561,32600,32635,32666,32693,32716,32734,32749,32759,32765,32767,0],"fx_depth":[0,2,8,18,32,50,73,99,130,164,203,245,292,343,398,457,520,587,658,733,812,895,983,1074,1170,1269,1373,1481,1592,1708,1828,1952,2080,2212,2348,2488,2632,2781,2933,3089,3250,3415,3583,3756,3933,4113,4298,4487,4680,4877,5078,5284,5493,5706,5924,6145,6370,6600,6834,7071,7313,7559,7809,8063,8321,8583,8849,9119,9393,9672,9954,10241,10531,10826,11124,11427,11734,12045,12359,12678,13001,13329,13660,13995,14334,14678,15025,15376,15732,16091,16455,16823,17195,17570,17950,18334,18722,19114,19511,19911,20315,20723,21136,21552,21973,22397,22826,23259,23696,24136,24581,25030,25483,25940,26402,26867,27336,27809,28287,28768,29254,29744,30237,30735,31237,31743,32253,32767],"fx_delay_div":[122730,245460,327280,490920,654560,981840,1309120,1472760,1963680,2618240,2945520,3927360],"fx_lfo_rate":[88,29084,59836,92451,127043,163730,202641,243908,287676,334096,383329,435544,490923,549657,611950,678017,748087,822402,901220,984813,1073471,1167501,1267228,1372997,1485174,1604148,1730331,1864158,2006094,2156629,2316285,2485615,2665204,2855673,3057683,3271932,3499163,3740160,3995759,4266845,4554355,4859284,5182689,5525688,5889469,6275291,6684489,7118479,7578764,8066937,8584687,9133807,9716197,10333872,10988972,11683762,12420649,13202182,14031067,14910172,15842541,16831400,17880172,18992487,20172195,21423379,22750370,24157761,25650424,27233523,28912540,30693285,32581921,34584987,36709414,38962557,41352213,43886653,46574651,49425509,52449094,55655874,59056945,62664081,66489766,70547243,74850553,79414594,84255160,89389007,94833904,100608696,106733372,113229131,120118454,127425189,135174624,143393583,152110512,161355583,171160795,181560086,192589450,204287062,216693409,229851433,243806676,258607440,274304953,290953549,308610851,327337974,347199738,368264887,390606333,414301403,439432112,466085442,494353646,524334565,556131970,589855919,625623136,663557419,703790067,746460333,791715907,839713430],"drum_pitch":[812,861,912,966,1024,1084,1149,1217,1290,1366,1448,1534,1625,1722,1824,1933,2048,2169,2298,2435,2580,2733,2896,3068,3250,3444,3649,3866,4096,4339,4597,4870,5160,5467,5792,6137,6501,6888,7298,7732,8192,8679,9195,9741,10321,10935,11585,12274,13003,13777,14596,15464,16384,17358,18390,19483,20642,21870,23170,24548,26007,27554,29192,30928,32768,34716,36780,38967,41285,43740,46340,49096,52015,55108,58385,61857,65536,69432,73561,77935,82570,87480,92681,98193,104031,110217,116771,123715,131072,138865,147123,155871,165140,174960,185363,196386,208063,220435,233543,247430,262144,277731,294246,311743,330280,349920,370727,392772,416127,440871,467087,494861,524288,555463,588493,623487,660561,699840,741455,785544,832255,881743,934175,989723,1048576,1110927,1176986,1246974],"voice_init":[0,0,0,0,0,2147483647,0,0,2,3,1,0,0,1048575,0,16777215,0,0,0,32767,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1569703,0,0,0,0,0,0,13174,13036,1,127834,0,0,500,0,0,0,0,0,0,0,32767,0,0,0,0,0,0,0,4,2,0,0,127,0,0,0,0,0,0,0,0,16777215,0,0,0,0,0,0,127,0,0,16777215,0,120,0],"mixer_init":[28672,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0],"fx_init":[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,88,0,16443,32768,32768,32768,0,32768,0,0,32768,0,0,0,0,0,0,0,32764,0,0,32767,32767,0],"knob_min":[-2,-63,0,-63,-63,-63,0,0,-63,0,0,0,0,0,-63,-63,0,-63,0,0,0,0,0,0,0,0,0,0,0,0,0],"knob_range":[5,127,128,127,127,127,4,4,127,128,2,128,128,3,127,127,2,127,128,128,128,128,128,128,128,2,7,7,7,7,7]};
@@ -1317,13 +1316,13 @@ const MANUAL=[
 ['k','VOICES','M is mono with legato and portamento. 2 to 8 make the track polyphonic.'],
 ['k','VOLUME','Track volume, the same as the mixer fader.'],
 ['p','Patch panel: MG is the LFO, with its rate (FREQ) and FREE or BPM sync. A BPM-synced MG restarts when play starts. Each of PITCH, VCO1, VCO2, CUTOFF and VCA has a depth knob and a source box. Click the box to choose SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate. VCO2 on a pitch destination gives FM, on CUTOFF filter FM, and on VCA ring modulation.'],
-['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. USER starts with three tiles: + SAVE CURRENT keeps the patch in this browser, SAVE FILE… writes it to a .patch.json file, and LOAD FILE… reads such a file into the track (or the drum in the drum editor). D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets its CUTOFF changed so the filter sits where it did on the DS-10 (usually lower, since the ZDF voice is an octave higher; higher again with PEAK); the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track. S next to it solos the track (also in the kit view), the same as S in the arrange window and the mixer.'],
-['p','USER patches are kept in this browser (localStorage), not in the song. In USER, + SAVE CURRENT stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. A patch saved from a ZDF voice is not legacy; one saved from a DS-10 EXACT voice is. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
+['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. USER starts with two tiles: SAVE PATCH… saves the current patch and OPEN PATCH… opens one into the track (or the drum in the drum editor), both through the file selector (see Songs and saving), so a patch can also be a .patch.json file. D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets its CUTOFF changed so the filter sits where it did on the DS-10 (usually lower, since the ZDF voice is an octave higher; higher again with PEAK); the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track. S next to it solos the track (also in the kit view), the same as S in the arrange window and the mixer.'],
+['p','USER patches are kept in the storage when one is connected, otherwise in this browser; they are not part of the song. SAVE PATCH… stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. A patch saved from a ZDF voice is not legacy; one saved from a DS-10 EXACT voice is. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
 
 ['h','Drums'],
 ['p','Any track can be a drum kit instead of a synth: click DRUM at the top right of the Synth window (F3). A kit has 8 drums; a new kit starts with 8 init patches named DRUM1 to DRUM8, ready to be edited or loaded from PRESET. Each drum is recorded, like on the DS-10, from its own DS-10 voice, highpass and two effects into a 2-second stereo sample at C3. From then on the track plays samples, so drums cost almost nothing to play back. The song file stores how each drum is made, and the samples are recorded again when a song loads.'],
 ['p','Switching a track to DRUM turns its notes into drum hits: C, C#, D and so on up the octave pick drums 1 to 8. Switching back turns hits into notes from C3 up. Ctrl+Z undoes the switch. The synth knobs of a drum track are not used, so they cannot be automated there; volume, pan, sends and the track\'s inserts still can.'],
-['k','KITS','The kit library of a drum track. + SAVE KIT keeps all 8 drums (voices, HOLD, NOTE, VOL, PAN, effects) in this browser as a user kit; click a saved kit to load it into this track, x deletes it. SAVE FILE… writes the kit to a .kit.json file, LOAD FILE… reads one. Loading replaces all 8 drums (it asks first), clears the drum mutes and records the drums again.'],
+['k','KITS','The kit library of a drum track. SAVE KIT… keeps all 8 drums (voices, HOLD, NOTE, VOL, PAN, effects) as a user kit, in the storage when one is connected, otherwise in this browser, or writes a .kit.json file; click a saved kit to load it into this track, x deletes it. OPEN KIT… opens a kit from the same places. Loading replaces all 8 drums (it asks first), clears the drum mutes and records the drums again.'],
 ['k','Kit view (F3)','One row per drum: its number (click it, or press 1-8, to mute the drum), its name (click to rename), HOLD time, a picture of the recorded sample (click to hear it), VOL and PAN, its effects, its NOTE and EDIT.'],
 ['k','VOL / PAN','Each drum\'s own volume and pan in the kit. VOL scales every hit of the drum on top of its velocity (127 = as recorded); PAN places it in the stereo field, and each hit\'s PAN lane value is added to it. Both act at once, also on hits still sounding, and do not record the drum again. Drag or scroll (Shift: fine); double-click resets. They are not automatable; the track\'s own volume and pan in the mixer are.'],
 ['k','Drum mute','Click a drum\'s number box, or press its key 1-8 while the kit is shown, to mute the drum in the whole kit: in every part and when played live, at once, also hits still sounding. A muted drum\'s number box turns black with an M. The mute is saved with the song. The M boxes in Key Edit mute a drum in one part only.'],
@@ -1372,8 +1371,13 @@ const MANUAL=[
 ['h','Songs and saving'],
 ['p','The song saves itself in this browser a moment after every change; the status line shows "saved". This includes tracks, patches, the mixer, effects, parts, notes, automation, tempo, locators and pad settings. Browser storage belongs to this browser only.'],
 ['k','File > Rename Song…','Type a new name and press Enter. You can also click the song name in the Arrange title bar.'],
-['k','File > Save JSON…  Ctrl+S','Writes the song as a .json file named after the song.'],
-['k','File > Open JSON…','Loads a song saved that way.'],
+['p','Songs, patches and kits can be kept in a storage: a stuff-storage server, run by you or someone who invited you. Without one they are kept in this browser. The app has to be on a web page (https, or http on localhost) to connect; a copy opened from disk cannot.'],
+['k','File > Connect Storage…','Asks for the storage address (for example storage.example.com), then goes to the storage to sign in and allow the app, and comes back. The song is saved in the browser first. After connecting, the app offers to move the songs, patches and kits kept in this browser to the storage; names that are already taken there stay in the browser.'],
+['k','File > Disconnect','Stops using the storage (the menu shows user@host). Songs, patches and kits are kept in this browser again.'],
+['k','File > Move Browser Items to Storage…','Offers the move again.'],
+['k','File > Open…','The file selector. STORAGE (or BROWSER when no storage is connected) lists the songs there with date and size: click one and OPEN, or double-click it; x deletes one (asks first); the wheel and Up/Down move through the list. .JSON FILE opens a .json file from this computer. CONNECT… and DISCONNECT on the right do the same as the File menu.'],
+['k','File > Save As…','The file selector with a NAME field: type the name, or click a song in the list to use its name, then SAVE (Enter). Saving under a name that is taken asks before replacing it. .JSON FILE writes a .json file to your downloads instead. Patches and kits use the same selector (SAVE PATCH…, OPEN PATCH…, SAVE KIT…, OPEN KIT… in the library).'],
+['k','File > Save  Ctrl+S','With a storage connected, saves the song there under its name. If it was opened or saved there, and someone changed the stored copy since, the app asks: Cancel, Open It (the stored one) or Overwrite. Without a storage, writes a .json file.'],
 ['k','File > New Song','Starts an empty song with eight init patches.'],
 ['k','File > Load Demo Song','Loads the demo, built from patches in the ds10emu example saves.'],
 ['k','Edit > Rename Track…','Renames the active track. You can also click the track name in the Synth window.'],
@@ -1397,7 +1401,7 @@ const MANUAL=[
 ['k','Del','Delete the selection'],
 ['k','Esc','Close a menu or dialog, end step input, back to Arrange'],
 ['k','Ctrl+Z','Undo'],
-['k','Ctrl+S','Save JSON'],
+['k','Ctrl+S','Save (to the storage when connected, else a .json file)'],
 ['k','Ctrl+A C X V','Key Edit: select all, copy, cut, paste'],
 ['k','1 … 8','Mixer: mute tracks 1-8; drum kit (F3): mute drums 1-8. On these two screens the number keys do not play notes.'],
 ['k','Numpad','Enter play, 0 stop, * record, / cycle, . bar 1'],
@@ -1556,7 +1560,7 @@ function newSong(){
   S.tracks=['Track 1','Track 2','Track 3','Track 4','Track 5','Track 6','Track 7','Track 8'].map(n=>mkTrack(n,{},1));
   S.buses=[{name:'BUS A',ret:100,ins:[mkFx('mverb',{mix:127}),null]},{name:'BUS B',ret:100,ins:[mkFx('tape',{mix:127}),null]}];
   S.master={vol:127,shp:1,ins:[null,null]};
-  S.parts=[];S.sel=null;S.view='arr';S.editPart=null;S.pos=0;S.songName='untitled';
+  S.parts=[];S.sel=null;S.view='arr';S.editPart=null;S.pos=0;S.songName='untitled';setSongDoc(null);
   sendCfg();songChanged();dirty=true;
 }
 function songObj(){
@@ -1622,13 +1626,6 @@ async function saveFile(filename,data){
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=filename;document.body.appendChild(a);a.click();a.remove();flashMsg('Saved '+filename);}
   catch(e){dialog(['Saving a file is not possible here.','Your song is still kept','in this browser.']);}
 }
-function openJSON(){const f=$('#fileIn');f.value='';f.click();}
-$('#fileIn').addEventListener('change',e=>{
-  const file=e.target.files[0];if(!file)return;
-  file.text().then(t=>{snapshot();loadSong(JSON.parse(t));songChanged();flashMsg('Loaded '+file.name);})
-    .catch(err=>dialog(['That file is not an','Arranger ST10 song.',String(err.message||'').slice(0,34)]));
-});
-
 /* ---------- audio engine bridge ---------- */
 let ac=null,node=null,ready=false,starting=null;
 function ensureAudio(){
@@ -2017,12 +2014,13 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='Backspace')I.value=I.value.slice(0,-1);
     else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&I.value.length<I.max&&/^[\x20-\x7e]$/.test(e.key))I.value+=e.key;
     dirty=true;return;}
+  if(S.fsel&&!S.dialog){e.preventDefault();fselKey(e);return;}
   if(e.code==='F9'){e.preventDefault();setView('man');return;}
   if(S.view==='man'&&['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(e.code)){e.preventDefault();
     const pg=MAN_VIS-2;S.manTop+=({ArrowUp:-1,ArrowDown:1,PageUp:-pg,PageDown:pg,Home:-1e9,End:1e9})[e.code];dirty=true;return;}
   if(FKEYS[e.code]){e.preventDefault();setView(FKEYS[e.code]);return;}
   if(e.ctrlKey||e.metaKey){
-    if(e.code==='KeyZ'){e.preventDefault();undo();}else if(e.code==='KeyS'){e.preventDefault();saveJSON();}
+    if(e.code==='KeyZ'){e.preventDefault();undo();}else if(e.code==='KeyS'){e.preventDefault();if(!S.fsel&&!S.dialog&&!S.input)quickSave();}
     else if(S.view==='edit'&&['KeyA','KeyC','KeyX','KeyV'].includes(e.code)){e.preventDefault();noteCmd(e.code);}
     return;}
   const c=e.code;
@@ -2193,8 +2191,9 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','L   locators to part (and cycle on)','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','1-8   mute track (Mixer) / drum (kit)','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
-  {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON},{l:'-'},{l:'Rename Song…',a:renameSong}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','L   locators to part (and cycle on)','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo   Ctrl+S  save (storage if connected)','1-8   mute track (Mixer) / drum (kit)','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();setSongDoc(null);sendCfg();songChanged();}},{l:'-'},{l:'Open…',a:()=>fileSel('open','song',songCtx())},{l:'Save',k:'^S',a:quickSave},{l:'Save As…',a:()=>fileSel('save','song',songCtx())},{l:'-'},
+    {l:()=>storage.connected?'Disconnect '+(storeWho||'Storage')+'…':'Connect Storage…',a:()=>storage.connected?disconnectStore():connectStore()},{l:'Move Browser Items to Storage…',a:()=>offerMove(true)},{l:'-'},{l:'Rename Song…',a:renameSong}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
   {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',k:'L',a:locToPart}]},
   {name:'Functions',items:[{l:'Quantize Part',k:()=>QS[S.qi][0],a:quantizePart},{l:'Transpose +12',a:()=>transposePart(12)},{l:'Transpose -12',a:()=>transposePart(-12)},{l:'Clear Notes',a:clearPart},{l:'Clear Automation',a:clearAuto}]},
@@ -2541,22 +2540,20 @@ function drawLibrary(T_,ti){
     reg(0,58,LW,TBY-58,{down:()=>{},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Sources','USER (your saved patches), the DS-10 factory set, the saved patch banks, then every song in the six ds10emu saves. Scroll the list.','']});
     for(let r=0;r<vis;r++){const gi=S.pbScroll+r;if(gi>=LIBG.length)break;const y=74+r*RH,on=gi===S.pbSrc;
       if(on)clr(1,y,LW-2,RH,B);T(LIBG[gi][0].replace('/',' / '),6,y+RH/2,on?WH:B,'left',14);T(String(LIBG[gi][1].length),LW-6,y+RH/2,on?WH:B,'right',14);
-      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;S.pgScroll=0;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Source',kit?'Your own drum kits, kept in this browser. SAVE KIT stores all 8 drums of this track here.':gi===0?'Your own patches, kept in this browser. Click to list them; SAVE stores the current patch here.':LIBG[gi][0]+': '+LIBG[gi][1].length+' patches. Click to list them.','']});}
+      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;S.pgScroll=0;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Source',kit?'Your own drum kits, kept '+storeWhere()+'. SAVE KIT… stores all 8 drums of this track.':gi===0?'Your own patches, kept '+storeWhere()+'. Click to list them; SAVE PATCH… stores the current patch.':LIBG[gi][0]+': '+LIBG[gi][1].length+' patches. Click to list them.','']});}
     if(S.pbScroll>0)T('▲ more',LW/2,TBY-2-RH*vis-2,B,'center',13);
     const user=S.pbSrc===0,g=LIBG[S.pbSrc];T((user?g[0]:g[0])+'  ·  click to load into '+(kit?'the kit of T'+(ti+1):dr?'drum '+(T_.d+1):'T'+(ti+1)),LW+8,66,B,'left',14);
-    const tiles=(user?['save','sfile','lfile']:[]).concat(g[1]),rows=Math.ceil(tiles.length/3),vrows=Math.floor((TBY-74)/31);
+    const tiles=(user?['save','lfile']:[]).concat(g[1]),rows=Math.ceil(tiles.length/3),vrows=Math.floor((TBY-74)/31);
     S.pgScroll=clamp(S.pgScroll||0,0,Math.max(0,rows-vrows));
     reg(LW+1,58,W-LW-1,TBY-58,{down:()=>{},wheel:d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;},hint:[kit?'Kits':'Patches',kit?'Click a kit to load it into this track (asks first). Scroll for more.':'Click a patch to load it. Scroll for more.','']});
     if(S.pgScroll>0)T('▲ more',W-8,66,B,'right',13);
     if(rows-S.pgScroll>vrows)T('▼ more',W-8,TBY-6,B,'right',13);
     tiles.forEach((tile,i)=>{const r=Math.floor(i/3)-S.pgScroll;if(r<0||r>=vrows)return;const cx=LW+6+(i%3)*144,cy=74+r*31;
       const wheel=d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;};
-      if(typeof tile==='string'){const A=kit?{save:['+ SAVE KIT',()=>saveKitAs(ti),'Save kit','Stores all 8 drums of this track (voices, HOLD, NOTE, VOL, PAN, effects) as a user kit in this browser. Saving under an existing name asks before replacing it.'],
-            sfile:['SAVE FILE…',()=>saveKitFile(ti),'Save kit as a file','Writes all 8 drums of this track to a .json file.'],
-            lfile:['LOAD FILE…',()=>openFile(o=>loadKitFile(ti,o),'a drum kit'),'Load kit from a file','Reads a kit .json file into this track, replacing all 8 drums (asks first).']}
-          :{save:['+ SAVE CURRENT',()=>savePatchAs(T_),'Save patch','Stores the current patch (31 synth knobs and the highpass) as a user patch in this browser. Saving under an existing name asks before replacing it.'],
-            sfile:['SAVE FILE…',()=>savePatchFile(T_),'Save patch as a file','Writes the current patch (31 synth knobs and the highpass) to a .json file.'],
-            lfile:['LOAD FILE…',()=>openFile(o=>loadPatchFile(T_,o),'a patch'),'Load patch from a file','Reads a patch .json file into '+(dr?'this drum':'this track')+'.']};
+      if(typeof tile==='string'){const A=kit?{save:['SAVE KIT…',()=>fileSel('save','kit',kitCtx(ti)),'Save kit','Saves all 8 drums of this track (voices, HOLD, NOTE, VOL, PAN, effects) as a kit, '+storeWhere()+' or to a .kit.json file.'],
+            lfile:['OPEN KIT…',()=>fileSel('open','kit',kitCtx(ti)),'Open kit','Opens a kit '+storeWhere()+' or a .kit.json file into this track, replacing all 8 drums (asks first).']}
+          :{save:['SAVE PATCH…',()=>fileSel('save','patch',patchCtx(T_)),'Save patch','Saves the current patch (31 synth knobs and the highpass), '+storeWhere()+' or to a .patch.json file.'],
+            lfile:['OPEN PATCH…',()=>fileSel('open','patch',patchCtx(T_)),'Open patch','Opens a patch '+storeWhere()+' or a .patch.json file into '+(dr?'this drum':'this track')+'.']};
         const [l,f,h1,h2]=A[tile];box(cx,cy,140,28);T(l,cx+70,cy+14,B,'center');reg(cx,cy,140,28,{down:f,wheel,hint:[h1,h2,'']});return;}
       if(kit){const xi=userKits.indexOf(tile);box(cx,cy,140,28);T(tile.name,cx+6,cy+14,B,'left',tile.name.length>12?14:16);
         reg(cx,cy,140,28,{down:()=>loadKit(ti,tile.name,tile.drums),wheel,hint:[tile.name,'User kit: '+tile.drums.map(d=>d.name).join(' ')+'. Click to load it into this track (asks first).','']});
@@ -2573,10 +2570,10 @@ function drawLibrary(T_,ti){
         reg(cx+122,cy+4,14,14,{down:()=>deleteUserPatch(xi),wheel,hint:['Delete user patch','Removes '+n+' from your user patches (asks first).','']});}
     });
 }
-/* user patches: kept in this browser's localStorage, shown as the USER source of the patch library */
+/* user patches: the patch documents of the store (the storage, or this browser), shown as the USER source of the patch library.
+   [name, drum, k, voice] with .etag, filled by refreshLib. UP_KEY held them before the store and is moved into it on start. */
 const UP_KEY='arranger-st.patches';
-let userPatches=[];try{userPatches=JSON.parse(localStorage.getItem(UP_KEY)||'[]');}catch(e){userPatches=[];}
-function saveUserPatches(){try{localStorage.setItem(UP_KEY,JSON.stringify(userPatches));}catch(e){flashMsg('Could not save: browser storage unavailable');}}
+const userPatches=[];
 function libGroups(){return [['USER',userPatches]].concat(LIB);}
 /* Legacy patches were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff: every library patch,
    user patches saved from a DS-10 EXACT voice, and user patches saved before the ZDF voice stopped doing that
@@ -2599,39 +2596,377 @@ function zdfCutoff(c,p){
   for(let x=0;x<=127;x++){const f=ZDF_OCT*vcfFreq(x,0),d=Math.abs(Math.log(f/want));if(d<bd){bd=d;best=x;}}
   return best;
 }
-function savePatchAs(T_){
-  const def=T_.dr?T_.dr.name:S.tracks[T_.ti].name;
-  askText('Save patch as',def,12,name=>{name=name.toUpperCase();
-    const k=T_.k.slice(0,33),i=userPatches.findIndex(p=>p[0]===name),put=()=>{
-      const e=[name,T_.dr?1:0,k,targetExact(T_)?'ds10':'zdf'];if(i>=0)userPatches[i]=e;else userPatches.push(e);
-      saveUserPatches();S.pbSrc=0;S.presetPick=true;flashMsg('Saved patch '+name);dirty=true;};
-    if(i>=0)dialog(['A user patch called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:put}]);else put();});
-}
-/* patch and kit files, and user kits (localStorage, the USER KITS library of the kit view) */
+/* user kits: the kit documents of the store, the USER KITS library of the kit view ({name, drums, etag}); UK_KEY as UP_KEY */
 const UK_KEY='arranger-st.kits';
-let userKits=[];try{userKits=JSON.parse(localStorage.getItem(UK_KEY)||'[]').filter(k=>k&&typeof k.name==='string'&&Array.isArray(k.drums));}catch(e){userKits=[];}
-function saveUserKits(){try{localStorage.setItem(UK_KEY,JSON.stringify(userKits));}catch(e){flashMsg('Could not save: browser storage unavailable');}}
+const userKits=[];
 const kitOut=t=>t.drums.map(drumOut);
-function saveKitAs(ti){const t=S.tracks[ti];
-  askText('Save kit as',t.name,12,name=>{name=name.toUpperCase();const i=userKits.findIndex(k=>k.name===name),put=()=>{
-      const e={name,drums:kitOut(t)};if(i>=0)userKits[i]=e;else userKits.push(e);saveUserKits();S.presetPick=true;flashMsg('Saved kit '+name);dirty=true;};
-    if(i>=0)dialog(['A user kit called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:put}]);else put();});}
 function deleteUserKit(i){const n=userKits[i].name;
-  dialog(['Delete the user kit',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{userKits.splice(i,1);saveUserKits();S.presetPick=true;flashMsg('Deleted kit '+n);dirty=true;}}]);}
+  dialog(['Delete the user kit',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{removeDoc('kit',n,userKits[i].etag);S.presetPick=true;}}]);}
 // replaces all 8 drums of track ti; the drum mutes are cleared, the kit is recorded again
 function loadKit(ti,name,drums){
   dialog(['Replace all 8 drums of T'+(ti+1),'with the kit '+name+'?'],[{l:'Cancel'},{l:'Load',def:true,a:()=>{const t=S.tracks[ti];allOff();
     t.drums=kitIn(drums.map(d=>({...d,mute:false})));post({t:'kind',tr:ti,kind:'drum',drums:t.drums.map(drumDef)});
     S.presetPick=false;flashMsg('Loaded kit '+name+' into T'+(ti+1));songChanged();dirty=true;}}]);}
-function saveKitFile(ti){const t=S.tracks[ti];saveFile(fileName(t.name,'.kit.json'),JSON.stringify({app:'arranger-st10',type:'kit',name:t.name,drums:kitOut(t)}));}
 function loadKitFile(ti,o){if(!o||o.type!=='kit'||!Array.isArray(o.drums))throw new Error('No kit in this file');loadKit(ti,String(o.name||'KIT').slice(0,12).toUpperCase(),o.drums);}
-function savePatchFile(T_){const name=T_.dr?T_.dr.name:S.tracks[T_.ti].name;
-  saveFile(fileName(name,'.patch.json'),JSON.stringify({app:'arranger-st10',type:'patch',name,drum:!!T_.dr,voice:targetExact(T_)?'ds10':'zdf',k:T_.k.slice(0,33)}));}
-function loadPatchFile(T_,o){if(!o||o.type!=='patch'||!Array.isArray(o.k))throw new Error('No patch in this file');
-  const k=Array.from({length:33},(_,i)=>clamp(Math.round(+o.k[i]||0),i<31?P[i][2]:0,i<31?P[i][3]:127));
-  loadPreset(T_,'file',String(o.name||'PATCH').slice(0,12),k,o.voice!=='zdf');}
+function loadPatchFile(T_,o,src='file'){if(!o||o.type!=='patch'||!Array.isArray(o.k))throw new Error('No patch in this file');
+  loadPreset(T_,src,String(o.name||'PATCH').slice(0,12),patchK(o),o.voice!=='zdf');}
 function deleteUserPatch(i){const n=userPatches[i][0];
-  dialog(['Delete the user patch',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{userPatches.splice(i,1);saveUserPatches();S.presetPick=true;flashMsg('Deleted patch '+n);dirty=true;}}]);}
+  dialog(['Delete the user patch',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{removeDoc('patch',n,userPatches[i].etag);S.presetPick=true;}}]);}
+/* ---------- document store: songs, patches and kits ----------
+   They are documents of the types song, patch and kit; the bodies are the same JSON as the .json files.
+   With a stuff-storage server connected they are kept there (STORAGE), otherwise in this browser (BROWSER). */
+// Client for stuff-storage. Copy this file into your app:
+//
+//   import { Storage } from "./client.js";
+//   const storage = new Storage();
+//   if (!storage.connected) await storage.connect("https://storage.example");
+//   const songs = storage.type("song");
+//   await songs.save("my song", "...");
+//
+// The storage server is not part of the app: the user names it when
+// connecting, and it is remembered in the browser's local storage.
+
+const KEY = "stuff-storage";
+
+// "storage.example" -> "https://storage.example"
+function normalize(server) {
+  server = String(server ?? "").trim();
+  if (!server) throw new Error("Enter the address of your storage.");
+  if (!/^https?:\/\//i.test(server)) {
+    const local = /^(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(server);
+    server = (local ? "http://" : "https://") + server;
+  }
+  try {
+    return new URL(server).origin;
+  } catch {
+    throw new Error("That is not a valid address.");
+  }
+}
+
+class Storage {
+  // Set by the constructor if a connect just ended without a token, for
+  // example "access_denied" when the user did not allow the app. Otherwise
+  // null.
+  connectError = null;
+
+  constructor() {
+    this.#finishConnect();
+  }
+
+  // The storage server last connected to, or null.
+  get server() {
+    return localStorage.getItem(`${KEY}:server`);
+  }
+
+  get token() {
+    return localStorage.getItem(`${KEY}:token`);
+  }
+
+  get connected() {
+    return this.server !== null && this.token !== null;
+  }
+
+  // Sends the browser to the given storage server to sign in and approve
+  // this app. The server redirects back to the current page with a token.
+  // Throws if there is no storage server at that address.
+  async connect(server) {
+    server = normalize(server);
+    try {
+      const info = await (await fetch(`${server}/api/info`)).json();
+      if (info.service !== "stuff-storage") throw new Error();
+    } catch {
+      throw new Error(`No storage found at ${server}.`);
+    }
+    const state = crypto.randomUUID();
+    sessionStorage.setItem(`${KEY}:pending`, JSON.stringify({ state, server }));
+    const back = location.origin + location.pathname + location.search;
+    location.assign(
+      `${server}/authorize?redirect_uri=${encodeURIComponent(back)}&state=${state}`,
+    );
+  }
+
+  #finishConnect() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const pending = JSON.parse(sessionStorage.getItem(`${KEY}:pending`) ?? "null");
+    if (!pending || params.get("state") !== pending.state) return;
+    sessionStorage.removeItem(`${KEY}:pending`);
+    history.replaceState(null, "", location.pathname + location.search);
+    const token = params.get("token");
+    if (!token) {
+      this.connectError = params.get("error") ?? "no_token";
+      return;
+    }
+    localStorage.setItem(`${KEY}:server`, pending.server);
+    localStorage.setItem(`${KEY}:token`, token);
+  }
+
+  // Revokes the token on the server and forgets it. The server address is
+  // kept, so that it can be offered again.
+  async disconnect() {
+    try {
+      await this.#call("/api/token", { method: "DELETE" });
+    } catch {}
+    localStorage.removeItem(`${KEY}:token`);
+  }
+
+  async #call(path, opts = {}) {
+    if (!this.connected) throw new Error("storage is not connected");
+    const res = await fetch(this.server + path, {
+      ...opts,
+      headers: { ...opts.headers, Authorization: `Bearer ${this.token}` },
+    });
+    if (res.status === 401) localStorage.removeItem(`${KEY}:token`);
+    if (!res.ok) {
+      const err = new Error((await res.text()) || res.statusText);
+      err.status = res.status;
+      throw err;
+    }
+    return res;
+  }
+
+  // { user, app, used, quota }, used and quota in bytes
+  async whoami() {
+    return (await this.#call("/api/whoami")).json();
+  }
+
+  // All documents of this app, of every type:
+  // [{ type, name, size, modified, etag }], modified is unix time in seconds
+  async list() {
+    return (await this.#call("/api/docs")).json();
+  }
+
+  // The documents of one type, for example storage.type("song"). The type is
+  // an identifier chosen by the app (letters, digits, "-", "_", "."). Names
+  // are separate per type: a song and a patch can have the same name.
+  type(type) {
+    const base = `/api/docs/${encodeURIComponent(type)}`;
+    const path = (name) => `${base}/${encodeURIComponent(name)}`;
+    return {
+      // [{ type, name, size, modified, etag }]
+      list: async () => (await this.#call(base)).json(),
+
+      // { data, etag }; `as` is "text", "json", "blob" or "arrayBuffer"
+      load: async (name, as = "text") => {
+        const res = await this.#call(path(name));
+        return { data: await res[as](), etag: res.headers.get("ETag") };
+      },
+
+      // Returns the new etag. With `ifMatch` (an etag) the save fails with
+      // status 412 if the stored document has changed since. With `create`
+      // it fails with 412 if the document already exists.
+      save: async (name, body, { ifMatch, create } = {}) => {
+        const headers = {};
+        if (ifMatch) headers["If-Match"] = ifMatch;
+        if (create) headers["If-None-Match"] = "*";
+        const res = await this.#call(path(name), { method: "PUT", headers, body });
+        return res.headers.get("ETag");
+      },
+
+      // With `ifMatch` (an etag) the removal fails with status 412 if the
+      // stored document has changed since.
+      remove: async (name, { ifMatch } = {}) => {
+        const headers = {};
+        if (ifMatch) headers["If-Match"] = ifMatch;
+        await this.#call(path(name), { method: "DELETE", headers });
+      },
+    };
+  }
+}
+
+const storage=new Storage(),isFileUrl=location.protocol==='file:';
+const BDOC_KEY='arranger-st.docs',DOC_KEY='arranger-st.doc',CONNECTING_KEY='arranger-st.connecting';
+const TYPES={song:{word:'song',max:24,upper:false,ext:'.json'},patch:{word:'patch',max:12,upper:true,ext:'.patch.json'},kit:{word:'kit',max:12,upper:true,ext:'.kit.json'}};
+// the browser store answers like the storage (etags, conditional save and remove, the same status codes)
+const browserStore={
+  all(){try{return JSON.parse(localStorage.getItem(BDOC_KEY)||'{}')||{};}catch(e){return {};}},
+  put(a){try{localStorage.setItem(BDOC_KEY,JSON.stringify(a));}catch(e){const er=new Error('browser storage is full or off');er.status=507;throw er;}},
+  type(ty){const fail=(st,m)=>{const e=new Error(m);e.status=st;throw e;};
+    return {
+      list:async()=>{const t=this.all()[ty]||{};return Object.keys(t).sort().map(name=>({type:ty,name,size:t[name].d.length,modified:t[name].m,etag:t[name].e}));},
+      load:async(name,as='text')=>{const o=(this.all()[ty]||{})[name];if(!o)fail(404,'no such document');return {data:as==='json'?JSON.parse(o.d):o.d,etag:o.e};},
+      save:async(name,body,{ifMatch,create}={})=>{const a=this.all(),t=a[ty]=a[ty]||{},o=t[name];
+        if(ifMatch&&(!o||o.e!==ifMatch))fail(412,'the stored document has changed');if(create&&o)fail(412,'the document exists');
+        const e='"b'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+'"';t[name]={d:String(body),m:Math.floor(Date.now()/1000),e};this.put(a);return e;},
+      remove:async(name,{ifMatch}={})=>{const a=this.all(),t=a[ty]||{},o=t[name];if(!o)fail(404,'no such document');if(ifMatch&&o.e!==ifMatch)fail(412,'the stored document has changed');delete t[name];this.put(a);}};}
+};
+const store=()=>storage.connected?storage:browserStore;
+const storeName=()=>storage.connected?'STORAGE':'BROWSER';
+const storeWhere=()=>storage.connected?'in the storage':'in this browser';
+let storeWho='',storeBusy=0;   // storeWho: "user@host" once whoami answered; storeBusy: calls in flight (status line)
+async function sto(f){storeBusy++;dirty=true;try{return await f();}finally{storeBusy--;dirty=true;}}
+function storeErr(e){
+  const s=e&&e.status;
+  if(s===401){storeWho='';dialog(['The storage connection has ended.','Connect again in the File menu.']);refreshLib();}
+  else if(s===507)dialog([storage.connected?'Your storage is full.':'The browser storage is full or off.','Nothing was saved.']);
+  else if(s===413)dialog(['This is too large for the storage','(16 MiB at most). Nothing was saved.']);
+  else if(s===404)dialog(['That document is not there any more.']);
+  else dialog(['The storage did not answer.',String(e&&e.message||'').slice(0,40)]);
+  dirty=true;
+}
+// the current song's stored copy: {where, server, name, etag}; a save with the same name sends the etag (If-Match)
+let songDoc=null;try{songDoc=JSON.parse(localStorage.getItem(DOC_KEY)||'null');}catch(e){}
+function setSongDoc(d){songDoc=d;try{if(d)localStorage.setItem(DOC_KEY,JSON.stringify(d));else localStorage.removeItem(DOC_KEY);}catch(e){}}
+const patchDoc=(name,drum,voice,k)=>({app:'arranger-st10',type:'patch',name,drum:!!drum,voice,k});
+const patchK=o=>Array.from({length:33},(_,i)=>clamp(Math.round(+o.k[i]||0),i<31?P[i][2]:0,i<31?P[i][3]:127));
+// fills the USER patches and USER KITS from the current store
+async function refreshLib(){
+  const src=store(),ps=[],ks=[];
+  try{await sto(async()=>{
+    const [pl,kl]=await Promise.all([src.type('patch').list(),src.type('kit').list()]);
+    const get=(ty,l)=>Promise.all(l.map(d=>src.type(ty).load(d.name,'json').then(r=>r.data).catch(()=>null)));
+    const [pd,kd]=await Promise.all([get('patch',pl),get('kit',kl)]);
+    pd.forEach((o,i)=>{if(o&&Array.isArray(o.k))ps.push(Object.assign([pl[i].name,o.drum?1:0,patchK(o),o.voice==='zdf'?'zdf':'ds10'],{etag:pl[i].etag}));});
+    kd.forEach((o,i)=>{if(o&&Array.isArray(o.drums))ks.push({name:kl[i].name,drums:o.drums,etag:kl[i].etag});});});}
+  catch(e){if(e&&e.status===401)storeErr(e);return;}
+  userPatches.splice(0,userPatches.length,...ps);userKits.splice(0,userKits.length,...ks);dirty=true;
+}
+// user patches and kits from before the document store become browser documents
+function migrateOldLib(){
+  try{const a=browserStore.all(),m=Math.floor(Date.now()/1000);let n=0;
+    const add=(ty,name,o)=>{a[ty]=a[ty]||{};if(!a[ty][name]){a[ty][name]={d:JSON.stringify(o),m,e:'"m'+(n++)+m.toString(36)+'"'};}};
+    const up=JSON.parse(localStorage.getItem(UP_KEY)||'[]'),uk=JSON.parse(localStorage.getItem(UK_KEY)||'[]');
+    for(const p of up)if(Array.isArray(p)&&typeof p[0]==='string'&&Array.isArray(p[2]))add('patch',p[0],patchDoc(p[0],p[1],p[3]==='zdf'?'zdf':'ds10',p[2]));
+    for(const k of uk)if(k&&typeof k.name==='string'&&Array.isArray(k.drums))add('kit',k.name,{app:'arranger-st10',type:'kit',name:k.name,drums:k.drums});
+    if(up.length||uk.length){browserStore.put(a);localStorage.removeItem(UP_KEY);localStorage.removeItem(UK_KEY);}}
+  catch(e){}
+}
+function connectStore(){
+  if(isFileUrl)return dialog(['A storage needs the app on a web page','(https, or http on localhost).','A file opened from disk cannot connect.']);
+  askText('Storage address',storage.server?new URL(storage.server).host:'',40,addr=>{
+    clearTimeout(saveTimer);autosave();savePrefs();   // connecting leaves the page
+    try{sessionStorage.setItem(CONNECTING_KEY,'1');}catch(e){}
+    sto(()=>storage.connect(addr)).catch(e=>{try{sessionStorage.removeItem(CONNECTING_KEY);}catch(_){}dialog(['Cannot connect.',String(e.message||'').slice(0,44)]);});});
+}
+function disconnectStore(){
+  dialog(['Disconnect from the storage?','Songs, patches and kits are then','kept in this browser again.'],[{l:'Cancel'},{l:'Disconnect',def:true,a:()=>
+    sto(()=>storage.disconnect()).then(()=>{storeWho='';refreshLib();flashMsg('Storage disconnected');})}]);
+}
+function browserCounts(){const a=browserStore.all(),c={};for(const ty in TYPES)c[ty]=Object.keys(a[ty]||{}).length;return c;}
+function offerMove(always){
+  if(!storage.connected)return flashMsg('Connect a storage first (File menu)');
+  const c=browserCounts(),n=c.song+c.patch+c.kit;
+  if(!n){if(always)flashMsg('Nothing in this browser to move');return;}
+  const pl=(n,w,ws)=>n+' '+(n===1?w:ws);
+  dialog(['Move '+pl(c.song,'song','songs')+', '+pl(c.patch,'patch','patches')+' and '+pl(c.kit,'kit','kits'),'from this browser to the storage?','','Items whose name is taken in the','storage stay in this browser.'],
+    [{l:'Not Now'},{l:'Move',def:true,a:moveToStorage}]);
+}
+async function moveToStorage(){
+  const a=browserStore.all(),kept=[];let moved=0;
+  try{await sto(async()=>{for(const ty in TYPES)for(const name in a[ty]||{}){
+    try{const etag=await storage.type(ty).save(name,a[ty][name].d,{create:true});moved++;await browserStore.type(ty).remove(name);
+      // the song being edited follows its stored copy
+      if(ty==='song'&&songDoc&&songDoc.where==='BROWSER'&&songDoc.name===name)setSongDoc({where:'STORAGE',server:storage.server,name,etag});}
+    catch(e){if(e.status===412)kept.push(name);else throw e;}}});}
+  catch(e){storeErr(e);}
+  if(songDoc&&songDoc.where==='BROWSER')setSongDoc(null);   // it stayed in this browser
+  refreshLib();
+  dialog(['Moved '+moved+(moved===1?' item':' items')+' to the storage.',...(kept.length?[kept.length+' stayed in this browser:',kept.slice(0,4).join(', ').slice(0,44)+(kept.length>4?' …':'')]:[])]);
+}
+function initStore(){
+  migrateOldLib();
+  if(storage.connectError)dialog(['The storage is not connected:',storage.connectError==='access_denied'?'the app was not allowed.':storage.connectError]);
+  let just=false;try{just=sessionStorage.getItem(CONNECTING_KEY)==='1';sessionStorage.removeItem(CONNECTING_KEY);}catch(e){}
+  refreshLib();
+  if(storage.connected)sto(()=>storage.whoami()).then(w=>{storeWho=w.user+'@'+new URL(storage.server).host;
+    if(just){flashMsg('Connected to '+storeWho);offerMove(false);}},e=>{if(e&&e.status===401)storeErr(e);});
+}
+
+// loading and saving a document; ctx: {name, body(name), saved(name, etag, where), open(obj, name, etag), etagFor(name)}
+function getDoc(type,name,ctx){
+  sto(()=>store().type(type).load(name,'text')).then(r=>{let o;
+    try{o=JSON.parse(r.data);}catch(e){return dialog(['That is not a '+TYPES[type].word+'.']);}
+    try{ctx.open(o,name,r.etag);}catch(e){dialog(['That is not a '+TYPES[type].word+'.',String(e.message||'').slice(0,40)]);}},storeErr);
+}
+function putDoc(type,name,ctx){
+  const word=TYPES[type].word,src=store(),where=storeName(),body=ctx.body(name),match=ctx.etagFor?ctx.etagFor(name):null;
+  const go=opts=>sto(()=>src.type(type).save(name,body,opts)).then(etag=>{ctx.saved(name,etag,where);flashMsg('Saved '+word+' '+name+' '+storeWhere());},e=>{
+    if(!e||e.status!==412)return storeErr(e);
+    if(opts.ifMatch)dialog(['The stored '+word+' '+name,'was changed elsewhere after you','opened or saved it.'],[{l:'Cancel',def:true},{l:'Open It',a:()=>getDoc(type,name,ctx)},{l:'Overwrite',a:()=>go({})}]);
+    else dialog(['A '+word+' called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:()=>go({})}]);});
+  go(match?{ifMatch:match}:{create:true});
+}
+function removeDoc(type,name,etag,after){const word=TYPES[type].word;
+  sto(()=>store().type(type).remove(name,etag?{ifMatch:etag}:{})).then(()=>{
+    if(type==='song'&&songDoc&&songDoc.name===name&&songDoc.where===storeName())setSongDoc(null);
+    if(type!=='song')refreshLib();flashMsg('Deleted '+word+' '+name);if(after)after();},
+    e=>{if(e&&e.status===412)dialog(['The '+word+' '+name+' was changed','elsewhere. It was not deleted.']);else storeErr(e);if(after)after();});
+}
+function songCtx(){return {name:S.songName||'untitled',
+  etagFor:n=>{const d=songDoc;return d&&d.name===n&&n===S.songName&&d.where===storeName()&&(d.where==='BROWSER'||d.server===storage.server)?d.etag:null;},
+  body:n=>{const o=songObj();o.name=n;return JSON.stringify(o);},
+  saved:(n,etag,where)=>{S.songName=n;setSongDoc({where,server:storage.server,name:n,etag});songChanged();},
+  savedFile:n=>{if(n!==S.songName){S.songName=n;songChanged();}},
+  open:(o,n,etag)=>{if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST10 song');
+    const where=storeName();snapshot();loadSong(o);
+    if(n!=null){S.songName=n;setSongDoc({where,server:storage.server,name:n,etag});}else setSongDoc(null);
+    songChanged();flashMsg('Loaded song '+S.songName);}};}
+function patchCtx(T_){return {name:T_.dr?T_.dr.name:S.tracks[T_.ti].name,
+  body:n=>JSON.stringify(patchDoc(n,T_.dr,targetExact(T_)?'ds10':'zdf',T_.k.slice(0,33))),
+  saved:()=>{refreshLib();S.pbSrc=0;S.presetPick=true;},
+  open:(o,n)=>loadPatchFile(T_,n!=null?{...o,name:n}:o,n!=null?storeName().toLowerCase():'file')};}
+function kitCtx(ti){const t=S.tracks[ti];return {name:t.name,
+  body:n=>JSON.stringify({app:'arranger-st10',type:'kit',name:n,drums:kitOut(t)}),
+  saved:()=>{refreshLib();S.presetPick=true;},
+  open:(o,n)=>loadKitFile(ti,n!=null?{...o,name:n}:o)};}
+// File > Save and Ctrl+S: to the storage when one is connected, otherwise a .json file
+function quickSave(){if(!storage.connected)return saveJSON();putDoc('song',S.songName||'untitled',songCtx());}
+
+/* the file selector: open or save a song, patch or kit, from or to the store (STORAGE or BROWSER) or a .json file */
+const FS={x:100,y:44,w:440,h:300,rows:10,rh:16};
+const fitName=(type,n)=>{n=String(n||'').slice(0,TYPES[type].max);return TYPES[type].upper?n.toUpperCase():n;};
+function fileSel(mode,type,ctx){S.fsel={mode,type,ctx,src:'store',items:null,err:'',sel:-1,top:0,name:mode==='save'?fitName(type,ctx.name):''};
+  S.menu=S.popup=S.toolbox=null;allOff();fselList();dirty=true;}
+function fselList(){const f=S.fsel;if(!f)return;f.items=null;f.err='';const src=store();
+  sto(()=>src.type(f.type).list()).then(l=>{if(S.fsel!==f)return;f.items=l;f.sel=l.findIndex(d=>d.name===f.name);f.top=clamp(f.sel-FS.rows+1,0,Math.max(0,l.length-FS.rows));dirty=true;},
+    e=>{if(S.fsel!==f)return;f.items=[];f.err=e&&e.status===401?'not connected any more':'the storage did not answer';if(e&&e.status===401)storeErr(e);dirty=true;});}
+function fselPick(i){const f=S.fsel,d=f.items[i];f.sel=i;if(f.mode==='save')f.name=fitName(f.type,d.name);f.top=clamp(f.top,i-FS.rows+1,i);dirty=true;}
+function fselOk(){const f=S.fsel;if(!f)return;const ty=TYPES[f.type];
+  if(f.mode==='save'){const n=fitName(f.type,f.name.trim());if(!n)return flashMsg('Type a name first');S.fsel=null;
+    if(f.src==='file'){saveFile(fileName(n,ty.ext),f.ctx.body(n));if(f.ctx.savedFile)f.ctx.savedFile(n);}else putDoc(f.type,n,f.ctx);}
+  else if(f.src==='file'){S.fsel=null;openFile(o=>f.ctx.open(o,null,null),'a '+ty.word);}
+  else{const d=f.items&&f.items[f.sel];if(!d)return flashMsg('Click a '+ty.word+' first');S.fsel=null;getDoc(f.type,d.name,f.ctx);}
+  dirty=true;}
+function fselKey(e){const f=S.fsel,k=e.key;
+  if(k==='Enter')fselOk();else if(k==='Escape')S.fsel=null;
+  else if(k==='ArrowUp'||k==='ArrowDown'){if(f.src==='store'&&f.items&&f.items.length)fselPick(clamp(f.sel+(k==='ArrowUp'?-1:1),0,f.items.length-1));}
+  else if(f.mode==='save'){if(k==='Backspace')f.name=f.name.slice(0,-1);
+    else if(k.length===1&&!e.ctrlKey&&!e.metaKey&&f.name.length<TYPES[f.type].max&&/^[\x20-\x7e]$/.test(k))f.name+=TYPES[f.type].upper?k.toUpperCase():k;}
+  dirty=true;}
+const fmtDate=s=>{const d=new Date(s*1000),z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());};
+const fmtSize=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB';
+function drawFsel(){
+  const f=S.fsel;if(!f)return;const ty=TYPES[f.type],{x,y,w,h,rows,rh}=FS,save=f.mode==='save',file=f.src==='file',word=ty.word;
+  reg(0,0,W,H,{down:()=>{},wheel:()=>{},hint:[(save?'Save ':'Open ')+word,'Choose where, then '+(save?'SAVE':'OPEN')+'. Esc cancels.','Esc']});
+  clr(x+4,y+4,w,h,B);clr(x,y,w,h,WH);box(x,y,w,h);box(x+3,y+3,w-6,h-6);
+  T((save?'SAVE ':'OPEN ')+word.toUpperCase(),x+w/2,y+17,B,'center');
+  [['store',storeName()],['file','.JSON FILE']].forEach(([k,l],i)=>{const bx=x+14+i*96,by=y+30,on=f.src===k;box(bx,by,90,18,on?B:WH);T(l,bx+45,by+9,on?WH:B,'center');
+    reg(bx,by,90,18,{down:()=>{f.src=k;if(k==='store')fselList();dirty=true;},hint:[l,k==='file'?(save?'Writes a '+ty.ext+' file to your downloads.':'Reads a .json file from this computer.')
+      :storage.connected?'Your storage'+(storeWho?' ('+storeWho+')':'')+'.':'Kept in this browser. Connect a storage (button on the right, or the File menu) to keep them there.','']});});
+  const cbx=x+w-104,cby=y+30;box(cbx,cby,90,18);T(storage.connected?'DISCONNECT':'CONNECT…',cbx+45,cby+9,B,'center');
+  reg(cbx,cby,90,18,{down:()=>{if(storage.connected)disconnectStore();else connectStore();},hint:storage.connected?['Disconnect','Stops using the storage'+(storeWho?' '+storeWho:'')+'. Songs, patches and kits are kept in this browser again.','']:['Connect storage','Asks for the address of a stuff-storage server and signs in there.','']});
+  T(storage.connected?(storeWho||'connected'):'no storage',cbx-6,cby+9,B,'right',13);
+  const lx=x+14,ly=y+56,lw=w-28,lh=rows*rh+4,n=f.items?f.items.length:0,maxTop=Math.max(0,n-rows);
+  box(lx,ly,lw,lh);
+  const wheel=d=>{f.top=clamp(f.top+d,0,maxTop);dirty=true;};
+  reg(lx,ly,lw,lh,{down:()=>{},wheel,hint:[file?'.json file':storeName(),file?'':'Click to choose, double-click to '+(save?'save over it':'open')+'. The wheel scrolls.','']});
+  const msg=(a)=>a.forEach((s,i)=>T(s,lx+lw/2,ly+lh/2+(i-(a.length-1)/2)*18,B,'center'));
+  if(file)msg(save?['SAVE writes '+fileName(fitName(f.type,f.name)||'untitled',ty.ext),'to your downloads.']:['OPEN… lets you choose a '+ty.ext+' file','on this computer.']);
+  else if(!f.items)msg(['loading…']);
+  else if(f.err)msg([f.err]);
+  else if(!n)msg(['No '+word+'s '+storeWhere()+' yet.']);
+  else{for(let r=0;r<rows;r++){const i=f.top+r,d=f.items[i];if(!d)break;const ry=ly+2+r*rh,on=i===f.sel,c=on?WH:B;
+      if(on)clr(lx+1,ry,lw-2,rh,B);
+      T(d.name,lx+6,ry+rh/2,c,'left',15);T(fmtDate(d.modified),lx+lw-170,ry+rh/2,c,'left',14);T(fmtSize(d.size),lx+lw-28,ry+rh/2,c,'right',14);
+      reg(lx+1,ry,lw-24,rh,{down:()=>fselPick(i),dbl:()=>{fselPick(i);fselOk();},wheel,hint:[d.name,word+', saved '+fmtDate(d.modified)+'. Double-click to '+(save?'save over it':'open it')+'.','']});
+      box(lx+lw-20,ry+2,13,12,on?WH:WH);T('x',lx+lw-13.5,ry+7.5,B,'center',13);
+      reg(lx+lw-20,ry+1,14,14,{down:()=>dialog(['Delete the '+word,d.name+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>removeDoc(f.type,d.name,d.etag,fselList)}]),wheel,hint:['Delete '+word,'Deletes '+d.name+' '+storeWhere()+' (asks first).','']});}
+    if(f.top>0)T('▲',lx+lw-4,ly-7,B,'right',13);if(f.top<maxTop)T('▼',lx+lw-4,ly+lh+7,B,'right',13);}
+  if(save){const ny=ly+lh+10;T('NAME',lx,ny+10);box(lx+50,ny,lw-50,20);T(f.name,lx+56,ny+10);
+    if(Math.floor(performance.now()/450)%2===0)clr(lx+57+tw(f.name),ny+3,7,14,B);
+    reg(lx+50,ny,lw-50,20,{down:()=>{},hint:['Name','Type the name of the '+word+(ty.upper?' (capitals, ':' (')+ty.max+' characters at most).','']});}
+  [['Cancel',false],[save?'SAVE':file?'OPEN…':'OPEN',true]].forEach(([l,o],i)=>{const bx=x+w/2-86+i*100,by=y+h-32;box(bx,by,72,22);if(o)box(bx+2,by+2,68,18);T(l,bx+36,by+11,B,'center');
+    reg(bx,by,72,22,{down:()=>{if(o)fselOk();else{S.fsel=null;dirty=true;}},hint:[l,o?'Enter':'Esc','']});});
+}
 function loadPreset(T_,src,n,k,legacy){
   const ti=T_.ti,t=S.tracks[ti];let conv='';
   if(legacy&&!targetExact(T_)){const c=zdfCutoff(k[11],k[12]);if(c!==k[11]){conv='  (cutoff '+k[11]+' > '+c+')';k=k.slice();k[11]=c;}}
@@ -2799,7 +3134,7 @@ function drawToolbox(){
     drawBm(CUR[c.t==='pointer'?'arrow':c.t],c.x+c.w/2,c.y+c.h/2,true);
     vl(c.x+c.w,c.y,c.h);hl(c.x,c.y+c.h,c.w);});
 }
-function dialogGeom(){const L=S.dialog.lines;const w=Math.max(220,...L.map(s=>tw(s)+40)),h=L.length*16+60;return {x:(W-w)/2|0,y:(H-h)/2|0,w,h};}
+function dialogGeom(){const L=S.dialog.lines;const w=Math.max(220,S.dialog.buttons.length*86+30,...L.map(s=>tw(s)+40)),h=L.length*16+60;return {x:(W-w)/2|0,y:(H-h)/2|0,w,h};}
 function drawDialog(){
   if(!S.dialog)return;const g=dialogGeom();
   box(g.x,g.y,g.w,g.h);box(g.x+3,g.y+3,g.w-6,g.h-6);
@@ -2826,12 +3161,12 @@ function render(){
   drawTransport();
   if(S.menu!=null)drawList(menuGeom(S.menu));
   if(S.popup)drawList(popupGeom());
-  drawToolbox();drawDialog();drawInput();
+  drawToolbox();drawFsel();drawDialog();drawInput();
   if(S.mx>=0)drawBm(CUR[cursorFor(S.mx,S.my)],S.mx,S.my);
-  $('#saveLbl').textContent=saveState;
+  $('#saveLbl').textContent=storeBusy?'storage…':saveState;
 }
 function cursorFor(x,y){
-  if(S.dialog||S.menu!=null||S.toolbox||S.popup||y<38||y>=TBY)return regionAt(x,y)?.cur||'arrow';
+  if(S.dialog||S.fsel||S.input||S.menu!=null||S.toolbox||S.popup||y<38||y>=TBY)return regionAt(x,y)?.cur||'arrow';
   if(S.view==='arr'){if(x>=TLX&&y>=TRY&&y<TRY+8*TRH){
       if(S.tool==='pointer'){const p=partAtTick(Math.floor((y-TRY)/TRH),xToTick(x));if(p&&x>=tickToX(p.start+p.len)-4)return 'resize';return 'arrow';}
       return S.tool;}}
@@ -2880,6 +3215,7 @@ cv.addEventListener('pointerdown',e=>{
   const now=performance.now(),dbl=now-lastDown.t<350&&Math.abs(x-lastDown.x)<5&&Math.abs(y-lastDown.y)<5;lastDown={t:dbl?0:now,x,y};
   if(S.input){const r=regionAt(x,y);if(r&&r.down)r.down(e);return;}
   if(S.dialog){const r=dialogBtns().find(r=>inR(r,x,y));if(r)dialogAnswer(r.o);return;}
+  if(S.fsel){const r=regionAt(x,y);if(r){if(dbl&&r.dbl)r.dbl();else if(r.down)r.down(e);}return;}
   if(S.toolbox){const c=toolboxCells().find(c=>inR(c,x,y));if(c)setTool(c.t);S.toolbox=null;return;}
   if(S.popup){const g=popupGeom();const it=g.rows.find(r=>inR(r,x,y));S.popup=null;if(it&&it.o.l!=='-')it.o.a();return;}
   if(S.menu!=null){const g=menuGeom(S.menu);const it=g.rows.find(r=>inR(r,x,y));
@@ -3257,7 +3593,7 @@ function frame(){
     liveQ.sort((a,b)=>a.at-b.at);
     dirty=true;
   }
-  if(gate.some(g=>g>0)||S.step||S.input||held.size||S.view==='drum'||performance.now()-S.inFlash<500)dirty=true;
+  if(gate.some(g=>g>0)||S.step||S.input||S.fsel||held.size||S.view==='drum'||performance.now()-S.inFlash<500)dirty=true;
   meters.l*=0.97;meters.r*=0.97;for(let i=0;i<8;i++)meters.tr[i]*=0.97;
   // the level meters are only drawn in the Mixer: redraw for them only there, and only when a bar changes height
   if(S.view==='mix'){const px=meters.tr.map(v=>Math.round(Math.min(1,v*2)*96)).join()+','+Math.round(Math.min(1,Math.max(meters.l,meters.r))*96);if(px!==meterPx){meterPx=px;dirty=true;}}
@@ -3274,12 +3610,13 @@ function loadPrefs(){let o=null;try{o=JSON.parse(localStorage.getItem(PREF_KEY)|
   S.oct=clamp(S.oct|0,-1,6);S.gate=clamp(S.gate|0,0,GATES.length-1);if(S.recMode!=='replace')S.recMode='overdub';
   const midi=S.midi;S.midi=false;prefsJSON=JSON.stringify(Object.fromEntries(PREFS.map(k=>[k,k==='midi'?midi:S[k]])));return midi;}
 function savePrefs(){const j=JSON.stringify(Object.fromEntries(PREFS.map(k=>[k,S[k]])));if(j===prefsJSON)return;prefsJSON=j;try{localStorage.setItem(PREF_KEY,j);}catch(e){}}
-window.__ast={S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy,onMidi};
+window.__ast={storage,fileSel,songCtx,patchCtx,refreshLib,offerMove,userKits,browserStore,S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy,onMidi};
 (function boot(){
   let ok=false;
   try{const s=localStorage.getItem(LS_KEY);if(s){loadSong(JSON.parse(s));ok=true;}}catch(e){ok=false;}
   if(!ok)loadDemo();
   const midi=loadPrefs();if(midi)toggleMidi(true);
+  initStore();
   buildKb();fit();
   (document.fonts?document.fonts.load('16px VT323'):Promise.resolve()).catch(()=>{}).then(()=>{dirty=true;requestAnimationFrame(frame);});
 })();

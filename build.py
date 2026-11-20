@@ -6,11 +6,13 @@ here = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(here, 'src', f), encoding='utf-8').read()
 app = src('app.html')
 eng = src('ds10_tables.js') + src('midiverb_fx.js') + src('engine.js')
-assert '</script' not in eng and '</script' not in src('manual.js')
+# the stuff-storage client (a copy of client.js from the stuff-storage repository), inlined without its export
+client = re.sub(r'^export ', '', src('stuff_storage_client.js'), flags=re.M)
+assert '</script' not in eng and '</script' not in src('manual.js') and '</script' not in client
 names = [json.loads(m) for m in re.findall(r'names:(\[.*?\]),fx:', src('midiverb_fx.js'))]
 tabs = src('ds10_tables.js'); T, _ = json.JSONDecoder().raw_decode(tabs, tabs.index('{'))
 vcf = json.dumps({'peak': T['peak'], 'coef': T['coef']}, separators=(',', ':'))
-app = app.replace('@@VCF@@', vcf).replace('@@MANUAL@@', src('manual.js')).replace('@@ENGINE@@', eng).replace('@@MVNAMES@@', json.dumps(names))
+app = app.replace('@@VCF@@', vcf).replace('@@MANUAL@@', src('manual.js')).replace('@@ENGINE@@', eng).replace('@@MVNAMES@@', json.dumps(names)).replace('@@CLIENT@@', client)
 assert '@@' not in app
 out = os.path.join(here, 'arranger-st10.html')
 open(out, 'w', encoding='utf-8').write(app)

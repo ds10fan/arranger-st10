@@ -27,10 +27,12 @@ Publish to GitHub Pages (https://ds10fan.github.io/arranger-st10/) after buildin
 ## Layout
 
 - `src/app.html` – page, UI (canvas-drawn 640x400 GEM screen), sequencer, mixer model, saving.
-  Placeholders `@@ENGINE@@`, `@@MVNAMES@@`, `@@MANUAL@@` are filled by `build.py`.
+  Placeholders `@@ENGINE@@`, `@@MVNAMES@@`, `@@MANUAL@@`, `@@CLIENT@@` are filled by `build.py`.
 - `src/engine.js` – AudioWorklet engine (DS-10 voice port, filters, effects, mixer). It is
   embedded as a `<script type="text/plain">` and loaded via blob:/data: URL.
 - `src/manual.js` – the in-app manual (Desk > Manual, F9).
+- `src/stuff_storage_client.js` – a copy of `client.js` from the stuff-storage repository (storage for songs, patches and kits);
+  `build.py` inlines it without its `export`. Copy it again when stuff-storage changes its client.
 - `src/ds10_tables.js`, `src/midiverb_fx.js` – generated data; regenerate with `tools/`
   (needs the upstream repos ds10emu and midiverb_emulator cloned locally; paths are at the top of each script).
 
