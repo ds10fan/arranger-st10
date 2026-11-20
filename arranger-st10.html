@@ -2912,7 +2912,7 @@ function kitCtx(ti){const t=S.tracks[ti];return {name:t.name,
 function quickSave(){if(!storage.connected)return saveJSON();putDoc('song',S.songName||'untitled',songCtx());}
 
 /* the file selector: open or save a song, patch or kit, from or to the store (STORAGE or BROWSER) or a .json file */
-const FS={x:100,y:44,w:440,h:300,rows:10,rh:16};
+const FS={x:40,y:44,w:560,h:300,rows:10,rh:16};
 const fitName=(type,n)=>{n=String(n||'').slice(0,TYPES[type].max);return TYPES[type].upper?n.toUpperCase():n;};
 function fileSel(mode,type,ctx){S.fsel={mode,type,ctx,src:'store',items:null,err:'',sel:-1,top:0,name:mode==='save'?fitName(type,ctx.name):''};
   S.menu=S.popup=S.toolbox=null;allOff();fselList();dirty=true;}
@@ -2944,7 +2944,10 @@ function drawFsel(){
       :storage.connected?'Your storage'+(storeWho?' ('+storeWho+')':'')+'.':'Kept in this browser. Connect a storage (button on the right, or the File menu) to keep them there.','']});});
   const cbx=x+w-104,cby=y+30;box(cbx,cby,90,18);T(storage.connected?'DISCONNECT':'CONNECT…',cbx+45,cby+9,B,'center');
   reg(cbx,cby,90,18,{down:()=>{if(storage.connected)disconnectStore();else connectStore();},hint:storage.connected?['Disconnect','Stops using the storage'+(storeWho?' '+storeWho:'')+'. Songs, patches and kits are kept in this browser again.','']:['Connect storage','Asks for the address of a stuff-storage server and signs in there.','']});
-  T(storage.connected?(storeWho||'connected'):'no storage',cbx-6,cby+9,B,'right',13);
+  // user@host between the source buttons and CONNECT/DISCONNECT, shortened with … when it does not fit
+  {const room=cbx-6-(x+14+2*96+4);let who=storage.connected?(storeWho||'connected'):'no storage';
+    if(tw(who,13)>room){while(who.length>1&&tw(who+'…',13)>room)who=who.slice(0,-1);who+='…';}
+    T(who,cbx-6,cby+9,B,'right',13);}
   const lx=x+14,ly=y+56,lw=w-28,lh=rows*rh+4,n=f.items?f.items.length:0,maxTop=Math.max(0,n-rows);
   box(lx,ly,lw,lh);
   const wheel=d=>{f.top=clamp(f.top+d,0,maxTop);dirty=true;};
