@@ -1257,9 +1257,10 @@ function deleteUserPatch(i){const n=userPatches[i][0];
    They are documents of the types song, patch and kit; the bodies are the same JSON as the .json files.
    With a stuff-storage server connected they are kept there (STORAGE), otherwise in this browser (BROWSER). */
 @@CLIENT@@
-const storage=new Storage(),isFileUrl=location.protocol==='file:';
 const BDOC_KEY='arranger-st.docs',DOC_KEY='arranger-st.doc',CONNECTING_KEY='arranger-st.connecting';
 const TYPES={song:{word:'song',max:24,upper:false,ext:'.json'},patch:{word:'patch',max:12,upper:true,ext:'.patch.json'},kit:{word:'kit',max:12,upper:true,ext:'.kit.json'}};
+// the storage token covers these types; other apps that use the same types share the documents
+const storage=new Storage({types:Object.keys(TYPES)}),isFileUrl=location.protocol==='file:';
 // the browser store answers like the storage (etags, conditional save and remove, the same status codes)
 const browserStore={
   all(){try{return JSON.parse(localStorage.getItem(BDOC_KEY)||'{}')||{};}catch(e){return {};}},
@@ -1283,6 +1284,7 @@ function storeErr(e){
   if(s===401){storeWho='';dialog(['The storage connection has ended.','Connect again in the File menu.']);refreshLib();}
   else if(s===507)dialog([storage.connected?'Your storage is full.':'The browser storage is full or off.','Nothing was saved.']);
   else if(s===413)dialog(['This is too large for the storage','(16 MiB at most). Nothing was saved.']);
+  else if(s===403)dialog(['The storage does not allow this','document type. Connect again','in the File menu.']);
   else if(s===404)dialog(['That document is not there any more.']);
   else dialog(['The storage did not answer.',String(e&&e.message||'').slice(0,40)]);
   dirty=true;
@@ -1348,6 +1350,8 @@ async function moveToStorage(){
 }
 function initStore(){
   migrateOldLib();
+  // a token from before the app named its types (or from fewer types) does not count as connected
+  if(!storage.connected&&storage.server&&storage.token&&!storage.connectError)dialog(['The storage has to be connected again','to allow songs, patches and kits.','Use File > Connect Storage…']);
   if(storage.connectError)dialog(['The storage is not connected:',storage.connectError==='access_denied'?'the app was not allowed.':storage.connectError]);
   let just=false;try{just=sessionStorage.getItem(CONNECTING_KEY)==='1';sessionStorage.removeItem(CONNECTING_KEY);}catch(e){}
   refreshLib();
@@ -1402,7 +1406,7 @@ function fileSel(mode,type,ctx){S.fsel={mode,type,ctx,src:'store',items:null,err
   S.menu=S.popup=S.toolbox=null;allOff();fselList();dirty=true;}
 function fselList(){const f=S.fsel;if(!f)return;f.items=null;f.err='';const src=store();
   sto(()=>src.type(f.type).list()).then(l=>{if(S.fsel!==f)return;f.items=l;f.sel=l.findIndex(d=>d.name===f.name);f.top=clamp(f.sel-FS.rows+1,0,Math.max(0,l.length-FS.rows));dirty=true;},
-    e=>{if(S.fsel!==f)return;f.items=[];f.err=e&&e.status===401?'not connected any more':'the storage did not answer';if(e&&e.status===401)storeErr(e);dirty=true;});}
+    e=>{if(S.fsel!==f)return;f.items=[];f.err=e&&e.status===401?'not connected any more':e&&e.status===403?'not allowed: connect again':'the storage did not answer';if(e&&e.status===401)storeErr(e);dirty=true;});}
 function fselPick(i){const f=S.fsel,d=f.items[i];f.sel=i;if(f.mode==='save')f.name=fitName(f.type,d.name);f.top=clamp(f.top,i-FS.rows+1,i);dirty=true;}
 function fselOk(){const f=S.fsel;if(!f)return;const ty=TYPES[f.type];
   if(f.mode==='save'){const n=fitName(f.type,f.name.trim());if(!n)return flashMsg('Type a name first');S.fsel=null;
