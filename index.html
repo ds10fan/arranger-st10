@@ -1380,7 +1380,7 @@ const MANUAL=[
 ['p','The song saves itself in this browser a moment after every change; the status line shows "saved". This includes tracks, patches, the mixer, effects, parts, notes, automation, tempo, locators and pad settings. Browser storage belongs to this browser only.'],
 ['k','File > Rename Song…','Type a new name and press Enter. You can also click the song name in the Arrange title bar.'],
 ['p','Songs, patches and kits can be kept in a storage: a stuff-storage server, run by you or someone who invited you. Without one they are kept in this browser. The app has to be on a web page (https, or http on localhost) to connect; a copy opened from disk cannot.'],
-['k','File > Connect Storage…','Asks for the storage address (for example storage.example.com), then goes to the storage to sign in and allow the app, and comes back. The song is saved in the browser first. After connecting, the app offers to move the songs, patches and kits kept in this browser to the storage; names that are already taken there stay in the browser.'],
+['k','File > Connect Storage…','Asks for the storage address (for example storage.example.com), then goes to the storage to sign in and allow the app, and comes back. The song is saved in the browser first. After connecting, the app offers to move the songs, patches and kits kept in this browser to the storage; names that are already taken there stay in the browser. The app asks for access to songs, patches and kits; other apps that use the same document types see and can change them too.'],
 ['k','File > Disconnect','Stops using the storage (the menu shows user@host). Songs, patches and kits are kept in this browser again.'],
 ['k','File > Move Browser Items to Storage…','Offers the move again.'],
 ['k','File > Open…','The file selector. STORAGE (or BROWSER when no storage is connected) lists the songs there with date and size: click one and OPEN, or double-click it; x deletes one (asks first); the wheel and Up/Down move through the list. .JSON FILE opens a .json file from this computer. CONNECT… and DISCONNECT on the right do the same as the File menu.'],
@@ -2626,13 +2626,17 @@ function deleteUserPatch(i){const n=userPatches[i][0];
 // Client for stuff-storage. Copy this file into your app:
 //
 //   import { Storage } from "./client.js";
-//   const storage = new Storage();
+//   const storage = new Storage({ types: ["song", "patch"] });
 //   if (!storage.connected) await storage.connect("https://storage.example");
 //   const songs = storage.type("song");
 //   await songs.save("my song", "...");
 //
 // The storage server is not part of the app: the user names it when
 // connecting, and it is remembered in the browser's local storage.
+//
+// The app declares the document types it works with. The user allows the
+// app to read and change their documents of these types; the documents are
+// shared with every other app the user allowed the same type.
 
 const KEY = "stuff-storage";
 
@@ -2657,7 +2661,14 @@ class Storage {
   // null.
   connectError = null;
 
-  constructor() {
+  // The document types this app works with.
+  types;
+
+  constructor({ types } = {}) {
+    if (!Array.isArray(types) || types.length === 0) {
+      throw new Error("Storage needs the document types of the app: new Storage({ types: [...] })");
+    }
+    this.types = [...types];
     this.#finishConnect();
   }
 
@@ -2670,12 +2681,21 @@ class Storage {
     return localStorage.getItem(`${KEY}:token`);
   }
 
+  // Whether there is a token that gives access to all types of this app.
+  // False also when the token was issued for fewer types, for example
+  // before the app started to use a new type; then connect again.
   get connected() {
-    return this.server !== null && this.token !== null;
+    if (this.server === null || this.token === null) return false;
+    let granted = [];
+    try {
+      granted = JSON.parse(localStorage.getItem(`${KEY}:types`) ?? "[]");
+    } catch {}
+    return this.types.every((type) => granted.includes(type));
   }
 
   // Sends the browser to the given storage server to sign in and approve
-  // this app. The server redirects back to the current page with a token.
+  // this app for its document types. The server redirects back to the
+  // current page with a token.
   // Throws if there is no storage server at that address.
   async connect(server) {
     server = normalize(server);
@@ -2686,10 +2706,11 @@ class Storage {
       throw new Error(`No storage found at ${server}.`);
     }
     const state = crypto.randomUUID();
-    sessionStorage.setItem(`${KEY}:pending`, JSON.stringify({ state, server }));
+    sessionStorage.setItem(`${KEY}:pending`, JSON.stringify({ state, server, types: this.types }));
     const back = location.origin + location.pathname + location.search;
     location.assign(
-      `${server}/authorize?redirect_uri=${encodeURIComponent(back)}&state=${state}`,
+      `${server}/authorize?redirect_uri=${encodeURIComponent(back)}&state=${state}` +
+        `&types=${encodeURIComponent(this.types.join(","))}`,
     );
   }
 
@@ -2704,26 +2725,39 @@ class Storage {
       this.connectError = params.get("error") ?? "no_token";
       return;
     }
+    this.#revoke(); // a token from an earlier connect, if any
     localStorage.setItem(`${KEY}:server`, pending.server);
     localStorage.setItem(`${KEY}:token`, token);
+    localStorage.setItem(`${KEY}:types`, JSON.stringify(pending.types ?? []));
+  }
+
+  // Asks the server to revoke the current token, without waiting for it.
+  #revoke() {
+    const { server, token } = this;
+    if (server === null || token === null) return;
+    fetch(`${server}/api/token`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+      keepalive: true,
+    }).catch(() => {});
   }
 
   // Revokes the token on the server and forgets it. The server address is
   // kept, so that it can be offered again.
   async disconnect() {
-    try {
-      await this.#call("/api/token", { method: "DELETE" });
-    } catch {}
+    this.#revoke();
     localStorage.removeItem(`${KEY}:token`);
   }
 
   async #call(path, opts = {}) {
     if (!this.connected) throw new Error("storage is not connected");
+    // Captured here so that a 401 for a replaced token does not remove the new one.
+    const token = this.token;
     const res = await fetch(this.server + path, {
       ...opts,
-      headers: { ...opts.headers, Authorization: `Bearer ${this.token}` },
+      headers: { ...opts.headers, Authorization: `Bearer ${token}` },
     });
-    if (res.status === 401) localStorage.removeItem(`${KEY}:token`);
+    if (res.status === 401 && this.token === token) localStorage.removeItem(`${KEY}:token`);
     if (!res.ok) {
       const err = new Error((await res.text()) || res.statusText);
       err.status = res.status;
@@ -2732,21 +2766,26 @@ class Storage {
     return res;
   }
 
-  // { user, app, used, quota }, used and quota in bytes
+  // { user, app, types, used, quota }, used and quota in bytes
   async whoami() {
     return (await this.#call("/api/whoami")).json();
   }
 
-  // All documents of this app, of every type:
+  // All documents of the types this app was allowed:
   // [{ type, name, size, modified, etag }], modified is unix time in seconds
   async list() {
     return (await this.#call("/api/docs")).json();
   }
 
-  // The documents of one type, for example storage.type("song"). The type is
-  // an identifier chosen by the app (letters, digits, "-", "_", "."). Names
-  // are separate per type: a song and a patch can have the same name.
+  // The documents of one type, for example storage.type("song"). The type
+  // must be one of those given to the constructor. It is an identifier
+  // (letters, digits, "-", "_", "."); apps that should share documents use
+  // the same one. Names are separate per type: a song and a patch can have
+  // the same name.
   type(type) {
+    if (!this.types.includes(type)) {
+      throw new Error(`type "${type}" is not among the types given to Storage`);
+    }
     const base = `/api/docs/${encodeURIComponent(type)}`;
     const path = (name) => `${base}/${encodeURIComponent(name)}`;
     return {
@@ -2781,9 +2820,10 @@ class Storage {
   }
 }
 
-const storage=new Storage(),isFileUrl=location.protocol==='file:';
 const BDOC_KEY='arranger-st.docs',DOC_KEY='arranger-st.doc',CONNECTING_KEY='arranger-st.connecting';
 const TYPES={song:{word:'song',max:24,upper:false,ext:'.json'},patch:{word:'patch',max:12,upper:true,ext:'.patch.json'},kit:{word:'kit',max:12,upper:true,ext:'.kit.json'}};
+// the storage token covers these types; other apps that use the same types share the documents
+const storage=new Storage({types:Object.keys(TYPES)}),isFileUrl=location.protocol==='file:';
 // the browser store answers like the storage (etags, conditional save and remove, the same status codes)
 const browserStore={
   all(){try{return JSON.parse(localStorage.getItem(BDOC_KEY)||'{}')||{};}catch(e){return {};}},
@@ -2807,6 +2847,7 @@ function storeErr(e){
   if(s===401){storeWho='';dialog(['The storage connection has ended.','Connect again in the File menu.']);refreshLib();}
   else if(s===507)dialog([storage.connected?'Your storage is full.':'The browser storage is full or off.','Nothing was saved.']);
   else if(s===413)dialog(['This is too large for the storage','(16 MiB at most). Nothing was saved.']);
+  else if(s===403)dialog(['The storage does not allow this','document type. Connect again','in the File menu.']);
   else if(s===404)dialog(['That document is not there any more.']);
   else dialog(['The storage did not answer.',String(e&&e.message||'').slice(0,40)]);
   dirty=true;
@@ -2872,6 +2913,8 @@ async function moveToStorage(){
 }
 function initStore(){
   migrateOldLib();
+  // a token from before the app named its types (or from fewer types) does not count as connected
+  if(!storage.connected&&storage.server&&storage.token&&!storage.connectError)dialog(['The storage has to be connected again','to allow songs, patches and kits.','Use File > Connect Storage…']);
   if(storage.connectError)dialog(['The storage is not connected:',storage.connectError==='access_denied'?'the app was not allowed.':storage.connectError]);
   let just=false;try{just=sessionStorage.getItem(CONNECTING_KEY)==='1';sessionStorage.removeItem(CONNECTING_KEY);}catch(e){}
   refreshLib();
@@ -2926,7 +2969,7 @@ function fileSel(mode,type,ctx){S.fsel={mode,type,ctx,src:'store',items:null,err
   S.menu=S.popup=S.toolbox=null;allOff();fselList();dirty=true;}
 function fselList(){const f=S.fsel;if(!f)return;f.items=null;f.err='';const src=store();
   sto(()=>src.type(f.type).list()).then(l=>{if(S.fsel!==f)return;f.items=l;f.sel=l.findIndex(d=>d.name===f.name);f.top=clamp(f.sel-FS.rows+1,0,Math.max(0,l.length-FS.rows));dirty=true;},
-    e=>{if(S.fsel!==f)return;f.items=[];f.err=e&&e.status===401?'not connected any more':'the storage did not answer';if(e&&e.status===401)storeErr(e);dirty=true;});}
+    e=>{if(S.fsel!==f)return;f.items=[];f.err=e&&e.status===401?'not connected any more':e&&e.status===403?'not allowed: connect again':'the storage did not answer';if(e&&e.status===401)storeErr(e);dirty=true;});}
 function fselPick(i){const f=S.fsel,d=f.items[i];f.sel=i;if(f.mode==='save')f.name=fitName(f.type,d.name);f.top=clamp(f.top,i-FS.rows+1,i);dirty=true;}
 function fselOk(){const f=S.fsel;if(!f)return;const ty=TYPES[f.type];
   if(f.mode==='save'){const n=fitName(f.type,f.name.trim());if(!n)return flashMsg('Type a name first');S.fsel=null;
