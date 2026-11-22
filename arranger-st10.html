@@ -1102,6 +1102,14 @@ class Engine {
       case 'fxp': { const x = this.slot(m.w)[m.slot]; if (x) { if (m.k === 'on') x.on = !!m.v; else x.set(m.k, m.v); } break; }
       case 'bus': this.bus[m.i].g = volGain(m.ret); break;
       case 'mst': this.mst.g = volGain(m.vol); this.mst.shp = m.shp ? 1 : 0; break;
+      // stop/relocate: drop the sequencer's queued events and release the notes it started that are still sounding;
+      // notes played live stay held
+      case 'seqoff': {
+        const keep = [], gone = new Set();
+        for (const e of this.q) if (e.sq && e.k === 'on') gone.add(e.tr + ':' + e.id);
+        for (const e of this.q) { if (!e.sq) keep.push(e); else if (e.k === 'off' && !gone.has(e.tr + ':' + e.id)) this.apply(e); }
+        this.q = keep; break;
+      }
       case 'panic': this.q = []; for (const t of this.tr) { t.allOff(); for (const v of t.vs) { v.on = false; v.lvl = v.lvT = v.lvd = 0; } } break;
     }
   }
@@ -1228,7 +1236,7 @@ const MANUAL=[
 ['h','Transport'],
 ['p','The transport bar at the bottom of the screen works in every window.'],
 ['k','Play','Space or Numpad Enter. Plays from the song position.'],
-['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop also returns automated knobs to their patch values.'],
+['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop releases every note the sequencer is playing (notes you hold on the keyboard keep sounding) and returns automated knobs to their patch values.'],
 ['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. A part grows by whole bars so it holds the end of every note, not just its start, up to the next part on the track; drawing, moving, stretching and pasting notes in Key Edit grow it the same way. In Key Edit while stopped, Record arms step input instead.'],
 ['k','Cycle','/ or Numpad /. Loops between the L and R locators. Recording in cycle layers each pass onto the last.'],
 ['k','Return to zero','Home or Numpad . jumps to bar 1.'],
@@ -1749,7 +1757,7 @@ function scheduleRange(a,b,time,pass,ev){
       if(p.dmute&&p.dmute[n.p]&&tr.kind==='drum')continue;
       const t0=time+(abs-a)*k,t1=t0+Math.max(4,n.d)*k;
       const id=++noteIdC;
-      ev.push({time:t0,k:'on',tr:p.track,p:n.p,v:n.v,pt:n.pt,pn:n.pn,st:n.st,id},{time:t1,k:'off',tr:p.track,p:n.p,id});
+      ev.push({time:t0,k:'on',tr:p.track,p:n.p,v:n.v,pt:n.pt,pn:n.pn,st:n.st,id,sq:1},{time:t1,k:'off',tr:p.track,p:n.p,id,sq:1});
       const ti=p.track;
       setTimeout(()=>{gate[ti]++;},Math.max(0,(t0-ac.currentTime)*1000));
       setTimeout(()=>{gate[ti]=Math.max(0,gate[ti]-1);},Math.max(0,(t1-ac.currentTime)*1000));
@@ -1758,7 +1766,7 @@ function scheduleRange(a,b,time,pass,ev){
       const ln=p.auto[pid];if(!ln.pts||!ln.pts.length||autoHeld.has(p.track+':'+pid))continue;
       const lo=Math.max(a,p.start),hi=Math.min(b,p.start+p.len),id=+pid;
       const emit=(abs,v)=>{const dd=PD(p.track,id);if(dd[6])return;v=clamp(Math.round(v),dd[2],dd[3]);const key=p.track+':'+id;if(lastAuto[key]===v)return;lastAuto[key]=v;
-        const t=time+(abs-a)*k;ev.push({time:t,k:'knob',tr:p.track,id,v});liveQ.push({at:t,tr:p.track,id,v});};
+        const t=time+(abs-a)*k;ev.push({time:t,k:'knob',tr:p.track,id,v,sq:1});liveQ.push({at:t,tr:p.track,id,v});};
       if(ln.m==='h'){if(p.start>=a&&p.start<b)emit(p.start,autoAt(ln,0));for(const pt of ln.pts){const abs=p.start+pt.t;if(abs>=lo&&abs<hi&&pt.t>0)emit(abs,pt.v);}}
       else for(let t=Math.ceil(lo/6)*6;t<hi;t+=6)emit(t,autoAt(ln,t-p.start));
     }
@@ -1785,13 +1793,13 @@ function startPlay(){
 }
 function relocate(t){
   S.pos=clamp(t,0,NBARS*BAR);
-  if(S.playing){clearInterval(timer);post({t:'ev',ev:[{time:0,k:'alloff'}]});passN++;schedTick=S.pos;schedTime=ac.currentTime+0.04;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
+  if(S.playing){clearInterval(timer);post({t:'seqoff'});passN++;schedTick=S.pos;schedTime=ac.currentTime+0.04;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
     for(const k in lastAuto)delete lastAuto[k];chase(S.pos);timer=setInterval(sched,25);}
   dirty=true;
 }
 function play(){if(!S.playing){if(S.step)exitStep();startPlay();}}
 function stop(){
-  if(S.playing){S.pos=Math.floor(curTick());S.playing=false;clearInterval(timer);post({t:'ev',ev:[{time:0,k:'alloff'}]});liveQ.length=0;
+  if(S.playing){S.pos=Math.floor(curTick());S.playing=false;clearInterval(timer);post({t:'seqoff'});liveQ.length=0;
     if(S.rec){S.rec=false;finalizeHeld();}autoHeld.clear();for(const k in recLast)delete recLast[k];restoreLive();}
   else{if(S.step)exitStep();else S.pos=(S.pos!==S.L)?S.L:0;}
   dirty=true;

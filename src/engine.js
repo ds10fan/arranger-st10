@@ -1061,6 +1061,14 @@ class Engine {
       case 'fxp': { const x = this.slot(m.w)[m.slot]; if (x) { if (m.k === 'on') x.on = !!m.v; else x.set(m.k, m.v); } break; }
       case 'bus': this.bus[m.i].g = volGain(m.ret); break;
       case 'mst': this.mst.g = volGain(m.vol); this.mst.shp = m.shp ? 1 : 0; break;
+      // stop/relocate: drop the sequencer's queued events and release the notes it started that are still sounding;
+      // notes played live stay held
+      case 'seqoff': {
+        const keep = [], gone = new Set();
+        for (const e of this.q) if (e.sq && e.k === 'on') gone.add(e.tr + ':' + e.id);
+        for (const e of this.q) { if (!e.sq) keep.push(e); else if (e.k === 'off' && !gone.has(e.tr + ':' + e.id)) this.apply(e); }
+        this.q = keep; break;
+      }
       case 'panic': this.q = []; for (const t of this.tr) { t.allOff(); for (const v of t.vs) { v.on = false; v.lvl = v.lvT = v.lvd = 0; } } break;
     }
   }
