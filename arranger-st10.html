@@ -1236,10 +1236,10 @@ const MANUAL=[
 ['h','Transport'],
 ['p','The transport bar at the bottom of the screen works in every window.'],
 ['k','Play','Space or Numpad Enter. Plays from the song position.'],
-['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop releases every note the sequencer is playing (notes you hold on the keyboard keep sounding) and returns automated knobs to their patch values.'],
+['k','Stop','Space while playing, or Home. Pressing it (or Home) again while stopped jumps to the left locator, and once more to bar 1. Stop releases every note the sequencer is playing (notes you hold on the keyboard keep sounding) and returns automated knobs to their patch values.'],
 ['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. A part grows by whole bars so it holds the end of every note, not just its start, up to the next part on the track; drawing, moving, stretching and pasting notes in Key Edit grow it the same way. In Key Edit while stopped, Record arms step input instead.'],
 ['k','Cycle','/ or Numpad /. Loops between the L and R locators. Recording in cycle layers each pass onto the last.'],
-['k','Return to zero','Home or Numpad . jumps to bar 1.'],
+['k','Return to zero','Numpad 0 or Numpad . jumps to bar 1.'],
 ['k','Position','Shift+Left/Right moves the song position by a bar. Plain Left/Right page the Arrange and Key Edit views a screen at a time (in the other windows they move the position). Scrolling over the position display steps by the quantize value.'],
 ['k','L and R','Click L or R to set that locator to the current bar. Shift-click jumps to the locator.'],
 ['k','OVERDUB / REPLACE','Overdub adds recorded notes to what is already there. Replace erases the active track\'s notes under the playhead while you record.'],
@@ -1400,7 +1400,7 @@ const MANUAL=[
 ['k','Enter','Record; step input in Key Edit while stopped'],
 ['k','/','Cycle'],
 ['k','L','Locators to Part: L and R around the selected part (in Key Edit the part being edited), cycle on'],
-['k','Home','Bar 1'],
+['k','Home','Stop; when stopped, the left locator, then bar 1'],
 ['k','Left / Right','Page Arrange and Key Edit (Shift: song position by a bar)'],
 ['k','Up / Down','Active track; in Key Edit, transpose the selection or go to the next track\'s part'],
 ['k','[ ]','Quantize'],
@@ -1412,7 +1412,7 @@ const MANUAL=[
 ['k','Ctrl+S','Save (to the storage when connected, else a .json file)'],
 ['k','Ctrl+A C X V','Key Edit: select all, copy, cut, paste'],
 ['k','1 … 8','Mixer: mute tracks 1-8; drum kit (F3): mute drums 1-8. On these two screens the number keys do not play notes.'],
-['k','Numpad','Enter play, 0 stop, * record, / cycle, . bar 1'],
+['k','Numpad','Enter play, 0 and . bar 1, * record, / cycle'],
 
 ['h','Credits'],
 ['p','The synth voice is a port of ds10emu, a reimplementation of the KORG DS-10 engine. The factory patches and the example-song patches come from its data files. The Midiverb programs come from the midiverb_emulator decompilation, and the tape delay is a port of camouflage FakeTapeDelay. Check their licences before you distribute this app.'],
@@ -2043,10 +2043,10 @@ document.addEventListener('keydown',e=>{
     case 'Space':handled();if(e.repeat)return;if(S.step)stepAdvance();else togglePlay();break;
     case 'Enter':handled();if(!e.repeat)rec();break;
     case 'NumpadEnter':handled();play();break;
-    case 'Numpad0':handled();stop();break;
+    case 'Home':handled();stop();break;
     case 'NumpadMultiply':handled();rec();break;
     case 'Slash':case 'NumpadDivide':handled();toggleCycle();break;
-    case 'Home':case 'NumpadDecimal':handled();rtz();break;
+    case 'Numpad0':case 'NumpadDecimal':handled();rtz();break;
     case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick||S.padPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;S.padPick=null;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
     case 'Tab':handled();nextTool(e.shiftKey?-1:1);break;
     case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();fitPart(part(S.editPart));}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
@@ -2199,7 +2199,7 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','L   locators to part (and cycle on)','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo   Ctrl+S  save (storage if connected)','1-8   mute track (Mixer) / drum (kit)','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Tab   next tool','Home   stop; again: left locator, then bar 1','L   locators to part (and cycle on)','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo   Ctrl+S  save (storage if connected)','1-8   mute track (Mixer) / drum (kit)','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
   {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();setSongDoc(null);sendCfg();songChanged();}},{l:'-'},{l:'Open…',a:()=>fileSel('open','song',songCtx())},{l:'Save',k:'^S',a:quickSave},{l:'Save As…',a:()=>fileSel('save','song',songCtx())},{l:'-'},
     {l:()=>storage.connected?'Disconnect '+(storeWho||'Storage')+'…':'Connect Storage…',a:()=>storage.connected?disconnectStore():connectStore()},{l:'Move Browser Items to Storage…',a:()=>offerMove(true)},{l:'-'},{l:'Rename Song…',a:renameSong}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
@@ -3146,7 +3146,7 @@ function icon(k,x,y,c){
 }
 function drawTransport(){
   const y=TBY;clr(0,y,W,H-y,WH);hl(0,y,W);hl(0,y+2,W);
-  const btn=[['rtz',rtz,'Return to zero','Home'],['stop',stop,'Stop','Numpad 0'],['play',play,'Play','Space'],['rec',rec,'Record','Enter'],['cyc',toggleCycle,'Cycle','/']];
+  const btn=[['rtz',rtz,'Return to zero','Numpad 0'],['stop',stop,'Stop','Home'],['play',play,'Play','Space'],['rec',rec,'Record','Enter'],['cyc',toggleCycle,'Cycle','/']];
   btn.forEach(([k,f,nm,key],i)=>{const x=6+i*29,on=k==='play'?S.playing:k==='rec'?(S.rec||S.step):k==='cyc'?S.cycle:k==='stop'?!S.playing:false;
     box(x,y+8,26,22,on?B:WH);icon(k,x+6,y+13,on?WH:B);reg(x,y+8,26,22,{down:f,hint:[nm,'On-screen twin of the panel key.',key]});});
   const rm=S.recMode==='replace';box(6,y+36,72,20,rm?B:WH);T(rm?'REPLACE':'OVERDUB',42,y+46,rm?WH:B,'center');
