@@ -33,9 +33,8 @@ body{font-family:var(--f-screen);margin:0;overflow:hidden}
 
 <div class="app">
   <canvas id="screen" width="640" height="400"></canvas>
-  <div class="status" id="status"><b id="hintT">ARRANGER ST10</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="saveLbl"></em></div>
+  <div class="status" id="status"><b id="hintT">ARRANGER ST10</b><span id="hintD">Click to start the audio engine, then press Space. Letter keys play notes. F1–F6 switch windows.</span><kbd id="hintK" hidden></kbd><em id="cpuLbl" title="CPU load: DSP is the audio engine (100% = it cannot keep up and the sound drops out), UI is drawing and the sequencer on the page"></em><em id="saveLbl"></em></div>
   <div class="kb" id="kb"></div>
-  <input type="file" id="fileIn" accept=".json,application/json" hidden>
 </div>
 
 <script type="text/plain" id="wk">const T={"env_rate":[16777215,14735831,12942834,11368002,9984789,8769879,7702795,6765550,5942345,5219304,4584240,4026448,3536526,3106215,2728264,2396299,2104727,1848632,1623698,1426133,1252607,1136242,1078832,1022734,968173,915372,864556,815947,769770,726248,685607,648003,613340,581452,552177,525350,500809,478389,457927,439260,422223,412639,392387,372069,353698,337136,322248,308896,296945,286257,276697,268128,260414,253417,247002,241033,235371,229883,224430,218901,213283,207586,201823,196005,190142,184247,178330,172403,166477,160564,154674,148820,143011,137261,131579,125978,120468,115061,109768,104601,99571,94686,89948,85355,80904,76595,72425,68393,64498,60736,57107,53610,50241,47000,43885,40893,38024,35276,32647,30134,27738,25455,23284,21223,19271,17426,15686,14050,12515,11081,9744,8504,7359,6306,5344,4471,3683,2981,2361,1821,1360,975,665,427,260,161,129,50],"lfo_bpm":[2239695,4479391,8958783,17917568,23890091,35835137,47780183,53752706,71670276,95560368,107505414,143340552,215010829,286681105,430021658,573362210],"lfo_free":[88,29084,59836,92451,127043,163730,202641,243908,287676,334096,383329,435544,490923,549657,611950,678017,748087,822402,901220,984813,1073471,1167501,1267228,1372997,1485174,1604148,1730331,1864158,2006094,2156629,2316285,2485615,2665204,2855673,3057683,3271932,3499163,3740160,3995759,4266845,4554355,4859284,5182689,5525688,5889469,6275291,6684489,7118479,7578764,8066937,8584687,9133807,9716197,10333872,10988972,11683762,12420649,13202182,14031067,14910172,15842541,16831400,17880172,18992487,20172195,21423379,22750370,24157761,25650424,27233523,28912540,30693285,32581921,34584987,36709414,38962557,41352213,43886653,46574651,49425509,52449094,55655874,59056945,62664081,66489766,70547243,74850553,79414594,84255160,89389007,94833904,100608696,106733372,113229131,120118454,127425189,135174624,143393583,152110512,161355583,171160795,181560086,192589450,204287062,216693409,229851433,243806676,258607440,274304953,290953549,308610851,327337974,347199738,368264887,390606333,414301403,439432112,466085442,494353646,524334565,556131970,589855919,625623136,663557419,703790067,746460333,791715907,839713430],"porta":[32767,31145,27820,24687,21973,19485,17033,14497,12037,9886,8218,6981,6067,5369,4792,4312,3918,3599,3344,3144,2987,2864,2765,2678,2594,2513,2435,2358,2283,2210,2140,2071,2004,1939,1875,1814,1754,1695,1639,1584,1530,1478,1427,1378,1330,1283,1237,1193,1150,1108,1067,1027,988,951,914,878,844,810,778,746,715,685,656,628,601,575,549,524,500,477,454,433,412,391,371,352,334,316,299,283,267,251,237,222,209,196,183,171,159,148,137,127,117,107,98,90,82,74,67,60,53,47,42,37,32,30,29,28,27,26,25,24,23,22,21,20,19,18,18,17,17,17,16,16,9,7,5,3],"peak":[0,33682843,67099419,100249728,133133769,165751543,198103049,230188287,262007258,293559961,324846397,355866565,386620466,417108099,447329465,477284563,506973394,536395957,565552252,594442280,623066041,651423534,679514759,707339717,734898407,762190830,789216985,815976873,842470493,868697845,894658930,920353748,945782298,970944580,995840595,1020470343,1044833822,1068931035,1092761979,1116326657,1139625066,1162657208,1185423083,1207922690,1230156030,1252123102,1273823906,1295258443,1316426712,1337328714,1357964448,1378333915,1398437114,1418274046,1437844710,1457149107,1476187236,1494959097,1513464691,1531704017,1549677076,1567383868,1584824392,1601998648,1618906637,1635548358,1651923811,1668032997,1683875916,1699452567,1714762951,1729807066,1744584915,1759096496,1773341809,1787320855,1801033633,1814480144,1827660387,1840574363,1853222071,1865603511,1877718684,1889567590,1901150228,1912466598,1923516701,1934300536,1944818104,1955069404,1965054437,1974773202,1984225700,1993411930,2002331893,2010985588,2019373015,2027494175,2035349067,2042937692,2050260050,2057316139,2064105962,2070629516,2076886804,2082877823,2088602575,2094061060,2099253277,2104179226,2108838908,2113232323,2117359469,2121220349,2124814961,2128143305,2131205382,2134001191,2136530732,2138794006,2140791013,2142521752,2143986223,2145184427,2146116364,2146782033,2147181434,2147314568],"pitch":[1072928,1136727,1204321,1275933,1351804,1432187,1517349,1607575,1703167,1804442,1911740,2025418,2145856,2273455,2408642,2551867,2703609,2864374,3034698,3215151,3406334,3608885,3823480,4050836,4291712,4546910,4817284,5103734,5407218,5728748,6069397,6430302,6812668,7217770,7646961,8101673,8583424,9093821,9634568,10207469,10814437,11457496,12138795,12860605,13625336,14435541,15293923,16203347,17166848,18187642,19269136,20414938,21628874,22914993,24277590,25721210,27250673,28871083,30587846,32406694,34333697,36375285,38538272,40829877,43257748,45829987,48555180,51442421,54501347,57742166,61175693,64813389,68667394,72750570,77076544,81659754,86515496,91659975,97110360,102884843,109002694,115484332,122351387,129626779,137334789,145501140,154153088,163319508,173030992,183319950,194220721,205769686,218005389,230968664,244702775,259253559,274669578,291002281,308306177,326639017,346061984,366639900,388441443,411539373,436010778,461937328,489405551,518507119,549339157,582004563,616612355,653278034,692123968,733279800,776882886,823078747,872021556,923874656,978811102,1037014239,1077879110,1098678315,-32768,-32768,-31786,-30744,-29720,-28713,-27724,-26753],"depth":[-32768,-32768,-31786,-30744,-29720,-28713,-27724,-26753,-25800,-24576,-23946,-23046,-22164,-21299,-20451,-19622,-18809,-18015,-17238,-16384,-15737,-15012,-14305,-13616,-12944,-12289,-11652,-11032,-10429,-9844,-9276,-8725,-8192,-7676,-7177,-6695,-6230,-5783,-5352,-4779,-4542,-4163,-3800,-3454,-3126,-2814,-2518,-2240,-2048,-1733,-1505,-1292,-1097,-918,-755,-608,-478,-363,-265,-182,-115,-64,-28,-7,0,7,28,64,115,182,265,363,478,608,755,918,1097,1292,1505,1733,2048,2240,2518,2814,3126,3454,3800,4163,4542,4779,5352,5783,6230,6695,7177,7676,8192,8725,9276,9844,10429,11032,11652,12289,12944,13616,14305,15012,15737,16384,17238,18015,18809,19622,20451,21299,22164,23046,23946,24576,25800,26753,27724,28713,29720,30744,31786,32767],"mod_a":[-32767,-32767,-31991,-31224,-30464,-29713,-28970,-28235,-27508,-26790,-26080,-25378,-24685,-24000,-23323,-22654,-21993,-21341,-20697,-20062,-19434,-18815,-18204,-17601,-17007,-16421,-15843,-15273,-14712,-14159,-13614,-13077,-12549,-12028,-11517,-11013,-10518,-10031,-9552,-9081,-8619,-8165,-7719,-7281,-6852,-6431,-6018,-5614,-5217,-4829,-4449,-4078,-3715,-3360,-3013,-2674,-2344,-2022,-1708,-1403,-1106,-817,-536,-264,0,264,536,817,1106,1403,1708,2022,2344,2674,3013,3360,3715,4078,4449,4829,5217,5614,6018,6431,6852,7281,7719,8165,8619,9081,9552,10031,10518,11013,11517,12028,12549,13077,13614,14159,14712,15273,15843,16421,17007,17601,18204,18815,19434,20062,20697,21341,21993,22654,23323,24000,24685,25378,26080,26790,27508,28235,28970,29713,30464,31224,31991,32767],"mod_b":[0,0,131,264,399,536,675,817,960,1106,1253,1403,1555,1708,1864,2022,2182,2344,2508,2674,2843,3013,3185,3360,3536,3715,3895,4078,4263,4449,4638,4829,5022,5217,5414,5614,5815,6018,6223,6431,6640,6852,7066,7281,7499,7719,7941,8165,8391,8619,8849,9081,9315,9552,9790,10031,10273,10518,10764,11013,11264,11517,11772,12028,12288,12549,12812,13077,13344,13614,13885,14159,14434,14712,14991,15273,15557,15843,16131,16421,16713,17007,17303,17601,17902,18204,18508,18815,19123,19434,19747,20062,20378,20697,21018,21341,21666,21993,22323,22654,22987,23323,23660,24000,24341,24685,25031,25378,25728,26080,26434,26790,27148,27508,27871,28235,28601,28970,29340,29713,30087,30464,30843,31224,31607,31991,32378,32767],"coef":[2123409,2249673,2383446,2525173,2675327,2834411,3002953,3181518,3370701,3571133,3783484,4008461,4246816,4499345,4766889,5050343,5350651,5668817,6005901,6363030,6741394,7142257,7566956,8016909,8493616,8998670,9533756,10100658,10701270,11337595,12011756,12726004,13482722,14284435,15133818,16033706,16987100,17997183,19067324,20201093,21402274,22674874,24023137,25451562,26964914,28568239,30266886,32066518,33973138,35993102,38133145,40400400,42802423,45347220,48043269,50899550,53925576,57131422,60527759,64125887,67937774,71976093,76254265,80786500,85587841,90674218,96062489,101770502,107817144,114222403,121007425,128194582,135807536,143871309,152412354,161458630,171039680,181186707,191932661,203312313,215362346,228121434,241630328,255931932,271071389,287096145,304056023,322003276,340992631,361081321,382329090,404798176,428553263,453661388,480191805,508215787,537806354,569037915,601985804,636725685,673332814,711881108,752442002,795083053,839866235,886845874,936066169,987558212,1041336439,1097394403,1155699781,1216188487,1278757771,1343258158,1409484092,1477163139,1545943597,1615380400,1684919210,1753878656,1821430768,1837986209,1854375049,1870579189,1886579739,1902357000,1917890437,1933158656,1948139385,1962809446,1977144736,1991120204,2004709830,2017886601,2030622493,2042888450,2054654367,2065889070,2076560300,2086634699,2096077796,2104853994,2112926564,2120257632,2126808180,2132538042,2137405902,2141369305,2144384658,2146407249,2147391259,1092638790],"fx_lfo_phase":[0,2147483647,238609294],"fx_flanger_fb":[0,518,1031,1541,2047,2549,3046,3539,4028,4513,4994,5471,5944,6412,6877,7337,7793,8245,8693,9137,9576,10012,10443,10871,11294,11713,12128,12538,12945,13347,13746,14140,14530,14916,15298,15676,16049,16419,16784,17145,17502,17855,18204,18549,18889,19226,19558,19886,20210,20530,20846,21158,21465,21768,22068,22363,22654,22941,23224,23502,23777,24047,24313,24576,24833,25087,25337,25583,25824,26062,26295,26524,26749,26970,27186,27399,27608,27812,28012,28208,28400,28588,28772,28951,29127,29298,29465,29628,29787,29942,30093,30239,30382,30520,30654,30784,30910,31032,31149,31263,31372,31478,31579,31676,31769,31857,31942,32022,32099,32171,32239,32303,32363,32419,32470,32518,32561,32600,32635,32666,32693,32716,32734,32749,32759,32765,32767,0],"fx_depth":[0,2,8,18,32,50,73,99,130,164,203,245,292,343,398,457,520,587,658,733,812,895,983,1074,1170,1269,1373,1481,1592,1708,1828,1952,2080,2212,2348,2488,2632,2781,2933,3089,3250,3415,3583,3756,3933,4113,4298,4487,4680,4877,5078,5284,5493,5706,5924,6145,6370,6600,6834,7071,7313,7559,7809,8063,8321,8583,8849,9119,9393,9672,9954,10241,10531,10826,11124,11427,11734,12045,12359,12678,13001,13329,13660,13995,14334,14678,15025,15376,15732,16091,16455,16823,17195,17570,17950,18334,18722,19114,19511,19911,20315,20723,21136,21552,21973,22397,22826,23259,23696,24136,24581,25030,25483,25940,26402,26867,27336,27809,28287,28768,29254,29744,30237,30735,31237,31743,32253,32767],"fx_delay_div":[122730,245460,327280,490920,654560,981840,1309120,1472760,1963680,2618240,2945520,3927360],"fx_lfo_rate":[88,29084,59836,92451,127043,163730,202641,243908,287676,334096,383329,435544,490923,549657,611950,678017,748087,822402,901220,984813,1073471,1167501,1267228,1372997,1485174,1604148,1730331,1864158,2006094,2156629,2316285,2485615,2665204,2855673,3057683,3271932,3499163,3740160,3995759,4266845,4554355,4859284,5182689,5525688,5889469,6275291,6684489,7118479,7578764,8066937,8584687,9133807,9716197,10333872,10988972,11683762,12420649,13202182,14031067,14910172,15842541,16831400,17880172,18992487,20172195,21423379,22750370,24157761,25650424,27233523,28912540,30693285,32581921,34584987,36709414,38962557,41352213,43886653,46574651,49425509,52449094,55655874,59056945,62664081,66489766,70547243,74850553,79414594,84255160,89389007,94833904,100608696,106733372,113229131,120118454,127425189,135174624,143393583,152110512,161355583,171160795,181560086,192589450,204287062,216693409,229851433,243806676,258607440,274304953,290953549,308610851,327337974,347199738,368264887,390606333,414301403,439432112,466085442,494353646,524334565,556131970,589855919,625623136,663557419,703790067,746460333,791715907,839713430],"drum_pitch":[812,861,912,966,1024,1084,1149,1217,1290,1366,1448,1534,1625,1722,1824,1933,2048,2169,2298,2435,2580,2733,2896,3068,3250,3444,3649,3866,4096,4339,4597,4870,5160,5467,5792,6137,6501,6888,7298,7732,8192,8679,9195,9741,10321,10935,11585,12274,13003,13777,14596,15464,16384,17358,18390,19483,20642,21870,23170,24548,26007,27554,29192,30928,32768,34716,36780,38967,41285,43740,46340,49096,52015,55108,58385,61857,65536,69432,73561,77935,82570,87480,92681,98193,104031,110217,116771,123715,131072,138865,147123,155871,165140,174960,185363,196386,208063,220435,233543,247430,262144,277731,294246,311743,330280,349920,370727,392772,416127,440871,467087,494861,524288,555463,588493,623487,660561,699840,741455,785544,832255,881743,934175,989723,1048576,1110927,1176986,1246974],"voice_init":[0,0,0,0,0,2147483647,0,0,2,3,1,0,0,1048575,0,16777215,0,0,0,32767,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1569703,0,0,0,0,0,0,13174,13036,1,127834,0,0,500,0,0,0,0,0,0,0,32767,0,0,0,0,0,0,0,4,2,0,0,127,0,0,0,0,0,0,0,0,16777215,0,0,0,0,0,0,127,0,0,16777215,0,120,0],"mixer_init":[28672,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0],"fx_init":[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,88,0,16443,32768,32768,32768,0,32768,0,0,32768,0,0,0,0,0,0,0,32764,0,0,32767,32767,0],"knob_min":[-2,-63,0,-63,-63,-63,0,0,-63,0,0,0,0,0,-63,-63,0,-63,0,0,0,0,0,0,0,0,0,0,0,0,0],"knob_range":[5,127,128,127,127,127,4,4,127,128,2,128,128,3,127,127,2,127,128,128,128,128,128,128,128,2,7,7,7,7,7]};
@@ -108,7 +107,7 @@ class Voice {
     // VCA
     this.dist = 0; this.wet = 0; this.alk = 0; this.ain = 0; this.aeg = 0; this.als = 4; this.aes = 2;
     this.dr1 = 0; this.dr2 = 32767; this.lvl = 0; this.lvd = 0; this.lvT = 0;
-    this.on = false; this.gate = false; this.note = -1; this.vg = 1; this.age = 0;
+    this.on = false; this.gate = false; this.note = -1; this.vg = 1; this.age = 0; this.bend = 0;
   }
 
   // ds10_patch_set_knob
@@ -214,7 +213,7 @@ class Voice {
     const D = T.depth;
     const mt = (ds, l, e) => I(D[ds], (l + e) >> 9) >> 15;
     const common = mt(this.pds[0], LO[this.pls[0]], eo(this.pes[0])) + (I(D[this.peg], EO0 >> 9) >> 15);
-    const base = this.nC + this.oct12 * 0x8000;
+    const base = this.nC + this.oct12 * 0x8000 + this.bend;
     const inc1 = plook((common + mt(this.pds[1], LO[this.pls[1]], eo(this.pes[1]))) * 0x30 + base);
     const inc2 = plook((common + mt(this.pds[2], LO[this.pls[2]], eo(this.pes[2]))) * 0x30 + base + D[this.v2p] * 0x30);
     this.d1 = inc1 / TWO32 * RT; this.d2 = inc2 / TWO32 * RT;
@@ -396,7 +395,7 @@ class VoiceX extends Voice {
     if (this.nD === 0) { if (this.nC < this.nT) this.nC = this.nT; } else if (this.nT < this.nC) this.nC = this.nT;
     const D = T.depth, mt = (ds, l, e) => I(D[ds], (l + e) >> 9) >> 15;
     const common = mt(this.pds[0], LO[this.pls[0]], eo(this.pes[0])) + (I(D[this.peg], EO0 >> 9) >> 15);
-    const base = this.nC + this.oct12 * 0x8000;
+    const base = this.nC + this.oct12 * 0x8000 + this.bend;
     const pl = v => { if (v < 0) v = 0; else if (v > 0x3C0000) v = 0x3C0000; const i = v >> 15, fr = v & 0x7FFF, lo = T.pitch[i]; return (lo + x15(fr, T.pitch[i + 1] - lo)) | 0; };
     const inc1 = pl((common + mt(this.pds[1], LO[this.pls[1]], eo(this.pes[1]))) * 0x30 + base);
     const inc2 = pl((common + mt(this.pds[2], LO[this.pls[2]], eo(this.pes[2]))) * 0x30 + base + D[this.v2p] * 0x30);
@@ -496,6 +495,11 @@ class VoiceX extends Voice {
 }
 
 // 4-pole highpass: two TPT SVF sections, resonance on the second
+// Anti-denormal noise: white noise around 1e-18 (-360 dB) added at the inputs of the filters and effects.
+// Without it, filter states and delay lines fed with silence decay into denormal numbers, which many CPUs
+// (most Intel ones) process 10-100x slower; the engine then overloads seconds after a track goes quiet.
+let dnS = 22222;
+function DN() { dnS = (Math.imul(dnS, 1664525) + 1013904223) | 0; return dnS * 4.6e-28; }
 class HP4 {
   constructor() { this.a = [0, 0, 0, 0]; this.set(0, 0); }
   set(c, r) {
@@ -554,7 +558,7 @@ function renderDrum(d, tempo) {
   for (let i = 0; i < N; i++) {
     if (i === hold) v.noteOff();
     if (--fc <= 0) { fc += FR; v.frame(); for (const x of fx) if (x.frame) x.frame(); }
-    let x0 = hp.p(v.on || v.exact ? v.sample() : 0), l = x0, r = x0;
+    let x0 = hp.p((v.on || v.exact ? v.sample() : 0) + DN()), l = x0, r = x0;
     for (const x of fx) { x.proc(l, r); l = x.l; r = x.r; }
     L[i] = l; R[i] = r;
   }
@@ -572,7 +576,7 @@ const volGain = v => (v * v * 0x10404 / 32768) / 32768;
 
 class Track {
   constructor() {
-    this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.stack = []; this.ageC = 0;
+    this.k = INIT_K.slice(); this.vs = []; this.nv = 1; this.bend = 0; this.stack = []; this.ageC = 0;
     for (let i = 0; i < 8; i++) this.vs.push(new Voice());
     this.hp = new HP4(); this.ins = [null, null]; this.mute = 0; this.solo = 0; this.peak = 0;
     // drum tracks play rendered samples instead of the voices: kit[d] = {L, R}, sv = sample voices
@@ -588,12 +592,12 @@ class Track {
     x = !!x; if (!!this.exact === x) return;
     this.exact = x; this.stack = [];
     this.vs = []; for (let i = 0; i < 8; i++) this.vs.push(x ? new VoiceX() : new Voice());
-    for (const vo of this.vs) { for (let id = 0; id < 31; id++) vo.knob(id, this.k[id]); vo.setBpm(tempo || 120); }
+    for (const vo of this.vs) { for (let id = 0; id < 31; id++) vo.knob(id, this.k[id]); vo.setBpm(tempo || 120); vo.bend = this.bend; }
   }
   setKind(drum) { if (this.drum !== !!drum) { this.allOff(); for (const v of this.sv) v.on = false; } this.drum = !!drum; }
   // e: p = drum index, v velocity, pt pitch in semitones, pn pan 0..127, st sample start 0..127
   // a drum edited since its last recording is played live from its voice and effects and recorded as it plays
-  setMix(d, def) { this.dg[d] = def && def.vol != null ? volGain(def.vol) : 1; this.dp[d] = def && def.pan != null ? def.pan - 64 : 0; }
+  setMix(d, def) { this.dg[d] = def && def.mute ? 0 : def && def.vol != null ? volGain(def.vol) : 1; this.dp[d] = def && def.pan != null ? def.pan - 64 : 0; }
   setDef(d, def) {
     const old = this.defs[d]; this.defs[d] = def; this.dirty[d] = true; this.setMix(d, def);
     const lr = this.liveOf(d); if (!lr) return;
@@ -629,7 +633,7 @@ class Track {
   liveStep(lr) {
     if (lr.pos === lr.hold) lr.v.noteOff();
     if (--lr.fc <= 0) { lr.fc += FR; lr.v.frame(); for (const x of lr.fx) if (x && x.on && x.frame) x.frame(); }
-    let l = lr.hp.p(lr.v.on || lr.v.exact ? lr.v.sample() : 0), r = l;
+    let l = lr.hp.p((lr.v.on || lr.v.exact ? lr.v.sample() : 0) + DN()), r = l;
     for (const x of lr.fx) if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; }
     lr.L[lr.pos] = l; lr.R[lr.pos] = r; lr.pos++;
     if (lr.pos < lr.L.length) return;
@@ -685,6 +689,7 @@ class Track {
     this.sl = l; this.sr = r;
   }
   set(id, v) {
+    if (id === NPARAM + 16) { this.bend = Math.round(v * 0x8000 / 40); for (const vo of this.vs) vo.bend = this.bend; return; }   // pitch bend, -120..120 = -3..+3 semitones
     if (id >= NPARAM) {
       // 37..52: knob j of insert slot s, id = 37 + s*8 + j, in the order of that effect's controls
       const s = (id - NPARAM) >> 3, fx = this.ins[s];
@@ -737,7 +742,7 @@ class Track {
     let m = 0;
     if (this.exact) { for (let i = 0; i < this.nv; i++) m += this.vs[i].sample(); }   // exact voices run continuously, as on the DS
     else for (let i = 0; i < 8; i++) { const vo = this.vs[i]; if (vo.on) m += vo.sample(); }
-    return this.hp.p(m);
+    return this.hp.p(m + DN());
   }
 }
 
@@ -922,8 +927,8 @@ class FxMverb {
       if (this.lp && ++this.lc >= 8) { this.lc = 0; this.stepLfo(); }
       this.l0 = this.l1; this.l1 = this.o[0] / 0x0fff; this.r0 = this.r1; this.r1 = this.o[1] / 0x0fff;
     }
-    this.wl = this.rcL.p(this.l0 + this.ph * (this.l1 - this.l0));
-    this.wr = this.rcR.p(this.r0 + this.ph * (this.r1 - this.r0));
+    this.wl = this.rcL.p(this.l0 + this.ph * (this.l1 - this.l0) + DN());
+    this.wr = this.rcR.p(this.r0 + this.ph * (this.r1 - this.r0) + DN());
     this.l = l * this.dg + this.wl * this.wg; this.r = r * this.dg + this.wr * this.wg;
   }
 }
@@ -1060,7 +1065,7 @@ class Engine {
   cfg(c) {
     c.tracks.forEach((t, i) => {
       const tr = this.tr[i]; if (!tr) return;
-      tr.setExact(t.exact, this.tempo); tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); });
+      tr.setExact(t.exact, this.tempo); tr.setNv(t.nv || 1); t.k.forEach((v, id) => { if (id < NPARAM) tr.set(id, v); }); tr.set(NPARAM + 16, t.k[NPARAM + 16] || 0);
       tr.mute = t.mute ? 1 : 0; tr.solo = t.solo ? 1 : 0;
       tr.ins = (t.ins || [null, null]).map(mkFx);
       tr.setKind(t.kind === 'drum'); tr.interp = t.interp ?? 1;
@@ -1089,7 +1094,7 @@ class Engine {
       case 'kind': this.tr[m.tr].setKind(m.kind === 'drum'); if (m.kind === 'drum') this.renderKit(m.tr, m.drums || []); break;
       case 'drum': this.renderOne(m.tr, m.d, m.def); break;
       case 'drumdef': this.tr[m.tr].setDef(m.d, m.def); break;
-      case 'drumplay': { const t = this.tr[m.tr], df = t.defs[m.d]; if (df) { df.note = m.note; df.vol = m.vol; df.pan = m.pan; t.setMix(m.d, df); } break; }   // NOTE, VOL, PAN: playback only, no new recording
+      case 'drumplay': { const t = this.tr[m.tr], df = t.defs[m.d]; if (df) { df.note = m.note; df.vol = m.vol; df.pan = m.pan; df.mute = !!m.mute; t.setMix(m.d, df); } break; }   // NOTE, VOL, PAN: playback only, no new recording
       case 'interp': this.tr[m.tr].interp = m.v; break;
       case 'exact': this.tr[m.tr].setExact(m.v, this.tempo); break;
       case 'mute': this.tr[m.tr].mute = m.m ? 1 : 0; this.tr[m.tr].solo = m.s ? 1 : 0; this.updSolo(); break;
@@ -1097,6 +1102,14 @@ class Engine {
       case 'fxp': { const x = this.slot(m.w)[m.slot]; if (x) { if (m.k === 'on') x.on = !!m.v; else x.set(m.k, m.v); } break; }
       case 'bus': this.bus[m.i].g = volGain(m.ret); break;
       case 'mst': this.mst.g = volGain(m.vol); this.mst.shp = m.shp ? 1 : 0; break;
+      // stop/relocate: drop the sequencer's queued events and release the notes it started that are still sounding;
+      // notes played live stay held
+      case 'seqoff': {
+        const keep = [], gone = new Set();
+        for (const e of this.q) if (e.sq && e.k === 'on') gone.add(e.tr + ':' + e.id);
+        for (const e of this.q) { if (!e.sq) keep.push(e); else if (e.k === 'off' && !gone.has(e.tr + ':' + e.id)) this.apply(e); }
+        this.q = keep; break;
+      }
       case 'panic': this.q = []; for (const t of this.tr) { t.allOff(); for (const v of t.vs) { v.on = false; v.lvl = v.lvT = v.lvd = 0; } } break;
     }
   }
@@ -1129,6 +1142,7 @@ class Engine {
         let l, r;
         if (T_.drum) { T_.stereo(); l = T_.sl * T_.pl * 2; r = T_.sr * T_.pr * 2; }   // pan acts as balance on the stereo samples
         else { const m = T_.sample(); l = m * T_.pl; r = m * T_.pr; }
+        l += DN(); r += DN();
         for (let s = 0; s < 2; s++) { const x = T_.ins[s]; if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; } }
         const audible = !T_.mute && (!this.solo || T_.solo);
         l *= T_.g; r *= T_.g;
@@ -1138,10 +1152,11 @@ class Engine {
         ml += l; mr += r; al += l * T_.ga; ar += r * T_.ga; bl += l * T_.gb; br += r * T_.gb;
       }
       for (let b = 0; b < 2; b++) {
-        let l = b ? bl : al, r = b ? br : ar; const B = bus[b];
+        let l = (b ? bl : al) + DN(), r = (b ? br : ar) + DN(); const B = bus[b];
         for (let s = 0; s < 2; s++) { const x = B.ins[s]; if (x && x.on) { x.proc(l, r); l = x.l; r = x.r; } }
         ml += l * B.g; mr += r * B.g;
       }
+      ml += DN(); mr += DN();
       for (let s = 0; s < 2; s++) { const x = mst.ins[s]; if (x && x.on) { x.proc(ml, mr); ml = x.l; mr = x.r; } }
       ml *= mst.g; mr *= mst.g;
       if (mst.shp) {
@@ -1165,17 +1180,22 @@ class Engine {
   }
 }
 
+// worklets may lack performance.now(); Date.now() steps by 1 ms, but summed over many blocks it averages out
+const NOW = typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();
 if (typeof registerProcessor !== 'undefined') {
   registerProcessor('arranger-st10', class extends AudioWorkletProcessor {
     constructor() {
       super();
-      this.e = new Engine();
+      this.e = new Engine(); this.busy = 0; this.fr = 0;
       this.e.post = m => this.port.postMessage(m);
       this.port.onmessage = ev => this.e.msg(ev.data);
     }
     process(inputs, outputs) {
-      const o = outputs[0];
-      this.e.render(o[0], o[1], o[0].length, currentFrame);
+      const o = outputs[0], n = o[0].length, t0 = NOW();
+      this.e.render(o[0], o[1], n, currentFrame);
+      // CPU meter: time spent rendering against the audio time rendered, reported every half second
+      this.busy += NOW() - t0; this.fr += n;
+      if (this.fr >= sampleRate / 2) { this.port.postMessage({ t: 'cpu', v: this.busy / (this.fr / sampleRate * 1000) }); this.busy = 0; this.fr = 0; }
       return true;
     }
   });
@@ -1216,8 +1236,8 @@ const MANUAL=[
 ['h','Transport'],
 ['p','The transport bar at the bottom of the screen works in every window.'],
 ['k','Play','Space or Numpad Enter. Plays from the song position.'],
-['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop also returns automated knobs to their patch values.'],
-['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. In Key Edit while stopped, Record arms step input instead.'],
+['k','Stop','Space while playing, or Numpad 0. Pressing it again while stopped jumps to the left locator, and once more to bar 1. Stop releases every note the sequencer is playing (notes you hold on the keyboard keep sounding) and returns automated knobs to their patch values.'],
+['k','Record','Enter or Numpad *. Starts recording notes into the active track. While playing, Record punches in and out. A part grows by whole bars so it holds the end of every note, not just its start, up to the next part on the track; drawing, moving, stretching and pasting notes in Key Edit grow it the same way. In Key Edit while stopped, Record arms step input instead.'],
 ['k','Cycle','/ or Numpad /. Loops between the L and R locators. Recording in cycle layers each pass onto the last.'],
 ['k','Return to zero','Home or Numpad . jumps to bar 1.'],
 ['k','Position','Shift+Left/Right moves the song position by a bar. Plain Left/Right page the Arrange and Key Edit views a screen at a time (in the other windows they move the position). Scrolling over the position display steps by the quantize value.'],
@@ -1234,6 +1254,8 @@ const MANUAL=[
 ['k','- and =','Keyboard octave down and up. The current base note is shown in Options.'],
 ['k','Options > QWERTY Input','Turn it off to free the letter keys. A, P, E, S, G and M then pick the pointer, pencil, eraser, scissors, glue and mute tools.'],
 ['k','Options > Web MIDI Input','Listens to every connected MIDI keyboard. The claude.ai viewer may block MIDI. To use a real keyboard, open the HTML file locally in Chromium.'],
+['k','Saved settings','The Options menu settings (metronome, auto quantize, replace mode, QWERTY input, on-screen keys, Web MIDI input, MIDI velocity, record latency compensation), the keyboard octave and the note gate are kept in this browser and come back the next time the page opens. They are not part of the song. Web MIDI is switched back on quietly; if the browser blocks it, it stays off. The DS-10 master shaper belongs to the song and is saved with it. The screen scale is kept too.'],
+['k','Options > MIDI Velocity','On by default: MIDI notes play at the velocity they are played with. Off: every MIDI note plays (and records) at velocity 100, like the computer keys.'],
 ['p','Notes always go to the active track. In Key Edit, the active track is the track of the part you are editing.'],
 
 ['h','Arrange window'],
@@ -1252,7 +1274,7 @@ const MANUAL=[
 ['k','Scissors','Click a part to split it at the dotted line (quantize grid).'],
 ['k','Glue','Click a part to join it with the next part on the same track.'],
 ['k','Mute','Click a part to mute or unmute it.'],
-['p','A small box in a part\'s corner means the part has automation. The Structure menu has Repeat Part x4, Split Part at Position, Glue Part to Next and Locators to Part. Functions has Quantize Part, Transpose +12 and -12, Clear Notes and Clear Automation.'],
+['p','A small box in a part\'s corner means the part has automation. The Structure menu has Repeat Part x4, Split Part at Position, Glue Part to Next and Locators to Part (L: sets L and R around the selected part, or the part open in Key Edit, and turns cycle on). Functions has Quantize Part, Transpose +12 and -12, Clear Notes and Clear Automation.'],
 
 ['h','Key Edit window'],
 ['p','Key Edit shows the selected part. The piano keys are on the left (click one to hear it), the note grid fills the middle, and a lane underneath shows velocity or one automation lane.'],
@@ -1261,7 +1283,7 @@ const MANUAL=[
 ['k','Shift+wheel','Scrolls the pitch range.'],
 ['k','Double-click the ruler','Fits the whole part again.'],
 ['k','Left / Right','Page the view one screen.'],
-['k','Pointer','Drum parts work the same way, with one row per drum. Click a note to select it; Shift-click adds or removes notes. Drag on empty grid to select a group with a box. Drag a selected note to move the whole group (Alt: no snapping). Drag a note\'s right end to stretch the group. Double-click empty grid to add a note.'],
+['k','Pointer','Drum parts work the same way, with one row per drum. Click a note to select it; Shift-click adds or removes notes. Drag on empty grid to select a group with a box. Drag a selected note to move the whole group (hold Shift while dragging for no snapping). Alt-drag a note to copy it, or the whole selected group; the copies move and the originals stay. Drag a note\'s right end to stretch the group. Double-click empty grid to add a note.'],
 ['k','Pencil','Draws notes. See Gate below.'],
 ['k','Eraser','Click or drag over notes to delete them.'],
 ['k','Ctrl+A','Selects all notes in the part.'],
@@ -1274,7 +1296,7 @@ const MANUAL=[
 ['k','TIE','The note is slightly longer than a step, so it overlaps the next note. Mono tracks then play legato and glide without retriggering.'],
 ['k','NEW VEL','Velocity for new notes. Scroll or drag it.'],
 ['p','Step input: in Key Edit while stopped, press Enter. Each note you play is entered at the step cursor, and the cursor then moves on by a 16th (or by the quantize value with the FREE gate). Space enters a rest and Backspace steps back. Chords work: hold the keys together. Esc or Enter ends step input.'],
-['p','Velocity lane: drag across the bars to draw velocities. With notes selected, only those change; with none selected, any note under the pointer. Drum parts also have PITCH, PAN and START lanes (see Drums).'],
+['p','Velocity lane: drag across the bars to draw velocities. With notes selected, only those change; with none selected, any note under the pointer. Drum parts also have PITCH, PAN and START lanes (see Drums). The lane is short, so the mouse skips values: hold Shift while drawing (here and in automation lanes with the pencil) and the value moves 8 times slower from where Shift was pressed, which reaches every value.'],
 ['p','Automation lanes: click the lane name to switch between velocity, the part\'s automation lanes and the pad\'s targets. Scroll over the name to reach any knob of the track. The box under the name switches the lane between SMT (smooth line) and HLD (hold each value). The dotted line shows the patch value.'],
 ['k','Pencil (lane)','Drag to draw values on the quantize grid.'],
 ['k','Eraser (lane)','Click or drag over points to delete them.'],
@@ -1302,14 +1324,16 @@ const MANUAL=[
 ['k','VOICES','M is mono with legato and portamento. 2 to 8 make the track polyphonic.'],
 ['k','VOLUME','Track volume, the same as the mixer fader.'],
 ['p','Patch panel: MG is the LFO, with its rate (FREQ) and FREE or BPM sync. A BPM-synced MG restarts when play starts. Each of PITCH, VCO1, VCO2, CUTOFF and VCA has a depth knob and a source box. Click the box to choose SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate. VCO2 on a pitch destination gives FM, on CUTOFF filter FM, and on VCA ring modulation.'],
-['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets its CUTOFF changed so the filter sits where it did on the DS-10 (usually lower, since the ZDF voice is an octave higher; higher again with PEAK); the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track.'],
-['p','USER patches are kept in this browser (localStorage), not in the song. In USER, + SAVE CURRENT stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. A patch saved from a ZDF voice is not legacy; one saved from a DS-10 EXACT voice is. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
+['p','PRESET opens the patch library: USER (your own patches), the DS-10 factory set, the saved patch banks and the patches of every song in the ds10emu example saves. Pick a source on the left and click a patch to load it. USER starts with two tiles: SAVE PATCH… saves the current patch and OPEN PATCH… opens one into the track (or the drum in the drum editor), both through the file selector (see Songs and saving), so a patch can also be a .patch.json file. D marks drum patches; the DS-10 plays drums at C3 (note 60). L marks legacy patches: every library patch, and user patches saved from a DS-10 EXACT voice or saved before this version. They were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff. Loaded into a ZDF voice (a synth track or drum set to ZDF VOICE), a legacy patch gets its CUTOFF changed so the filter sits where it did on the DS-10 (usually lower, since the ZDF voice is an octave higher; higher again with PEAK); the status line shows the change. Modulation of the cutoff (EG, LFO, patch row) is not converted. Into a DS-10 EXACT voice it loads unchanged. INIT resets the patch and asks first. COPY and PASTE copy a patch between tracks. Click the track name to rename the track. S next to it solos the track (also in the kit view), the same as S in the arrange window and the mixer.'],
+['p','USER patches are kept in the storage when one is connected, otherwise in this browser; they are not part of the song. SAVE PATCH… stores the current synth or drum patch (31 knobs and the highpass) under a name; saving under an existing name asks before replacing it. A patch saved from a ZDF voice is not legacy; one saved from a DS-10 EXACT voice is. The x on a user patch deletes it (asks first). The wheel scrolls a long patch list.'],
 
 ['h','Drums'],
-['p','Any track can be a drum kit instead of a synth: click DRUM at the top right of the Synth window (F3). A kit has 8 drums. Each drum is recorded, like on the DS-10, from its own DS-10 voice, highpass and two effects into a 2-second stereo sample at C3. From then on the track plays samples, so drums cost almost nothing to play back. The song file stores how each drum is made, and the samples are recorded again when a song loads.'],
+['p','Any track can be a drum kit instead of a synth: click DRUM at the top right of the Synth window (F3). A kit has 8 drums; a new kit starts with 8 init patches named DRUM1 to DRUM8, ready to be edited or loaded from PRESET. Each drum is recorded, like on the DS-10, from its own DS-10 voice, highpass and two effects into a 2-second stereo sample at C3. From then on the track plays samples, so drums cost almost nothing to play back. The song file stores how each drum is made, and the samples are recorded again when a song loads.'],
 ['p','Switching a track to DRUM turns its notes into drum hits: C, C#, D and so on up the octave pick drums 1 to 8. Switching back turns hits into notes from C3 up. Ctrl+Z undoes the switch. The synth knobs of a drum track are not used, so they cannot be automated there; volume, pan, sends and the track\'s inserts still can.'],
-['k','Kit view (F3)','One row per drum: its name (click to rename), HOLD time, a picture of the recorded sample (click to hear it), VOL and PAN, its effects, its NOTE and EDIT.'],
+['k','KITS','The kit library of a drum track. SAVE KIT… keeps all 8 drums (voices, HOLD, NOTE, VOL, PAN, effects) as a user kit, in the storage when one is connected, otherwise in this browser, or writes a .kit.json file; click a saved kit to load it into this track, x deletes it. OPEN KIT… opens a kit from the same places. Loading replaces all 8 drums (it asks first), clears the drum mutes and records the drums again.'],
+['k','Kit view (F3)','One row per drum: its number (click it, or press 1-8, to mute the drum), its name (click to rename), HOLD time, a picture of the recorded sample (click to hear it), VOL and PAN, its effects, its NOTE and EDIT.'],
 ['k','VOL / PAN','Each drum\'s own volume and pan in the kit. VOL scales every hit of the drum on top of its velocity (127 = as recorded); PAN places it in the stereo field, and each hit\'s PAN lane value is added to it. Both act at once, also on hits still sounding, and do not record the drum again. Drag or scroll (Shift: fine); double-click resets. They are not automatable; the track\'s own volume and pan in the mixer are.'],
+['k','Drum mute','Click a drum\'s number box, or press its key 1-8 while the kit is shown, to mute the drum in the whole kit: in every part and when played live, at once, also hits still sounding. A muted drum\'s number box turns black with an M. The mute is saved with the song. The M boxes in Key Edit mute a drum in one part only.'],
 ['k','NOTE','The note the drum plays at, shown in the kit and in the drum editor\'s top bar. A drum is always recorded at C3, the DS-10\'s own note; NOTE replays that recording faster or slower. Set it to C2 and the drum sounds an octave lower and takes twice as long, envelope included. Changing NOTE does not record the drum again. Scroll or drag (Shift: octaves); double-click for C3.'],
 ['k','INTERP','How the samples are played between their recorded points. LIN is linear and cheapest, with a gritty top when pitched. CUBIC (4-point Hermite) is smoother. SINC is band-limited and stays clean when drums are pitched far up, but uses the most CPU.'],
 ['k','EDIT','Stops playback and opens the drum editor.'],
@@ -1323,6 +1347,7 @@ const MANUAL=[
 ['k','Insert slots','Click a slot to put DS-10 FX, Midiverb, Tape Delay, Distortion or Rate Crush in it. The same menu bypasses, removes or edits the effect. Bypassed effects are drawn struck through.'],
 ['k','SEND A  SEND B  PAN','Post-fader sends and the DS-10 linear pan. Double-click resets.'],
 ['k','Fader','Drag; double-click for 100. A meter runs beside it.'],
+['k','M  S','Mute and solo. Keys 1-8 mute tracks 1-8 while the Mixer is shown.'],
 ['k','SHAPER','The DS-10 master stage: about 2x gain that saturates smoothly near full scale.'],
 ['p','Effects added to a bus slot start fully wet (DRY/WET 127), because the dry signal already reaches the master; keep them that way. Inserts run in series, so delay into reverb is insert 1 and insert 2 of the same strip. The volume curve is the DS-10\'s: 100 is about -4 dB, and 127 is 0 dB.'],
 
@@ -1338,11 +1363,15 @@ const MANUAL=[
 
 ['h','KAOSS pad and automation'],
 ['p','The pad moves two knobs of the active track at once: X left to right and Y bottom to top. Click a target\'s name to choose from every knob on one page: the synth columns, the patch depths and sources, the track strip and the knobs of both insert effects. The arrows and the scroll wheel step through them one by one. Any synth knob, the highpass, volume, pan, the sends and the knobs of the track\'s insert effects can be a target. Releasing the pad returns the knobs to their patch values.'],
+['p','Every track keeps its own X and Y targets and its own CURVE, saved with the song, so switching the active track also switches what the pad and the wheels move. New tracks start with CUTOFF on X and RESONANCE on Y; a drum kit, which has no synth knobs, starts with VOLUME and PAN.'],
+['p','With Web MIDI Input on, a MIDI keyboard\'s mod wheel moves X and its pitch wheel moves Y, each over the target\'s whole range: mod wheel 0 is the left edge, pitch wheel fully down the bottom edge and fully up the top edge. There is no centre or rest position; a wheel always sets its knob to where it stands, and the knob keeps that value until something else moves it (Stop restores the patch values). The wheels act on the active track like the pad and record automation the same way.'],
+['p','BEND (in the MG / BEND column of the target chooser) is the synth\'s pitch bend: -3 to +3 semitones (a minor third each way) in steps of 1/40 semitone, 0 in the patch. It is not a knob in the Synth window; only the pad, the wheels and automation move it. Put it on Y and the pitch wheel bends notes, with its centre at no bend. Drum tracks have no BEND.'],
 ['p','Recording automation: press Record and play, then move the pad, a synth knob or an insert-effect knob of the active track. The moves are written into the part under the playhead. If no part is there, one is created and grows bar by bar. Moving over existing automation overwrites it, and holding the pad still keeps writing the same value. CURVE sets whether new lanes are SMOOTH or HOLD.'],
 ['p','Playback: automation moves a live copy of the knob and leaves the patch alone; Stop restores the patch values. Before a part\'s first point the lane holds that value, and after the last point it holds the last value. Changing an insert slot\'s effect type clears that slot\'s lanes.'],
 ['p','Clearing: Functions > Clear Automation removes all lanes of the selected part. To clear one lane, open it in Key Edit and select its points with the pointer, then press Del, or use the eraser.'],
 
 ['h','Latency'],
+['p','CPU meter: the right end of the status line shows DSP and UI load. DSP is the audio engine\'s share of the time it has for each block of sound; near 100% it cannot keep up and the sound breaks up. UI is the time the page spends drawing the screen and running the sequencer. Both update twice a second.'],
 ['p','From a key press to sound takes the browser\'s processing, one 128-sample audio block, up to one 2 ms DS-10 control frame, and the operating system\'s audio output. The last part is usually the largest. Options > Audio Latency shows what your system reports.'],
 ['k','Record Latency Compensation','On by default (Options). While recording, notes, their lengths and pad or knob moves are placed where the music you heard was, not where the engine was rendering. That removes the lag of the audio output from recordings.'],
 ['p','Lowering the system latency on Linux with PipeWire: check the current buffer size with pw-top (the QUANT column). For a session, run pw-metadata -n settings 0 clock.force-quantum 128, and set it back with 0. Permanently, put context.properties = { default.clock.quantum = 128 default.clock.min-quantum = 64 } into ~/.config/pipewire/pipewire.conf.d/10-lowlatency.conf, and pulse.properties = { pulse.min.req = 128/48000 pulse.min.quantum = 128/48000 } into ~/.config/pipewire/pipewire-pulse.conf.d/10-lowlatency.conf, then run systemctl --user restart pipewire pipewire-pulse. Browsers talk to PipeWire through its PulseAudio layer, so starting the browser with PULSE_LATENCY_MSEC=3 also lowers its buffer. Smaller values need a faster machine: crackles mean go back up (256 is a safe middle).'],
@@ -1350,8 +1379,13 @@ const MANUAL=[
 ['h','Songs and saving'],
 ['p','The song saves itself in this browser a moment after every change; the status line shows "saved". This includes tracks, patches, the mixer, effects, parts, notes, automation, tempo, locators and pad settings. Browser storage belongs to this browser only.'],
 ['k','File > Rename Song…','Type a new name and press Enter. You can also click the song name in the Arrange title bar.'],
-['k','File > Save JSON…  Ctrl+S','Writes the song as a .json file named after the song.'],
-['k','File > Open JSON…','Loads a song saved that way.'],
+['p','Songs, patches and kits can be kept in a storage: a stuff-storage server, run by you or someone who invited you. Without one they are kept in this browser. The app has to be on a web page (https, or http on localhost) to connect; a copy opened from disk cannot.'],
+['k','File > Connect Storage…','Asks for the storage address (for example storage.example.com), then goes to the storage to sign in and allow the app, and comes back. The song is saved in the browser first. After connecting, the app offers to move the songs, patches and kits kept in this browser to the storage; names that are already taken there stay in the browser.'],
+['k','File > Disconnect','Stops using the storage (the menu shows user@host). Songs, patches and kits are kept in this browser again.'],
+['k','File > Move Browser Items to Storage…','Offers the move again.'],
+['k','File > Open…','The file selector. STORAGE (or BROWSER when no storage is connected) lists the songs there with date and size: click one and OPEN, or double-click it; x deletes one (asks first); the wheel and Up/Down move through the list. .JSON FILE opens a .json file from this computer. CONNECT… and DISCONNECT on the right do the same as the File menu.'],
+['k','File > Save As…','The file selector with a NAME field: type the name, or click a song in the list to use its name, then SAVE (Enter). Saving under a name that is taken asks before replacing it. .JSON FILE writes a .json file to your downloads instead. Patches and kits use the same selector (SAVE PATCH…, OPEN PATCH…, SAVE KIT…, OPEN KIT… in the library).'],
+['k','File > Save  Ctrl+S','With a storage connected, saves the song there under its name. If it was opened or saved there, and someone changed the stored copy since, the app asks: Cancel, Open It (the stored one) or Overwrite. Without a storage, writes a .json file.'],
 ['k','File > New Song','Starts an empty song with eight init patches.'],
 ['k','File > Load Demo Song','Loads the demo, built from patches in the ds10emu example saves.'],
 ['k','Edit > Rename Track…','Renames the active track. You can also click the track name in the Synth window.'],
@@ -1365,6 +1399,7 @@ const MANUAL=[
 ['k','Space','Play / stop; a rest in step input'],
 ['k','Enter','Record; step input in Key Edit while stopped'],
 ['k','/','Cycle'],
+['k','L','Locators to Part: L and R around the selected part (in Key Edit the part being edited), cycle on'],
 ['k','Home','Bar 1'],
 ['k','Left / Right','Page Arrange and Key Edit (Shift: song position by a bar)'],
 ['k','Up / Down','Active track; in Key Edit, transpose the selection or go to the next track\'s part'],
@@ -1374,8 +1409,9 @@ const MANUAL=[
 ['k','Del','Delete the selection'],
 ['k','Esc','Close a menu or dialog, end step input, back to Arrange'],
 ['k','Ctrl+Z','Undo'],
-['k','Ctrl+S','Save JSON'],
+['k','Ctrl+S','Save (to the storage when connected, else a .json file)'],
 ['k','Ctrl+A C X V','Key Edit: select all, copy, cut, paste'],
+['k','1 … 8','Mixer: mute tracks 1-8; drum kit (F3): mute drums 1-8. On these two screens the number keys do not play notes.'],
 ['k','Numpad','Enter play, 0 stop, * record, / cycle, . bar 1'],
 
 ['h','Credits'],
@@ -1399,17 +1435,20 @@ const P=[
   ['SRC','PITCH SOURCE',0,6,0,SRC],['SRC','VCO1 SOURCE',0,6,0,SRC],['SRC','VCO2 SOURCE',0,6,0,SRC],['SRC','CUTOFF SOURCE',0,6,0,SRC],['SRC','VCA SOURCE',0,6,0,SRC],
   ['HP CUT','HPF CUTOFF',0,127,0],['HP RES','HPF RESONANCE',0,127,0],
   ['VOLUME','VOLUME',0,127,100],['PAN','PAN',0,127,64],['SEND A','SEND A',0,127,0],['SEND B','SEND B',0,127,0]];
-const NP=P.length,NA=NP+16,INIT_K=P.map(p=>p[4]).concat(new Array(16).fill(0));
+const NP=P.length,BD=NP+16,NA=NP+17,INIT_K=P.map(p=>p[4]).concat(new Array(17).fill(0));
+// id BD is the synth's pitch bend, -120..120 = -3..+3 semitones (a minor third); not part of the patch, only moved by the pad and automation
+const BEND=['BEND','PITCH BEND',-120,120,0];
 /* ids NP..NA-1 are the knobs of a track's two insert slots: NP + slot*8 + n, n in the effect's own control order.
    PD() describes any id for a given track, so lanes, the pad and recording treat them like synth knobs. */
 function PD(ti,id){
   if(id<33&&isDrumT(ti))return ['—','(synth knob)',0,127,0,null,true];
   if(id<NP)return P[id];
+  if(id===BD)return isDrumT(ti)?['—','(synth knob)',0,127,0,null,true]:BEND;
   const slot=(id-NP)>>3,j=(id-NP)&7,fx=S.tracks[ti]&&S.tracks[ti].ins[slot],d=fx&&FXDEF[fx.type],pp=d&&d.p[j];
   if(!pp)return ['—','INS'+(slot+1)+' —',0,127,0,null,true];
   return [pp[1].slice(0,7),'INS'+(slot+1)+' '+d.short+' '+pp[1],pp[2],pp[0]==='prog'?progMax(fx):pp[3],pp[4],pp[5]];
 }
-function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
+function pfmtT(ti,id,v){if(id<NP)return pfmt(id,v);if(id===BD)return (v>0?'+':'')+(v/40).toFixed(2)+' st';const d=PD(ti,id);if(d[5])return d[5][v]??String(v);return d[2]<0&&v>0?'+'+v:String(v);}
 function fxId(slot,key,fx){return NP+slot*8+FXDEF[fx.type].p.findIndex(x=>x[0]===key);}
 function syncFx(t){for(let s=0;s<2;s++)for(let j=0;j<8;j++){const fx=t.ins[s],pp=fx&&FXDEF[fx.type].p[j],v=pp?fx.p[pp[0]]:0;t.k[NP+s*8+j]=v;t.lv[NP+s*8+j]=v;}}
 const pfmt=(id,v)=>{const p=P[id];if(p[5])return p[5][v]??String(v);if(id===34)return v===64?'C':v<64?'L'+(64-v):'R'+(v-64);if(p[2]<0&&v>0)return '+'+v;return String(v);};
@@ -1435,10 +1474,10 @@ function progName(fx){const n=MV_NAMES[fx.p.dev]||[];const i=clamp(fx.p.prog,0,n
 /* ---------- state ---------- */
 const S={tracks:[],buses:[],master:null,parts:[],nextId:1,active:0,sel:null,view:'arr',editPart:null,selNote:null,selSet:new Set(),ptSel:new Set(),band:null,
   tool:'pointer',arrTool:'pointer',pos:0,L:0,R:BAR*8,cycle:false,playing:false,rec:false,recMode:'overdub',
-  tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,
+  tempo:120,qi:4,autoQ:true,click:false,scroll:0,oct:2,qwerty:true,midi:false,midiVel:true,
   menu:null,popup:null,dialog:null,toolbox:null,step:false,stepPos:0,stepHeld:0,editHi:72,takeId:0,
   mx:-1,my:-1,lastIn:null,inFlash:0,drag:null,pencil:null,lane:'vel',
-  fxSel:{w:{s:'t',i:0},slot:0},ezoom:0,escroll:0,showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padX:11,padY:12,padMode:'s',padOn:false,padVX:.5,padVY:.5,clip:null};
+  fxSel:{w:{s:'t',i:0},slot:0},ezoom:0,escroll:0,showKb:true,latComp:true,input:null,manTop:0,gate:4,newVel:100,padOn:false,padVX:.5,padVY:.5,clip:null};
 const gate=new Array(8).fill(0);
 let dirty=true;
 const q=()=>QS[S.qi][1];
@@ -1449,7 +1488,7 @@ function selOnly(n){S.selSet=new Set(n?[n]:[]);S.selNote=n||null;S.ptSel=new Set
 const selList=()=>[...S.selSet];
 let noteClip=null;
 
-function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1,exact:false};}
+function mkTrack(name,k,nv){const kk=INIT_K.slice();for(const i in (k||{}))kk[i]=k[i];return {name,nv:nv||1,k:kk,lv:kk.slice(),mute:false,solo:false,ins:[null,null],kind:'synth',drums:null,interp:1,exact:false,padX:11,padY:12,padMode:'s'};}
 /* drum tracks: a kit of 8 drums. Each drum is a DS-10 patch (knobs 0-30 + highpass 31-32), a HOLD time
    and two effects, recorded by the engine into a 2 s sample. Notes on a drum track carry the drum in p (0-7)
    and optional pt (pitch, semitones), pn (pan 0-127) and st (sample start 0-127). */
@@ -1458,6 +1497,8 @@ const isDrumT=ti=>!!(S.tracks[ti]&&S.tracks[ti].kind==='drum');
 function mkDrum(name,k31,hold,note){return {name,k:(k31||INIT_K.slice(0,31)).slice(0,31).concat([0,0]),hold:hold??DRUM_INIT_HOLD,note:note??60,vol:127,pan:64,ins:[null,null],wave:null};}
 const DRUM_NOTE_MIN=12,DRUM_NOTE_MAX=108;
 const holdMs=k=>Math.round(10*Math.pow(200,k/127));
+// a new drum track starts with 8 init patches; the demo song keeps its RESIN# kit
+function initKit(){return Array.from({length:NDRUM},(_,i)=>mkDrum('DRUM'+(i+1)));}
 function defaultKit(){return [mkDrum('KICK',lib('DS10PLUS/RESIN#','DR1')),mkDrum('SNARE',lib('DS10PLUS/RESIN#','DR2')),mkDrum('HAT',lib('DS10PLUS/RESIN#','DR3'),30),
   mkDrum('OPENHAT',fac('HIHAT'),80),mkDrum('TOM',fac('TOM')),mkDrum('SNARE2',fac('SNARE2')),mkDrum('PERC',lib('DS10PLUS/HATER','DR4')),mkDrum('ZAP',fac('ZAP'))];}
 const NOTE_LANES={vel:['VEL','VELOCITY',1,127,100,'v'],pt:['PITCH','DRUM PITCH (semitones)',-24,24,0,'pt'],pn:['PAN','DRUM PAN',0,127,64,'pn'],st:['START','SAMPLE START',0,127,0,'st']};
@@ -1527,24 +1568,29 @@ function newSong(){
   S.tracks=['Track 1','Track 2','Track 3','Track 4','Track 5','Track 6','Track 7','Track 8'].map(n=>mkTrack(n,{},1));
   S.buses=[{name:'BUS A',ret:100,ins:[mkFx('mverb',{mix:127}),null]},{name:'BUS B',ret:100,ins:[mkFx('tape',{mix:127}),null]}];
   S.master={vol:127,shp:1,ins:[null,null]};
-  S.parts=[];S.sel=null;S.view='arr';S.editPart=null;S.pos=0;S.songName='untitled';
+  S.parts=[];S.sel=null;S.view='arr';S.editPart=null;S.pos=0;S.songName='untitled';setSongDoc(null);
   sendCfg();songChanged();dirty=true;
 }
 function songObj(){
-  return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,padX:S.padX,padY:S.padY,padMode:S.padMode,
-    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,...(d.exact?{exact:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins})),
+  return {app:'arranger-st',version:2,name:S.songName||'untitled',tempo:S.tempo,qi:S.qi,L:S.L,R:S.R,cycle:S.cycle,
+    tracks:S.tracks.map(t=>({name:t.name,nv:t.nv,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(d=>({...drumOut(d),...(d.mute?{mute:true}:{})})),k:t.k.slice(0,NP),mute:t.mute,solo:t.solo,ins:t.ins,padX:t.padX,padY:t.padY,padMode:t.padMode})),
     buses:S.buses,master:S.master,
     parts:S.parts.map(p=>({id:p.id,track:p.track,start:p.start,len:p.len,name:p.name,mute:!!p.mute,...(p.dmute?{dmute:p.dmute.map(Boolean)}:{}),notes:p.notes.map(n=>{const o={t:n.t,p:n.p,v:n.v,d:n.d};for(const f of ['pt','pn','st'])if(n[f]!=null)o[f]=n[f];return o;}),auto:p.auto||{}}))};
 }
+const drumOut=d=>({name:d.name,k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,...(d.exact?{exact:true}:{})});
+function fxIn(f){if(!f||!FXDEF[f.type])return null;const p=Object.assign(mkFx(f.type).p,f.p||{});
+  for(const pp of FXDEF[f.type].p)if(pp[5])p[pp[0]]=clamp(p[pp[0]],pp[2],pp[3]);return {type:f.type,on:f.on!==false,p};}
+function drumIn(d,j){d=d||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fxIn((d.ins||[])[0]),fxIn((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.vol=clamp(Math.round(d.vol??127),0,127);m.pan=clamp(Math.round(d.pan??64),0,127);m.exact=!!d.exact;m.mute=!!d.mute;return m;}
+const kitIn=drums=>Array.from({length:NDRUM},(_,j)=>drumIn(drums[j],j));
 function cleanAuto(a){const o={};if(a&&typeof a==='object')for(const k in a){const id=+k,ln=a[k];if(id>=0&&id<NA&&ln&&Array.isArray(ln.pts))o[id]={m:ln.m==='h'?'h':'s',pts:ln.pts.filter(x=>x&&isFinite(x.t)&&isFinite(x.v)).map(x=>({t:x.t|0,v:id<NP?clamp(Math.round(x.v),P[id][2],P[id][3]):Math.round(x.v)})).sort((a,b)=>a.t-b.t)};}return o;}
 function loadSong(o){
   if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST10 song');
-  const fx=f=>{if(!f||!FXDEF[f.type])return null;const p=Object.assign(mkFx(f.type).p,f.p||{});
-    for(const pp of FXDEF[f.type].p)if(pp[5])p[pp[0]]=clamp(p[pp[0]],pp[2],pp[3]);return {type:f.type,on:f.on!==false,p};};
+  const fx=fxIn;
   S.tracks=o.tracks.slice(0,8).map((t,i)=>{const tr=mkTrack(String(t.name||'Track '+(i+1)).slice(0,12),{},clamp(t.nv|0,1,8));
     (t.k||[]).forEach((v,j)=>{if(j<NP)tr.k[j]=clamp(Math.round(v),P[j][2],P[j][3]);});tr.lv=tr.k.slice();tr.mute=!!t.mute;tr.solo=!!t.solo;tr.kind=t.kind==='drum'?'drum':'synth';tr.interp=clamp(t.interp??1,0,2);tr.exact=!!t.exact;
-    if(Array.isArray(t.drums))tr.drums=Array.from({length:NDRUM},(_,j)=>{const d=t.drums[j]||{};const m=mkDrum(String(d.name||'DRUM'+(j+1)).slice(0,8),(d.k||[]).slice(0,31).map((v,i)=>clamp(Math.round(v)||0,P[i][2],P[i][3])),clamp(d.hold??DRUM_INIT_HOLD,0,127));m.k[31]=clamp((d.k||[])[31]|0,0,127);m.k[32]=clamp((d.k||[])[32]|0,0,127);m.ins=[fx((d.ins||[])[0]),fx((d.ins||[])[1])];m.note=clamp(d.note??60,DRUM_NOTE_MIN,DRUM_NOTE_MAX);m.vol=clamp(Math.round(d.vol??127),0,127);m.pan=clamp(Math.round(d.pan??64),0,127);m.exact=!!d.exact;return m;});
-    if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];return tr;});
+    if(Array.isArray(t.drums))tr.drums=kitIn(t.drums);
+    if(tr.kind==='drum'&&!tr.drums)tr.drums=defaultKit();tr.ins=[fx((t.ins||[])[0]),fx((t.ins||[])[1])];
+    const px=t.padX??o.padX,py=t.padY??o.padY,pm=t.padMode??o.padMode;if(px!=null)tr.padX=clamp(px|0,0,NA-1);if(py!=null)tr.padY=clamp(py|0,0,NA-1);if(pm)tr.padMode=pm==='h'?'h':'s';return tr;});
   while(S.tracks.length<8)S.tracks.push(mkTrack('Track '+(S.tracks.length+1),{},1));
   const bs=o.buses||[];S.buses=[0,1].map(i=>({name:i?'BUS B':'BUS A',ret:clamp((bs[i]||{}).ret??100,0,127),ins:[fx(((bs[i]||{}).ins||[])[0]),fx(((bs[i]||{}).ins||[])[1])]}));
   const m=o.master||{};S.master={vol:clamp(m.vol??100,0,127),shp:m.shp?1:0,ins:[fx((m.ins||[])[0]),fx((m.ins||[])[1])]};
@@ -1552,7 +1598,6 @@ function loadSong(o){
     notes:(p.notes||[]).map(n=>{const o={t:n.t|0,p:clamp(n.p|0,0,127),v:clamp(n.v|0,1,127),d:Math.max(1,n.d|0)};if(n.pt!=null)o.pt=clamp(n.pt|0,-24,24);if(n.pn!=null)o.pn=clamp(n.pn|0,0,127);if(n.st!=null)o.st=clamp(n.st|0,0,127);return o;}),auto:cleanAuto(p.auto)}));
   S.nextId=S.parts.reduce((a,p)=>Math.max(a,p.id),0)+1;
   S.tempo=clamp(+o.tempo||120,40,240);S.qi=clamp(o.qi??4,0,QS.length-1);S.L=o.L|0;S.R=o.R|0||BAR*8;S.cycle=!!o.cycle;
-  if(o.padX!=null)S.padX=clamp(o.padX|0,0,NA-1);if(o.padY!=null)S.padY=clamp(o.padY|0,0,NA-1);if(o.padMode)S.padMode=o.padMode==='h'?'h':'s';
   S.songName=String(o.name||'song').slice(0,24);
   S.sel=null;S.view='arr';S.editPart=null;selOnly(null);S.active=0;S.pos=0;S.lane='vel';
   sendCfg();dirty=true;
@@ -1577,21 +1622,18 @@ function autosave(){
   catch(e){saveState='not saved: storage off';}
   dirty=true;
 }
-async function saveJSON(){
-  const data=JSON.stringify(songObj());const filename=(S.songName||'song').replace(/[^\w-]+/g,'_')+'.json';
+const fileName=(n,ext)=>(n||'untitled').replace(/[^\w-]+/g,'_')+ext;
+function saveJSON(){saveFile(fileName(S.songName||'song','.json'),JSON.stringify(songObj()));}
+// a JSON file chosen by the user, parsed, handed to ok(object, file name); bad files end in a dialog
+function openFile(ok,what){const f=document.createElement('input');f.type='file';f.accept='.json,application/json';
+  f.onchange=()=>{const file=f.files[0];if(!file)return;file.text().then(t=>ok(JSON.parse(t),file.name)).catch(err=>dialog(['That file is not '+what+'.',String(err.message||'').slice(0,34)]));};f.click();}
+async function saveFile(filename,data){
   try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
     if(dl){await dl.save({filename,data});flashMsg('Saved '+filename);return;}}
   catch(e){if(e&&e.code==='declined'){flashMsg('Save cancelled');return;}}
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=filename;document.body.appendChild(a);a.click();a.remove();flashMsg('Saved '+filename);}
   catch(e){dialog(['Saving a file is not possible here.','Your song is still kept','in this browser.']);}
 }
-function openJSON(){const f=$('#fileIn');f.value='';f.click();}
-$('#fileIn').addEventListener('change',e=>{
-  const file=e.target.files[0];if(!file)return;
-  file.text().then(t=>{snapshot();loadSong(JSON.parse(t));songChanged();flashMsg('Loaded '+file.name);})
-    .catch(err=>dialog(['That file is not an','Arranger ST10 song.',String(err.message||'').slice(0,34)]));
-});
-
 /* ---------- audio engine bridge ---------- */
 let ac=null,node=null,ready=false,starting=null;
 function ensureAudio(){
@@ -1611,14 +1653,15 @@ function ensureAudio(){
   return starting;
 }
 const post=m=>{if(ready)node.port.postMessage(m);};
-const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,ins:d.ins,exact:!!d.exact});
-// NOTE, VOL and PAN only change how the recording is played, so they do not record the drum again
-function drumPlayChanged(ti,d){const dr=S.tracks[ti].drums[d];post({t:'drumplay',tr:ti,d,note:dr.note,vol:dr.vol,pan:dr.pan});songChanged();dirty=true;}
+const drumDef=d=>({k:d.k,hold:d.hold,note:d.note,vol:d.vol,pan:d.pan,mute:!!d.mute,ins:d.ins,exact:!!d.exact});
+// NOTE, VOL, PAN and the drum's mute only change how the recording is played, so they do not record the drum again
+function drumPlayChanged(ti,d){const dr=S.tracks[ti].drums[d];post({t:'drumplay',tr:ti,d,note:dr.note,vol:dr.vol,pan:dr.pan,mute:!!dr.mute});songChanged();dirty=true;}
 function cfgObj(){return {tempo:S.tempo,tracks:S.tracks.map(t=>({k:t.lv,nv:t.nv,mute:t.mute,solo:t.solo,ins:t.ins,kind:t.kind,interp:t.interp,exact:!!t.exact,drums:t.drums&&t.drums.map(drumDef)})),buses:S.buses.map(b=>({ret:b.ret,ins:b.ins})),master:S.master};}
 function sendCfg(){S.tracks.forEach(syncFx);post({t:'cfg',c:cfgObj()});}
 const meters={tr:new Array(8).fill(0),l:0,r:0,v:new Array(8).fill(0)};
 function onEngine(m){if(m.t==='dw'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){const dr=t.drums[m.d];dr.wave=m.w;dr.dirty=false;dr.recording=false;dirty=true;}return;}
   if(m.t==='drec'){const t=S.tracks[m.tr];if(t&&t.drums&&t.drums[m.d]){t.drums[m.d].recording=true;dirty=true;}return;}
+  if(m.t==='cpu'){cpu.dsp=m.v;return;}
   if(m.t==='m'){for(let i=0;i<8;i++){meters.tr[i]=Math.max(m.tr[i],meters.tr[i]*0.6);meters.v[i]=m.v[i];}meters.l=Math.max(m.l,meters.l*0.6);meters.r=Math.max(m.r,meters.r*0.6);}}
 
 /* parameter changes. `perm` writes the patch; otherwise only the live value moves (automation, pad) */
@@ -1627,7 +1670,7 @@ function setParam(ti,id,v,perm){
   const t=S.tracks[ti],d=PD(ti,id);if(d[6])return;v=clamp(Math.round(v),d[2],d[3]);
   const recording=S.playing&&S.rec&&ti===inputTrack();
   if(recording){recAuto(ti,id,v);perm=false;}
-  if(perm){t.k[id]=v;if(id>=NP){const fx=t.ins[(id-NP)>>3];fx.p[FXDEF[fx.type].p[(id-NP)&7][0]]=v;}songChanged();}
+  if(perm){t.k[id]=v;if(id>=NP&&id<BD){const fx=t.ins[(id-NP)>>3];fx.p[FXDEF[fx.type].p[(id-NP)&7][0]]=v;}songChanged();}
   if(t.lv[id]!==v){t.lv[id]=v;post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v}]});}
   dirty=true;
 }
@@ -1645,7 +1688,7 @@ function setKind(ti,kind){
     [{l:'Cancel'},{l:kind==='drum'?'Drum kit':'Synth',def:true,a:()=>{
       snapshot();allOff();
       for(const pt of S.parts)if(pt.track===ti)for(const n of pt.notes)n.p=kind==='drum'?((n.p%NDRUM)+NDRUM)%NDRUM:60+n.p;
-      t.kind=kind;if(kind==='drum'&&!t.drums)t.drums=defaultKit();
+      t.kind=kind;if(kind==='drum'&&!t.drums)t.drums=initKit();
       for(const pt of S.parts)if(pt.track===ti)for(const id in pt.auto)if(PD(ti,+id)[6])delete pt.auto[id];
       post({t:'kind',tr:ti,kind,drums:t.drums&&t.drums.map(drumDef)});songChanged();dirty=true;}}]);
 }
@@ -1654,6 +1697,8 @@ function setExact(ti,v){S.tracks[ti].exact=v;post({t:'exact',tr:ti,v});songChang
 function setInterp(ti,v){S.tracks[ti].interp=v;post({t:'interp',tr:ti,v});songChanged();dirty=true;}
 function setNv(ti,n){S.tracks[ti].nv=n;post({t:'nv',tr:ti,n});songChanged();dirty=true;}
 function sendMute(ti){const t=S.tracks[ti];post({t:'mute',tr:ti,m:t.mute,s:t.solo});songChanged();}
+function toggleTrackMute(ti){const t=S.tracks[ti];t.mute=!t.mute;sendMute(ti);dirty=true;}
+function toggleDrumMute(ti,d){const dr=S.tracks[ti].drums[d];dr.mute=!dr.mute;drumPlayChanged(ti,d);}
 function slotsOf(w){return w.s==='d'?S.tracks[w.i].drums[w.d].ins:w.s==='t'?S.tracks[w.i].ins:w.s==='b'?S.buses[w.i].ins:S.master.ins;}
 function setFx(w,slot,fx){
   if(w.s==='d'){slotsOf(w)[slot]=fx;drumChanged(w.i,w.d);return;}
@@ -1712,7 +1757,7 @@ function scheduleRange(a,b,time,pass,ev){
       if(p.dmute&&p.dmute[n.p]&&tr.kind==='drum')continue;
       const t0=time+(abs-a)*k,t1=t0+Math.max(4,n.d)*k;
       const id=++noteIdC;
-      ev.push({time:t0,k:'on',tr:p.track,p:n.p,v:n.v,pt:n.pt,pn:n.pn,st:n.st,id},{time:t1,k:'off',tr:p.track,p:n.p,id});
+      ev.push({time:t0,k:'on',tr:p.track,p:n.p,v:n.v,pt:n.pt,pn:n.pn,st:n.st,id,sq:1},{time:t1,k:'off',tr:p.track,p:n.p,id,sq:1});
       const ti=p.track;
       setTimeout(()=>{gate[ti]++;},Math.max(0,(t0-ac.currentTime)*1000));
       setTimeout(()=>{gate[ti]=Math.max(0,gate[ti]-1);},Math.max(0,(t1-ac.currentTime)*1000));
@@ -1721,7 +1766,7 @@ function scheduleRange(a,b,time,pass,ev){
       const ln=p.auto[pid];if(!ln.pts||!ln.pts.length||autoHeld.has(p.track+':'+pid))continue;
       const lo=Math.max(a,p.start),hi=Math.min(b,p.start+p.len),id=+pid;
       const emit=(abs,v)=>{const dd=PD(p.track,id);if(dd[6])return;v=clamp(Math.round(v),dd[2],dd[3]);const key=p.track+':'+id;if(lastAuto[key]===v)return;lastAuto[key]=v;
-        const t=time+(abs-a)*k;ev.push({time:t,k:'knob',tr:p.track,id,v});liveQ.push({at:t,tr:p.track,id,v});};
+        const t=time+(abs-a)*k;ev.push({time:t,k:'knob',tr:p.track,id,v,sq:1});liveQ.push({at:t,tr:p.track,id,v});};
       if(ln.m==='h'){if(p.start>=a&&p.start<b)emit(p.start,autoAt(ln,0));for(const pt of ln.pts){const abs=p.start+pt.t;if(abs>=lo&&abs<hi&&pt.t>0)emit(abs,pt.v);}}
       else for(let t=Math.ceil(lo/6)*6;t<hi;t+=6)emit(t,autoAt(ln,t-p.start));
     }
@@ -1748,13 +1793,13 @@ function startPlay(){
 }
 function relocate(t){
   S.pos=clamp(t,0,NBARS*BAR);
-  if(S.playing){clearInterval(timer);post({t:'ev',ev:[{time:0,k:'alloff'}]});passN++;schedTick=S.pos;schedTime=ac.currentTime+0.04;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
+  if(S.playing){clearInterval(timer);post({t:'seqoff'});passN++;schedTick=S.pos;schedTime=ac.currentTime+0.04;anchors=[{time:schedTime,tick:schedTick,pass:passN}];prevTick=S.pos;
     for(const k in lastAuto)delete lastAuto[k];chase(S.pos);timer=setInterval(sched,25);}
   dirty=true;
 }
 function play(){if(!S.playing){if(S.step)exitStep();startPlay();}}
 function stop(){
-  if(S.playing){S.pos=Math.floor(curTick());S.playing=false;clearInterval(timer);post({t:'ev',ev:[{time:0,k:'alloff'}]});liveQ.length=0;
+  if(S.playing){S.pos=Math.floor(curTick());S.playing=false;clearInterval(timer);post({t:'seqoff'});liveQ.length=0;
     if(S.rec){S.rec=false;finalizeHeld();}autoHeld.clear();for(const k in recLast)delete recLast[k];restoreLive();}
   else{if(S.step)exitStep();else S.pos=(S.pos!==S.L)?S.L:0;}
   dirty=true;
@@ -1795,9 +1840,9 @@ function glue(p){
 function repeatPart(){const p=needSel();if(!p)return;snapshot();for(let i=1;i<=3;i++){const c=clonePart(p);c.start=p.start+p.len*i;S.parts.push(c);}dirty=true;}
 function splitAtSPP(){const p=needSel();if(!p)return;snapshot();split(p,Math.round(S.pos));dirty=true;}
 function gluePart(){const p=needSel();if(!p)return;snapshot();glue(p);dirty=true;}
-function locToPart(){const p=needSel();if(!p)return;S.L=p.start;S.R=p.start+p.len;S.cycle=true;dirty=true;}
+function locToPart(){const p=curPartFn();if(!p)return;S.L=p.start;S.R=p.start+p.len;S.cycle=true;dirty=true;}
 function curPartFn(){return S.view==='edit'?part(S.editPart):needSel();}
-function quantizePart(){const p=curPartFn();if(!p)return;snapshot();(S.view==='edit'&&S.selSet.size?selList():p.notes).forEach(n=>n.t=Math.round(n.t/q())*q());dirty=true;}
+function quantizePart(){const p=curPartFn();if(!p)return;snapshot();(S.view==='edit'&&S.selSet.size?selList():p.notes).forEach(n=>n.t=Math.round(n.t/q())*q());fitPart(p);dirty=true;}
 function transposePart(d){const p=curPartFn();if(!p)return;snapshot();p.notes.forEach(n=>n.p=clamp(n.p+d,0,127));dirty=true;}
 function clearPart(){const p=curPartFn();if(!p)return;snapshot();p.notes=[];dirty=true;}
 function clearAuto(){const p=curPartFn();if(!p)return;snapshot();p.auto={};S.lane='vel';dirty=true;}
@@ -1848,7 +1893,7 @@ function noteCmd(c){
     const na=Object.keys(auto).length;flashMsg((c==='KeyX'?'Cut ':'Copied ')+L.length+' notes'+(na?' and '+na+' automation lane'+(na>1?'s':''):''));}
   else if(c==='KeyV'){if(!noteClip)return flashMsg('Copy notes first');snapshot();
     const at=clamp(Math.round((S.pos-p.start)/q())*q(),0,p.len-1),add=noteClip.notes.filter(n=>at+n.t<p.len).map(n=>({...n,t:at+n.t}));
-    p.notes.push(...add);S.selSet=new Set(add);S.selNote=add[0]||null;
+    p.notes.push(...add);S.selSet=new Set(add);S.selNote=add[0]||null;fitPart(p);
     // automation replaces what was there over the pasted span; lanes that do not apply to this track (e.g. synth knobs on a drum kit) are skipped
     const end=Math.min(p.len,at+noteClip.len);let na=0;
     for(const id in noteClip.auto){if(PD(p.track,+id)[6])continue;const src=noteClip.auto[id],ln=p.auto[id]||(p.auto[id]={m:src.m,pts:[]});
@@ -1887,7 +1932,7 @@ function noteOn(key,p,v,drumIdx){
   gate[tr]++;S.lastIn={p,v};S.inFlash=performance.now();
   let rn=null;
   if(S.playing&&S.rec)rn=recordStart(tr,p,v);
-  else if(S.step&&S.view==='edit'){const pt=part(S.editPart);if(pt){pt.notes.push({t:S.stepPos,p,v,d:gateLen()||q()});S.stepHeld++;}}
+  else if(S.step&&S.view==='edit'){const pt=part(S.editPart);if(pt){pt.notes.push({t:S.stepPos,p,v,d:gateLen()||q()});fitPart(pt);S.stepHeld++;}}
   held.set(key,{p,kp,rn,tr,step:S.step,id});
   kbLight(kp,true);dirty=true;
 }
@@ -1900,6 +1945,11 @@ function noteOff(key){
   kbLight(h.kp,[...held.values()].some(x=>x.kp===h.kp));dirty=true;
 }
 function allOff(){[...held.keys()].forEach(noteOff);}
+// grow a part by whole bars until it holds the end of every note, up to the next part on its track
+function fitPart(p){if(!p)return;let e=0;for(const n of p.notes)if(n.t<p.len)e=Math.max(e,n.t+n.d);
+  let L=Math.ceil(e/BAR)*BAR;if(L<=p.len)return;
+  const nx=partsOn(p.track).filter(o=>o!==p&&o.start>=p.start+p.len).reduce((m,o)=>Math.min(m,o.start),Infinity);
+  L=Math.min(L,nx-p.start);if(L>p.len)p.len=L;}
 function recPartAt(tr,st){
   let pt=S.parts.find(x=>x.track===tr&&!x.mute&&st>=x.start&&st<x.start+x.len);
   if(!pt){
@@ -1932,10 +1982,10 @@ function recordStart(tr,p,v){
   if(cycOn()&&st>=S.R)st=S.L;
   const pt=recPartAt(tr,st);
   const n={t:st-pt.start,p,v,d:6,take:S.takeId,fresh:curPass()};pt.notes.push(n);
-  return {n,raw};
+  return {n,raw,pt};
 }
 function recLen(rn){let d=recTick()-rn.raw;if(d<0)d+=S.R-S.L;return Math.max(6,Math.round(d));}
-function finalizeRec(rn){rn.n.d=recLen(rn);songChanged();}
+function finalizeRec(rn){rn.n.d=recLen(rn);fitPart(rn.pt);songChanged();}
 function finalizeHeld(){for(const h of held.values())if(h.rn){finalizeRec(h.rn);h.rn=null;}}
 function eraseReplace(a,b){
   const tr=S.active;
@@ -1948,7 +1998,7 @@ function recAuto(tr,id,v){
   const tk=recTick();const pt=recPartAt(tr,tk);
   pt.auto=pt.auto||{};
   const rel=clamp(Math.round((tk-pt.start)/6)*6,0,pt.len-1);
-  const ln=pt.auto[id]||(pt.auto[id]={m:S.padMode,pts:[]});
+  const ln=pt.auto[id]||(pt.auto[id]={m:S.tracks[tr].padMode,pts:[]});
   const key=tr+':'+id,last=recLast[key];
   if(last&&last.part===pt.id&&rel>=last.t)ln.pts=ln.pts.filter(x=>x.t<=last.t||x.t>rel);
   else ln.pts=ln.pts.filter(x=>x.t!==rel);
@@ -1972,15 +2022,19 @@ document.addEventListener('keydown',e=>{
     else if(e.key==='Backspace')I.value=I.value.slice(0,-1);
     else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&I.value.length<I.max&&/^[\x20-\x7e]$/.test(e.key))I.value+=e.key;
     dirty=true;return;}
+  if(S.fsel&&!S.dialog){e.preventDefault();fselKey(e);return;}
   if(e.code==='F9'){e.preventDefault();setView('man');return;}
   if(S.view==='man'&&['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(e.code)){e.preventDefault();
     const pg=MAN_VIS-2;S.manTop+=({ArrowUp:-1,ArrowDown:1,PageUp:-pg,PageDown:pg,Home:-1e9,End:1e9})[e.code];dirty=true;return;}
   if(FKEYS[e.code]){e.preventDefault();setView(FKEYS[e.code]);return;}
   if(e.ctrlKey||e.metaKey){
-    if(e.code==='KeyZ'){e.preventDefault();undo();}else if(e.code==='KeyS'){e.preventDefault();saveJSON();}
+    if(e.code==='KeyZ'){e.preventDefault();undo();}else if(e.code==='KeyS'){e.preventDefault();if(!S.fsel&&!S.dialog&&!S.input)quickSave();}
     else if(S.view==='edit'&&['KeyA','KeyC','KeyX','KeyV'].includes(e.code)){e.preventDefault();noteCmd(e.code);}
     return;}
   const c=e.code;
+  // in the Mixer and the drum kit, 1-8 mute tracks / drums before the keys play notes
+  const dg=/^Digit([1-8])$/.exec(c),kit=S.view==='syn'&&isDrumT(S.active);
+  if(dg&&!S.dialog&&!e.altKey&&!e.shiftKey&&(S.view==='mix'||kit)){e.preventDefault();if(!e.repeat){const i=dg[1]-1;if(kit)toggleDrumMute(S.active,i);else toggleTrackMute(i);}return;}
   if(S.qwerty&&!e.altKey){const n=codeToNote(c);if(n>=0){e.preventDefault();if(!e.repeat)noteOn('k:'+c,n,e.shiftKey?127:100);return;}}
   else if(!S.qwerty&&TOOLKEYS[c]){const t=TOOLKEYS[c];if(S.view==='arr'||TOOLS_EDIT.includes(t))setTool(t);return;}
   const handled=()=>e.preventDefault();
@@ -1995,7 +2049,7 @@ document.addEventListener('keydown',e=>{
     case 'Home':case 'NumpadDecimal':handled();rtz();break;
     case 'Escape':handled();if(S.menu!=null||S.toolbox||S.popup||S.presetPick||S.padPick){S.menu=null;S.toolbox=null;S.popup=null;S.presetPick=false;S.padPick=null;dirty=true;}else if(S.step)exitStep();else if(S.view!=='arr')closeWin();break;
     case 'Tab':handled();nextTool(e.shiftKey?-1:1);break;
-    case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
+    case 'Backquote':handled();S.gate=((S.gate||0)+(e.shiftKey?GATES.length-1:1))%GATES.length;if(S.gate&&S.selSet.size&&S.view==='edit'){snapshot();for(const m of S.selSet)m.d=gateLen();fitPart(part(S.editPart));}flashMsg('Gate '+GATES[S.gate][0]);dirty=true;break;
     case 'ArrowLeft':case 'ArrowRight':{handled();const d=c==='ArrowLeft'?-1:1;
       // Arrange and Key Edit page the view a screen at a time; Shift (and the other windows) move the song position by a bar
       if(!e.shiftKey&&S.view==='arr'){S.scroll=clamp(S.scroll+d*VIS,0,NBARS-VIS);dirty=true;}
@@ -2004,6 +2058,7 @@ document.addEventListener('keydown',e=>{
     case 'ArrowUp':case 'ArrowDown':{handled();const d=c==='ArrowUp'?1:-1;
       if(S.view==='edit'){if(S.selSet.size){snapshot();const mxp=eg().maxP;for(const m of S.selSet)m.p=clamp(m.p+d*(e.shiftKey&&mxp>12?12:1),0,mxp);const a=S.selNote||selList()[0];audition(a.p,a.v);}else editTrackStep(-d);}
       else setActive(S.active-d);dirty=true;break;}
+    case 'KeyL':handled();locToPart();break;
     case 'BracketLeft':handled();setQ(S.qi-1);break;
     case 'BracketRight':handled();setQ(S.qi+1);break;
     case 'Minus':case 'NumpadSubtract':handled();octave(-1);break;
@@ -2018,19 +2073,22 @@ function audition(p,v,n){ensureAudio();const tr=inputTrack(),id=++noteIdC;post({
 
 /* MIDI */
 let midiAcc=null;
-async function toggleMidi(){
+async function toggleMidi(quiet){
   if(S.midi){S.midi=false;if(midiAcc)for(const i of midiAcc.inputs.values())i.onmidimessage=null;dirty=true;return;}
-  if(!navigator.requestMIDIAccess)return dialog(['This browser has no Web MIDI.','Use Chromium, or keep playing','with the computer keyboard.']);
+  if(!navigator.requestMIDIAccess)return quiet?null:dialog(['This browser has no Web MIDI.','Use Chromium, or keep playing','with the computer keyboard.']);
   try{
     midiAcc=await navigator.requestMIDIAccess();
     const hook=()=>{for(const i of midiAcc.inputs.values())i.onmidimessage=onMidi;};hook();midiAcc.onstatechange=hook;
     S.midi=true;const n=[...midiAcc.inputs.values()].map(i=>i.name);
-    dialog(n.length?['MIDI input ready.',...n.slice(0,3)]:['MIDI is on, but no keyboard','is connected yet. Plug one in.']);
-  }catch(err){dialog(['Web MIDI is blocked here.','The artifact viewer does not allow','MIDI devices. Open the HTML file','locally in Chromium, or keep','playing with the computer keyboard.']);}
+    if(!quiet)dialog(n.length?['MIDI input ready.',...n.slice(0,3)]:['MIDI is on, but no keyboard','is connected yet. Plug one in.']);
+  }catch(err){if(!quiet)dialog(['Web MIDI is blocked here.','The artifact viewer does not allow','MIDI devices. Open the HTML file','locally in Chromium, or keep','playing with the computer keyboard.']);}
   dirty=true;
 }
+// mod wheel (CC 1) drives the KAOSS pad X axis, the pitch wheel its Y axis, each over the target's whole range
 function onMidi(e){const [st,d1,d2]=e.data;const cmd=st&0xf0;
-  if(cmd===0x90&&d2>0)noteOn('m:'+d1,d1,d2);else if(cmd===0x80||(cmd===0x90&&d2===0))noteOff('m:'+d1);}
+  if(cmd===0x90&&d2>0)noteOn('m:'+d1,d1,S.midiVel?d2:100);else if(cmd===0x80||(cmd===0x90&&d2===0))noteOff('m:'+d1);
+  else if(cmd===0xb0&&d1===1)padAxis('x',d2/127);
+  else if(cmd===0xe0)padAxis('y',(d1|d2<<7)/16383);}
 
 /* ---------- drawing primitives ---------- */
 const cv=$('#screen'),ctx=cv.getContext('2d',{willReadFrequently:true});
@@ -2141,16 +2199,17 @@ function waveIcon(i,cx,cy,c){
 
 /* ---------- menus ---------- */
 const MENUS=[
-  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo        Ctrl+S  save JSON','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
-  {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();sendCfg();songChanged();}},{l:'-'},{l:'Open JSON…',a:openJSON},{l:'Save JSON…',k:'^S',a:saveJSON},{l:'-'},{l:'Rename Song…',a:renameSong}]},
+  {name:'Desk',items:[{l:'Manual…',k:'F9',a:()=>setView('man')},{l:'Keyboard Shortcuts…',a:()=>dialog(['Z-M , and Q-P   play notes  (Shift = vel 127)','-  =   octave        F1-F6   windows','Space   play/stop    Enter   record','/   cycle    Home   bar 1    Tab   next tool','L   locators to part (and cycle on)','<- ->  page view (Shift: move a bar)','Up Down  track; Key Edit: transpose/next track','[  ]   quantize     Del   delete','`   note gate: free 25 50 75 100 TIE','Ctrl+Z  undo   Ctrl+S  save (storage if connected)','1-8   mute track (Mixer) / drum (kit)','Key Edit: drag box to select, Ctrl+A/C/X/V','Right-press on the grid: toolbox','Double-click a knob: reset'])},{l:'About Arranger ST10…',a:()=>dialog(['ARRANGER ST10','8 DS-10 voices, mixer, KAOSS','automation. Midiverb, tape delay,','DS-10 FX, distortion, rate crush.','','Engine: ds10emu port, midiverb_emulator,','camouflage FakeTapeDelay.'])}]},
+  {name:'File',items:[{l:'New Song',a:newSong},{l:'Load Demo Song',a:()=>{snapshot();loadDemo();setSongDoc(null);sendCfg();songChanged();}},{l:'-'},{l:'Open…',a:()=>fileSel('open','song',songCtx())},{l:'Save',k:'^S',a:quickSave},{l:'Save As…',a:()=>fileSel('save','song',songCtx())},{l:'-'},
+    {l:()=>storage.connected?'Disconnect '+(storeWho||'Storage')+'…':'Connect Storage…',a:()=>storage.connected?disconnectStore():connectStore()},{l:'Move Browser Items to Storage…',a:()=>offerMove(true)},{l:'-'},{l:'Rename Song…',a:renameSong}]},
   {name:'Edit',items:[{l:'Undo',k:'^Z',a:undo},{l:'Delete',k:'Del',a:del},{l:'-'},{l:'Copy Patch',a:copyPatch},{l:'Paste Patch',a:pastePatch},{l:'Init Patch',a:initPatch},{l:'-'},{l:'Rename Track…',a:()=>renameTrack()}]},
-  {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',a:locToPart}]},
+  {name:'Structure',items:[{l:'Repeat Part x4',a:repeatPart},{l:'Split Part at Position',a:splitAtSPP},{l:'Glue Part to Next',a:gluePart},{l:'Locators to Part',k:'L',a:locToPart}]},
   {name:'Functions',items:[{l:'Quantize Part',k:()=>QS[S.qi][0],a:quantizePart},{l:'Transpose +12',a:()=>transposePart(12)},{l:'Transpose -12',a:()=>transposePart(-12)},{l:'Clear Notes',a:clearPart},{l:'Clear Automation',a:clearAuto}]},
   {name:'View',items:[{l:'Arrange',k:'F1',a:()=>setView('arr')},{l:'Key Edit',k:'F2',a:()=>setView('edit')},{l:'Synth',k:'F3',a:()=>setView('syn')},{l:'Mixer',k:'F4',a:()=>setView('mix')},{l:'Effect',k:'F5',a:()=>setView('fx')},{l:'KAOSS Pad',k:'F6',a:()=>setView('pad')},{l:'Manual',k:'F9',a:()=>setView('man')}]},
   {name:'Options',items:[{l:()=>(S.click?'√ ':'  ')+'Metronome',a:()=>{S.click=!S.click;}},{l:()=>(S.autoQ?'√ ':'  ')+'Auto Quantize',a:()=>{S.autoQ=!S.autoQ;}},
     {l:()=>(S.recMode==='replace'?'√ ':'  ')+'Replace Mode',a:()=>{S.recMode=S.recMode==='replace'?'overdub':'replace';}},
     {l:()=>(S.master.shp?'√ ':'  ')+'DS-10 Master Shaper',a:()=>{S.master.shp=S.master.shp?0:1;sendMst();}},{l:'-'},
-    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:toggleMidi},{l:'-'},{l:()=>'  Audio Latency: '+(ac?Math.round(outLatency()*1000+128/ac.sampleRate*1000)+' ms':'—')+'…',a:latencyInfo},{l:()=>(S.latComp?'√ ':'  ')+'Record Latency Compensation',a:()=>{S.latComp=!S.latComp;flashMsg('Record compensation '+(S.latComp?'on':'off'));}}]}
+    {l:()=>(S.qwerty?'√ ':'  ')+'QWERTY Input',a:()=>{S.qwerty=!S.qwerty;allOff();}},{l:()=>'  Keyboard Octave: '+nname(base()),k:'- =',a:()=>octave(1)},{l:()=>(S.showKb?'√ ':'  ')+'On-screen Keys',a:()=>{S.showKb=!S.showKb;fit();}},{l:'-'},{l:()=>(scaleMode==='auto'?'√ ':'  ')+'Scale: Auto (whole steps)',a:()=>setScale('auto')},{l:()=>(scaleMode==='fill'?'√ ':'  ')+'Scale: Fill Window',a:()=>setScale('fill')},{l:()=>(scaleMode==='1'?'√ ':'  ')+'Scale: 1x',a:()=>setScale('1')},{l:()=>(scaleMode==='2'?'√ ':'  ')+'Scale: 2x',a:()=>setScale('2')},{l:()=>(scaleMode==='3'?'√ ':'  ')+'Scale: 3x',a:()=>setScale('3')},{l:'-'},{l:()=>(S.midi?'√ ':'  ')+'Web MIDI Input',a:()=>toggleMidi()},{l:()=>(S.midiVel?'√ ':'  ')+'MIDI Velocity',a:()=>{S.midiVel=!S.midiVel;flashMsg('MIDI velocity '+(S.midiVel?'on':'off: notes play at 100'));}},{l:'-'},{l:()=>'  Audio Latency: '+(ac?Math.round(outLatency()*1000+128/ac.sampleRate*1000)+' ms':'—')+'…',a:latencyInfo},{l:()=>(S.latComp?'√ ':'  ')+'Record Latency Compensation',a:()=>{S.latComp=!S.latComp;flashMsg('Record compensation '+(S.latComp?'on':'off'));}}]}
 ];
 const lab=v=>typeof v==='function'?v():v;
 function menuBarGeom(){let x=6;return MENUS.map(m=>{const w=tw(m.name)+14;const r={x,w};x+=w;return r;});}
@@ -2326,14 +2385,14 @@ function drawEdit(){
   // lane: a per-note value (velocity; pitch, pan, start on drums) or one automation lane
   {const ty=GY+GH;clr(0,ty,W,VY-2-ty,WH);hl(0,ty,W);T('GATE',4,ty+11);
     GATES.forEach(([l],i)=>{const bx=40+i*40,on=(S.gate||0)===i;box(bx,ty+3,38,16,on?B:WH);T(l,bx+19,ty+11,on?WH:B,'center');
-      reg(bx,ty+3,38,16,{down:()=>{S.gate=i;if(i&&S.selSet.size){snapshot();for(const m of S.selSet)m.d=GATES[i][1];}dirty=true;},hint:['Gate '+l,i?'Pencil and step input enter 16th notes '+(i===5?'tied into the next step (legato: mono tracks glide without retriggering)':'held for '+l+' of the step')+'. With notes selected, clicking sets their length.':'Pencil uses the quantize grid and you drag to set the length.','`']});});
+      reg(bx,ty+3,38,16,{down:()=>{S.gate=i;if(i&&S.selSet.size){snapshot();for(const m of S.selSet)m.d=GATES[i][1];fitPart(part(S.editPart));}dirty=true;},hint:['Gate '+l,i?'Pencil and step input enter 16th notes '+(i===5?'tied into the next step (legato: mono tracks glide without retriggering)':'held for '+l+' of the step')+'. With notes selected, clicking sets their length.':'Pencil uses the quantize grid and you drag to set the length.','`']});});
     T('NEW VEL',300,ty+11);box(358,ty+3,34,16);T(String(S.newVel),375,ty+11,B,'center');
     reg(300,ty+3,92,16,{wheel:d=>{S.newVel=clamp(S.newVel-d*4,1,127);dirty=true;},drag:d=>{S.newVel=clamp(Math.round(S.newVel+d),1,127);dirty=true;},hint:['New note velocity','Scroll or drag. Used by the pencil and step input.',''],cur:'vert'});
     if(S.gate)T('pencil: click/drag fills 16ths',W-6,ty+11,B,'right',14);}
   hl(0,VY-2,W);clr(0,VY-1,W,VH+2,WH);vl(GX-1,VY-1,VH+2);
   const NL=NOTE_LANES[S.lane],ln=NL?null:p.auto[S.lane];
   clr(0,VY-1,GX-1,20,B);T(laneShort(S.lane,p.track),GX/2,VY+8,WH,'center',tw(laneShort(S.lane,p.track))>34?13:16);
-  if(!NL){const m=ln?ln.m:S.padMode;box(4,VY+21,GX-9,14,m==='h'?B:WH);T(m==='h'?'HLD':'SMT',GX/2-2,VY+28,m==='h'?WH:B,'center');}
+  if(!NL){const m=ln?ln.m:S.tracks[p.track].padMode;box(4,VY+21,GX-9,14,m==='h'?B:WH);T(m==='h'?'HLD':'SMT',GX/2-2,VY+28,m==='h'?WH:B,'center');}
   if(NL){
     // bars grow from the lane's default value: the floor for velocity and start, the middle for pitch and pan
     const [,,mn,mx,def]=NL,yv=v=>VY+VH-1-Math.round((v-mn)/(mx-mn)*(VH-2)),y0=yv(S.lane==='vel'?mn:def);
@@ -2362,7 +2421,7 @@ function drawEdit(){
     const blink=Math.floor(performance.now()/400)%2;clr(x-1,38,32,12,blink?B:WH);T('STEP',x+2,44,blink?WH:B);}}
   const rel=S.pos-p.start;if(rel>=ES&&rel<=ES+V.vis){const x=Math.floor(GX+((rel)-ES)*ppt);ctx.globalCompositeOperation='difference';clr(x,38,1,TBY-38,WH);ctx.globalCompositeOperation='source-over';}
 }
-function laneList(p){const s=new Set(isDrumT(p.track)?['vel','pt','pn','st']:['vel']);for(const k in p.auto)if(p.auto[k].pts.length)s.add(k);for(const id of [S.padX,S.padY])if(!PD(p.track,id)[6])s.add(String(id));if(!NOTE_LANES[S.lane])s.add(String(S.lane));return [...s];}
+function laneList(p){const s=new Set(isDrumT(p.track)?['vel','pt','pn','st']:['vel']);for(const k in p.auto)if(p.auto[k].pts.length)s.add(k);const t=padOf(p.track);s.add(String(t.padX));s.add(String(t.padY));if(!NOTE_LANES[S.lane])s.add(String(S.lane));return [...s];}
 
 /* ---------- SYNTH ---------- */
 const SYN_COLS=[['VCO',[0,2,1,19]],['VCO1',[6,9,null,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['OUTPUT',[31,32,'nv',33]]];
@@ -2384,6 +2443,8 @@ function paramCell(T_,id,x,y,w){
   else knobCell(x,y,w,p[0],v,p[2],p[3],p[4],set,hintFor(id),pfmt(id,v));
 }
 const NVOPTS=[1,2,3,4,6,8];
+function soloBtn(ti,x){const t=S.tracks[ti];box(x,40,16,14,t.solo?B:WH);T('S',x+8,47,t.solo?WH:B,'center');
+  reg(x,40,16,14,{down:()=>{t.solo=!t.solo;sendMute(ti);dirty=true;},hint:['Solo','Plays only soloed tracks. The same as S in the arrange window and the mixer.','']});}
 function kindSwitch(ti,x){const t=S.tracks[ti];[['SYNTH','synth'],['DRUM','drum']].forEach(([l,k],i)=>{const bx=x+i*40,on=t.kind===k;box(bx,40,38,14,on?B:WH);T(l,bx+19,47,on?WH:B,'center',14);
   reg(bx,40,38,14,{down:()=>setKind(ti,k),hint:['Track type','SYNTH plays one DS-10 voice. DRUM makes the track a kit of 8 drums, each recorded from its own DS-10 voice and effects into a 2-second sample.','']});});}
 function drawSynth(){if(isDrumT(S.active))return drawKit(S.active);drawPatch(synthTarget(S.active));}
@@ -2393,12 +2454,16 @@ function drawKit(ti){
   box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>setActive(ti-1),hint:['Previous track','','↑']});
   box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
   T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);reg(42,40,tw('T'+(ti+1)+' '+t.name.toUpperCase())+6,14,{down:()=>renameTrack(ti),hint:['Track name','Click to rename this track.','']});
+  soloBtn(ti,214);
   T('INTERP',300,47,B,'left',14);
   INTERP.forEach((l,i)=>{const bx=346+i*44,on=(t.interp??1)===i;box(bx,40,42,14,on?B:WH);T(l,bx+21,47,on?WH:B,'center',14);
     reg(bx,40,42,14,{down:()=>setInterp(ti,i),hint:['Sample interpolation: '+l,['Linear: cheapest, with a gritty top when pitched.','Cubic (4-point Hermite): smoother, still aliases when pitched far up.','Windowed sinc: band-limited, clean when pitched up, uses the most CPU.'][i],'']});});
   kindSwitch(ti,W-82);
+  {const on=S.presetPick;box(236,40,56,14,on?B:WH);T('KITS',264,47,on?WH:B,'center');reg(236,40,56,14,{down:()=>{S.presetPick=!S.presetPick;dirty=true;},hint:['Kit library','Your saved drum kits: save this kit, load one into this track, or save and load kits as .json files.','']});}
+  if(S.presetPick)return drawLibrary(null,ti);
   for(let d=0;d<NDRUM;d++){const dr=t.drums[d],y=60+d*34;
-    box(4,y,22,28);T(String(d+1),15,y+14,B,'center');
+    box(4,y,22,28,dr.mute?B:WH);T(String(d+1),15,y+(dr.mute?9:14),dr.mute?WH:B,'center');if(dr.mute)T('M',15,y+21,WH,'center',13);
+    reg(4,y,22,28,{down:()=>toggleDrumMute(ti,d),hint:['Drum '+(d+1)+' mute','Silences this drum in the whole kit, in every part and when played live, at once. Saved with the song.',String(d+1)]});
     T(dr.name,32,y+9);reg(30,y+1,76,15,{down:()=>renameDrum(ti,d),hint:['Drum name','Click to rename this drum.','']});
     T('HOLD '+holdMs(dr.hold)+'ms',32,y+22,B,'left',13);noteField(ti,d,478,y+16,92);
     drawWave(dr.recording||dr.dirty?null:dr.wave,110,y,252,28,dr.recording?'RECORDING':dr.dirty?'NOT RECORDED':null);reg(110,y,252,28,{down:()=>audition(d,110),hint:['Drum '+(d+1)+' '+dr.name,'Click to hear the recorded sample.','']});
@@ -2434,6 +2499,7 @@ function drawPatch(T_){
   box(4,40,16,14);T('<',12,47,B,'center');reg(4,40,16,14,{down:()=>setActive(ti-1),hint:['Previous track','','↑']});
   box(22,40,16,14);T('>',30,47,B,'center');reg(22,40,16,14,{down:()=>setActive(ti+1),hint:['Next track','','↓']});
   T('T'+(ti+1)+' '+t.name.toUpperCase(),44,47);reg(42,40,tw('T'+(ti+1)+' '+t.name.toUpperCase())+6,14,{down:()=>renameTrack(ti),hint:['Track name','Click to rename this track.','']});
+  soloBtn(ti,214);
   }
   const bx=[[240,'PRESET',()=>{S.presetPick=!S.presetPick;},'Patch library','Browse the DS-10 factory set and 502 patches from the ds10emu song saves. Legacy patches (L) get their CUTOFF converted when loaded into a ZDF voice.'],[300,'INIT',initPatch,'Init patch','Resets all synth knobs to the DS-10 init patch.'],[352,'COPY',copyPatch,'Copy patch','Copies this track\'s synth knobs.'],[404,'PASTE',pastePatch,'Paste patch','Pastes copied knobs onto this track.']];
   for(const [x,l,f,h1,h2] of bx){const on=l==='PRESET'&&S.presetPick,bw=l==='PRESET'?56:48;box(x,40,bw,14,on?B:WH);T(l,x+bw/2,47,on?WH:B,'center');reg(x,40,bw,14,{down:f,hint:[h1,h2,'']});}
@@ -2468,28 +2534,38 @@ function drawPatch(T_){
       wheel:d=>T_.set(sk,clamp(sv-d,0,6)),hint:[P[sk][1],'Click to choose what modulates '+title.toLowerCase()+': SIN, SAW, SQR or S&H from the MG, the EG, or VCO2 at audio rate.','']});
     if(c<5)dotV(x+cw-2,262,74,2);
   });
-  if(S.presetPick){
+  if(S.presetPick)drawLibrary(T_,ti);
+}
+// the patch library over the Synth window or the drum editor; with T_ null it is the kit library of drum track ti
+function drawLibrary(T_,ti){
+  const kit=!T_,dr=T_&&T_.dr;
     clr(0,56,W,TBY-56,WH);hl(0,56,W);
     reg(0,56,W,TBY-56,{down:()=>{S.presetPick=false;},hint:['Patch library','Click a patch to load it, or click elsewhere to close.','Esc']});
-    const LIBG=libGroups(),LW=200,RH=15,vis=Math.floor((TBY-76)/RH);
+    const LIBG=kit?[['USER KITS',userKits]]:libGroups(),LW=200,RH=15,vis=Math.floor((TBY-76)/RH);
     S.pbScroll=clamp(S.pbScroll||0,0,Math.max(0,LIBG.length-vis));
-    if(S.pbSrc==null||S.pbSrc>=LIBG.length)S.pbSrc=userPatches.length?0:1;
+    if(kit)S.pbSrc=0;else if(S.pbSrc==null||S.pbSrc>=LIBG.length)S.pbSrc=userPatches.length?0:1;
     T('SOURCE  '+LIBG.length,6,66,B,'left',14);vl(LW,57,TBY-57);
     reg(0,58,LW,TBY-58,{down:()=>{},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Sources','USER (your saved patches), the DS-10 factory set, the saved patch banks, then every song in the six ds10emu saves. Scroll the list.','']});
     for(let r=0;r<vis;r++){const gi=S.pbScroll+r;if(gi>=LIBG.length)break;const y=74+r*RH,on=gi===S.pbSrc;
       if(on)clr(1,y,LW-2,RH,B);T(LIBG[gi][0].replace('/',' / '),6,y+RH/2,on?WH:B,'left',14);T(String(LIBG[gi][1].length),LW-6,y+RH/2,on?WH:B,'right',14);
-      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;S.pgScroll=0;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Source',gi===0?'Your own patches, kept in this browser. Click to list them; SAVE stores the current patch here.':LIBG[gi][0]+': '+LIBG[gi][1].length+' patches. Click to list them.','']});}
+      reg(1,y,LW-2,RH,{down:()=>{S.pbSrc=gi;S.pgScroll=0;dirty=true;},wheel:d=>{S.pbScroll=clamp(S.pbScroll+d*3,0,Math.max(0,LIBG.length-vis));dirty=true;},hint:['Source',kit?'Your own drum kits, kept '+storeWhere()+'. SAVE KIT… stores all 8 drums of this track.':gi===0?'Your own patches, kept '+storeWhere()+'. Click to list them; SAVE PATCH… stores the current patch.':LIBG[gi][0]+': '+LIBG[gi][1].length+' patches. Click to list them.','']});}
     if(S.pbScroll>0)T('▲ more',LW/2,TBY-2-RH*vis-2,B,'center',13);
-    const user=S.pbSrc===0,g=LIBG[S.pbSrc];T((user?'USER':g[0])+'  ·  click to load into '+(dr?'drum '+(T_.d+1):'T'+(ti+1)),LW+8,66,B,'left',14);
-    const tiles=(user?[null]:[]).concat(g[1]),rows=Math.ceil(tiles.length/3),vrows=Math.floor((TBY-74)/31);
+    const user=S.pbSrc===0,g=LIBG[S.pbSrc];T((user?g[0]:g[0])+'  ·  click to load into '+(kit?'the kit of T'+(ti+1):dr?'drum '+(T_.d+1):'T'+(ti+1)),LW+8,66,B,'left',14);
+    const tiles=(user?['save','lfile']:[]).concat(g[1]),rows=Math.ceil(tiles.length/3),vrows=Math.floor((TBY-74)/31);
     S.pgScroll=clamp(S.pgScroll||0,0,Math.max(0,rows-vrows));
-    reg(LW+1,58,W-LW-1,TBY-58,{down:()=>{},wheel:d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;},hint:['Patches','Click a patch to load it. Scroll for more.','']});
+    reg(LW+1,58,W-LW-1,TBY-58,{down:()=>{},wheel:d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;},hint:[kit?'Kits':'Patches',kit?'Click a kit to load it into this track (asks first). Scroll for more.':'Click a patch to load it. Scroll for more.','']});
     if(S.pgScroll>0)T('▲ more',W-8,66,B,'right',13);
     if(rows-S.pgScroll>vrows)T('▼ more',W-8,TBY-6,B,'right',13);
     tiles.forEach((tile,i)=>{const r=Math.floor(i/3)-S.pgScroll;if(r<0||r>=vrows)return;const cx=LW+6+(i%3)*144,cy=74+r*31;
       const wheel=d=>{S.pgScroll=clamp(S.pgScroll+d,0,Math.max(0,rows-vrows));dirty=true;};
-      if(!tile){box(cx,cy,140,28);T('+ SAVE CURRENT',cx+70,cy+14,B,'center');
-        reg(cx,cy,140,28,{down:()=>savePatchAs(T_),wheel,hint:['Save patch','Stores the current patch (31 synth knobs and the highpass) as a user patch in this browser. Saving under an existing name asks before replacing it.','']});return;}
+      if(typeof tile==='string'){const A=kit?{save:['SAVE KIT…',()=>fileSel('save','kit',kitCtx(ti)),'Save kit','Saves all 8 drums of this track (voices, HOLD, NOTE, VOL, PAN, effects) as a kit, '+storeWhere()+' or to a .kit.json file.'],
+            lfile:['OPEN KIT…',()=>fileSel('open','kit',kitCtx(ti)),'Open kit','Opens a kit '+storeWhere()+' or a .kit.json file into this track, replacing all 8 drums (asks first).']}
+          :{save:['SAVE PATCH…',()=>fileSel('save','patch',patchCtx(T_)),'Save patch','Saves the current patch (31 synth knobs and the highpass), '+storeWhere()+' or to a .patch.json file.'],
+            lfile:['OPEN PATCH…',()=>fileSel('open','patch',patchCtx(T_)),'Open patch','Opens a patch '+storeWhere()+' or a .patch.json file into '+(dr?'this drum':'this track')+'.']};
+        const [l,f,h1,h2]=A[tile];box(cx,cy,140,28);T(l,cx+70,cy+14,B,'center');reg(cx,cy,140,28,{down:f,wheel,hint:[h1,h2,'']});return;}
+      if(kit){const xi=userKits.indexOf(tile);box(cx,cy,140,28);T(tile.name,cx+6,cy+14,B,'left',tile.name.length>12?14:16);
+        reg(cx,cy,140,28,{down:()=>loadKit(ti,tile.name,tile.drums),wheel,hint:[tile.name,'User kit: '+tile.drums.map(d=>d.name).join(' ')+'. Click to load it into this track (asks first).','']});
+        box(cx+122,cy+4,14,14);T('x',cx+129,cy+10,B,'center',14);reg(cx+122,cy+4,14,14,{down:()=>deleteUserKit(xi),wheel,hint:['Delete user kit','Removes '+tile.name+' from your user kits (asks first).','']});return;}
       const [n,isDr,k]=tile,leg=isLegacy(tile,user),conv=leg&&!targetExact(T_);
       const ck=conv?zdfCutoff(k[11],k[12]):k[11];
       const same=k.every((v,j)=>T_.k[j]===(j===11?ck:v));box(cx,cy,140,28,same?B:WH);T(n,cx+6,cy+14,same?WH:B,'left',n.length>12?14:16);
@@ -2501,12 +2577,11 @@ function drawPatch(T_){
       if(user){const xi=user?userPatches.indexOf(tile):-1;box(cx+122,cy+4,14,14,same?WH:WH);T('x',cx+129,cy+10,B,'center',14);
         reg(cx+122,cy+4,14,14,{down:()=>deleteUserPatch(xi),wheel,hint:['Delete user patch','Removes '+n+' from your user patches (asks first).','']});}
     });
-  }
 }
-/* user patches: kept in this browser's localStorage, shown as the USER source of the patch library */
+/* user patches: the patch documents of the store (the storage, or this browser), shown as the USER source of the patch library.
+   [name, drum, k, voice] with .etag, filled by refreshLib. UP_KEY held them before the store and is moved into it on start. */
 const UP_KEY='arranger-st.patches';
-let userPatches=[];try{userPatches=JSON.parse(localStorage.getItem(UP_KEY)||'[]');}catch(e){userPatches=[];}
-function saveUserPatches(){try{localStorage.setItem(UP_KEY,JSON.stringify(userPatches));}catch(e){flashMsg('Could not save: browser storage unavailable');}}
+const userPatches=[];
 function libGroups(){return [['USER',userPatches]].concat(LIB);}
 /* Legacy patches were made for the DS-10 cutoff mapping, where PEAK also raises the cutoff: every library patch,
    user patches saved from a DS-10 EXACT voice, and user patches saved before the ZDF voice stopped doing that
@@ -2529,16 +2604,380 @@ function zdfCutoff(c,p){
   for(let x=0;x<=127;x++){const f=ZDF_OCT*vcfFreq(x,0),d=Math.abs(Math.log(f/want));if(d<bd){bd=d;best=x;}}
   return best;
 }
-function savePatchAs(T_){
-  const def=T_.dr?T_.dr.name:S.tracks[T_.ti].name;
-  askText('Save patch as',def,12,name=>{name=name.toUpperCase();
-    const k=T_.k.slice(0,33),i=userPatches.findIndex(p=>p[0]===name),put=()=>{
-      const e=[name,T_.dr?1:0,k,targetExact(T_)?'ds10':'zdf'];if(i>=0)userPatches[i]=e;else userPatches.push(e);
-      saveUserPatches();S.pbSrc=0;S.presetPick=true;flashMsg('Saved patch '+name);dirty=true;};
-    if(i>=0)dialog(['A user patch called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:put}]);else put();});
-}
+/* user kits: the kit documents of the store, the USER KITS library of the kit view ({name, drums, etag}); UK_KEY as UP_KEY */
+const UK_KEY='arranger-st.kits';
+const userKits=[];
+const kitOut=t=>t.drums.map(drumOut);
+function deleteUserKit(i){const n=userKits[i].name;
+  dialog(['Delete the user kit',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{removeDoc('kit',n,userKits[i].etag);S.presetPick=true;}}]);}
+// replaces all 8 drums of track ti; the drum mutes are cleared, the kit is recorded again
+function loadKit(ti,name,drums){
+  dialog(['Replace all 8 drums of T'+(ti+1),'with the kit '+name+'?'],[{l:'Cancel'},{l:'Load',def:true,a:()=>{const t=S.tracks[ti];allOff();
+    t.drums=kitIn(drums.map(d=>({...d,mute:false})));post({t:'kind',tr:ti,kind:'drum',drums:t.drums.map(drumDef)});
+    S.presetPick=false;flashMsg('Loaded kit '+name+' into T'+(ti+1));songChanged();dirty=true;}}]);}
+function loadKitFile(ti,o){if(!o||o.type!=='kit'||!Array.isArray(o.drums))throw new Error('No kit in this file');loadKit(ti,String(o.name||'KIT').slice(0,12).toUpperCase(),o.drums);}
+function loadPatchFile(T_,o,src='file'){if(!o||o.type!=='patch'||!Array.isArray(o.k))throw new Error('No patch in this file');
+  loadPreset(T_,src,String(o.name||'PATCH').slice(0,12),patchK(o),o.voice!=='zdf');}
 function deleteUserPatch(i){const n=userPatches[i][0];
-  dialog(['Delete the user patch',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{userPatches.splice(i,1);saveUserPatches();S.presetPick=true;flashMsg('Deleted patch '+n);dirty=true;}}]);}
+  dialog(['Delete the user patch',n+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>{removeDoc('patch',n,userPatches[i].etag);S.presetPick=true;}}]);}
+/* ---------- document store: songs, patches and kits ----------
+   They are documents of the types song, patch and kit; the bodies are the same JSON as the .json files.
+   With a stuff-storage server connected they are kept there (STORAGE), otherwise in this browser (BROWSER). */
+// Client for stuff-storage. Copy this file into your app:
+//
+//   import { Storage } from "./client.js";
+//   const storage = new Storage();
+//   if (!storage.connected) await storage.connect("https://storage.example");
+//   const songs = storage.type("song");
+//   await songs.save("my song", "...");
+//
+// The storage server is not part of the app: the user names it when
+// connecting, and it is remembered in the browser's local storage.
+
+const KEY = "stuff-storage";
+
+// "storage.example" -> "https://storage.example"
+function normalize(server) {
+  server = String(server ?? "").trim();
+  if (!server) throw new Error("Enter the address of your storage.");
+  if (!/^https?:\/\//i.test(server)) {
+    const local = /^(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(server);
+    server = (local ? "http://" : "https://") + server;
+  }
+  try {
+    return new URL(server).origin;
+  } catch {
+    throw new Error("That is not a valid address.");
+  }
+}
+
+class Storage {
+  // Set by the constructor if a connect just ended without a token, for
+  // example "access_denied" when the user did not allow the app. Otherwise
+  // null.
+  connectError = null;
+
+  constructor() {
+    this.#finishConnect();
+  }
+
+  // The storage server last connected to, or null.
+  get server() {
+    return localStorage.getItem(`${KEY}:server`);
+  }
+
+  get token() {
+    return localStorage.getItem(`${KEY}:token`);
+  }
+
+  get connected() {
+    return this.server !== null && this.token !== null;
+  }
+
+  // Sends the browser to the given storage server to sign in and approve
+  // this app. The server redirects back to the current page with a token.
+  // Throws if there is no storage server at that address.
+  async connect(server) {
+    server = normalize(server);
+    try {
+      const info = await (await fetch(`${server}/api/info`)).json();
+      if (info.service !== "stuff-storage") throw new Error();
+    } catch {
+      throw new Error(`No storage found at ${server}.`);
+    }
+    const state = crypto.randomUUID();
+    sessionStorage.setItem(`${KEY}:pending`, JSON.stringify({ state, server }));
+    const back = location.origin + location.pathname + location.search;
+    location.assign(
+      `${server}/authorize?redirect_uri=${encodeURIComponent(back)}&state=${state}`,
+    );
+  }
+
+  #finishConnect() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const pending = JSON.parse(sessionStorage.getItem(`${KEY}:pending`) ?? "null");
+    if (!pending || params.get("state") !== pending.state) return;
+    sessionStorage.removeItem(`${KEY}:pending`);
+    history.replaceState(null, "", location.pathname + location.search);
+    const token = params.get("token");
+    if (!token) {
+      this.connectError = params.get("error") ?? "no_token";
+      return;
+    }
+    localStorage.setItem(`${KEY}:server`, pending.server);
+    localStorage.setItem(`${KEY}:token`, token);
+  }
+
+  // Revokes the token on the server and forgets it. The server address is
+  // kept, so that it can be offered again.
+  async disconnect() {
+    try {
+      await this.#call("/api/token", { method: "DELETE" });
+    } catch {}
+    localStorage.removeItem(`${KEY}:token`);
+  }
+
+  async #call(path, opts = {}) {
+    if (!this.connected) throw new Error("storage is not connected");
+    const res = await fetch(this.server + path, {
+      ...opts,
+      headers: { ...opts.headers, Authorization: `Bearer ${this.token}` },
+    });
+    if (res.status === 401) localStorage.removeItem(`${KEY}:token`);
+    if (!res.ok) {
+      const err = new Error((await res.text()) || res.statusText);
+      err.status = res.status;
+      throw err;
+    }
+    return res;
+  }
+
+  // { user, app, used, quota }, used and quota in bytes
+  async whoami() {
+    return (await this.#call("/api/whoami")).json();
+  }
+
+  // All documents of this app, of every type:
+  // [{ type, name, size, modified, etag }], modified is unix time in seconds
+  async list() {
+    return (await this.#call("/api/docs")).json();
+  }
+
+  // The documents of one type, for example storage.type("song"). The type is
+  // an identifier chosen by the app (letters, digits, "-", "_", "."). Names
+  // are separate per type: a song and a patch can have the same name.
+  type(type) {
+    const base = `/api/docs/${encodeURIComponent(type)}`;
+    const path = (name) => `${base}/${encodeURIComponent(name)}`;
+    return {
+      // [{ type, name, size, modified, etag }]
+      list: async () => (await this.#call(base)).json(),
+
+      // { data, etag }; `as` is "text", "json", "blob" or "arrayBuffer"
+      load: async (name, as = "text") => {
+        const res = await this.#call(path(name));
+        return { data: await res[as](), etag: res.headers.get("ETag") };
+      },
+
+      // Returns the new etag. With `ifMatch` (an etag) the save fails with
+      // status 412 if the stored document has changed since. With `create`
+      // it fails with 412 if the document already exists.
+      save: async (name, body, { ifMatch, create } = {}) => {
+        const headers = {};
+        if (ifMatch) headers["If-Match"] = ifMatch;
+        if (create) headers["If-None-Match"] = "*";
+        const res = await this.#call(path(name), { method: "PUT", headers, body });
+        return res.headers.get("ETag");
+      },
+
+      // With `ifMatch` (an etag) the removal fails with status 412 if the
+      // stored document has changed since.
+      remove: async (name, { ifMatch } = {}) => {
+        const headers = {};
+        if (ifMatch) headers["If-Match"] = ifMatch;
+        await this.#call(path(name), { method: "DELETE", headers });
+      },
+    };
+  }
+}
+
+const storage=new Storage(),isFileUrl=location.protocol==='file:';
+const BDOC_KEY='arranger-st.docs',DOC_KEY='arranger-st.doc',CONNECTING_KEY='arranger-st.connecting';
+const TYPES={song:{word:'song',max:24,upper:false,ext:'.json'},patch:{word:'patch',max:12,upper:true,ext:'.patch.json'},kit:{word:'kit',max:12,upper:true,ext:'.kit.json'}};
+// the browser store answers like the storage (etags, conditional save and remove, the same status codes)
+const browserStore={
+  all(){try{return JSON.parse(localStorage.getItem(BDOC_KEY)||'{}')||{};}catch(e){return {};}},
+  put(a){try{localStorage.setItem(BDOC_KEY,JSON.stringify(a));}catch(e){const er=new Error('browser storage is full or off');er.status=507;throw er;}},
+  type(ty){const fail=(st,m)=>{const e=new Error(m);e.status=st;throw e;};
+    return {
+      list:async()=>{const t=this.all()[ty]||{};return Object.keys(t).sort().map(name=>({type:ty,name,size:t[name].d.length,modified:t[name].m,etag:t[name].e}));},
+      load:async(name,as='text')=>{const o=(this.all()[ty]||{})[name];if(!o)fail(404,'no such document');return {data:as==='json'?JSON.parse(o.d):o.d,etag:o.e};},
+      save:async(name,body,{ifMatch,create}={})=>{const a=this.all(),t=a[ty]=a[ty]||{},o=t[name];
+        if(ifMatch&&(!o||o.e!==ifMatch))fail(412,'the stored document has changed');if(create&&o)fail(412,'the document exists');
+        const e='"b'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+'"';t[name]={d:String(body),m:Math.floor(Date.now()/1000),e};this.put(a);return e;},
+      remove:async(name,{ifMatch}={})=>{const a=this.all(),t=a[ty]||{},o=t[name];if(!o)fail(404,'no such document');if(ifMatch&&o.e!==ifMatch)fail(412,'the stored document has changed');delete t[name];this.put(a);}};}
+};
+const store=()=>storage.connected?storage:browserStore;
+const storeName=()=>storage.connected?'STORAGE':'BROWSER';
+const storeWhere=()=>storage.connected?'in the storage':'in this browser';
+let storeWho='',storeBusy=0;   // storeWho: "user@host" once whoami answered; storeBusy: calls in flight (status line)
+async function sto(f){storeBusy++;dirty=true;try{return await f();}finally{storeBusy--;dirty=true;}}
+function storeErr(e){
+  const s=e&&e.status;
+  if(s===401){storeWho='';dialog(['The storage connection has ended.','Connect again in the File menu.']);refreshLib();}
+  else if(s===507)dialog([storage.connected?'Your storage is full.':'The browser storage is full or off.','Nothing was saved.']);
+  else if(s===413)dialog(['This is too large for the storage','(16 MiB at most). Nothing was saved.']);
+  else if(s===404)dialog(['That document is not there any more.']);
+  else dialog(['The storage did not answer.',String(e&&e.message||'').slice(0,40)]);
+  dirty=true;
+}
+// the current song's stored copy: {where, server, name, etag}; a save with the same name sends the etag (If-Match)
+let songDoc=null;try{songDoc=JSON.parse(localStorage.getItem(DOC_KEY)||'null');}catch(e){}
+function setSongDoc(d){songDoc=d;try{if(d)localStorage.setItem(DOC_KEY,JSON.stringify(d));else localStorage.removeItem(DOC_KEY);}catch(e){}}
+const patchDoc=(name,drum,voice,k)=>({app:'arranger-st10',type:'patch',name,drum:!!drum,voice,k});
+const patchK=o=>Array.from({length:33},(_,i)=>clamp(Math.round(+o.k[i]||0),i<31?P[i][2]:0,i<31?P[i][3]:127));
+// fills the USER patches and USER KITS from the current store
+async function refreshLib(){
+  const src=store(),ps=[],ks=[];
+  try{await sto(async()=>{
+    const [pl,kl]=await Promise.all([src.type('patch').list(),src.type('kit').list()]);
+    const get=(ty,l)=>Promise.all(l.map(d=>src.type(ty).load(d.name,'json').then(r=>r.data).catch(()=>null)));
+    const [pd,kd]=await Promise.all([get('patch',pl),get('kit',kl)]);
+    pd.forEach((o,i)=>{if(o&&Array.isArray(o.k))ps.push(Object.assign([pl[i].name,o.drum?1:0,patchK(o),o.voice==='zdf'?'zdf':'ds10'],{etag:pl[i].etag}));});
+    kd.forEach((o,i)=>{if(o&&Array.isArray(o.drums))ks.push({name:kl[i].name,drums:o.drums,etag:kl[i].etag});});});}
+  catch(e){if(e&&e.status===401)storeErr(e);return;}
+  userPatches.splice(0,userPatches.length,...ps);userKits.splice(0,userKits.length,...ks);dirty=true;
+}
+// user patches and kits from before the document store become browser documents
+function migrateOldLib(){
+  try{const a=browserStore.all(),m=Math.floor(Date.now()/1000);let n=0;
+    const add=(ty,name,o)=>{a[ty]=a[ty]||{};if(!a[ty][name]){a[ty][name]={d:JSON.stringify(o),m,e:'"m'+(n++)+m.toString(36)+'"'};}};
+    const up=JSON.parse(localStorage.getItem(UP_KEY)||'[]'),uk=JSON.parse(localStorage.getItem(UK_KEY)||'[]');
+    for(const p of up)if(Array.isArray(p)&&typeof p[0]==='string'&&Array.isArray(p[2]))add('patch',p[0],patchDoc(p[0],p[1],p[3]==='zdf'?'zdf':'ds10',p[2]));
+    for(const k of uk)if(k&&typeof k.name==='string'&&Array.isArray(k.drums))add('kit',k.name,{app:'arranger-st10',type:'kit',name:k.name,drums:k.drums});
+    if(up.length||uk.length){browserStore.put(a);localStorage.removeItem(UP_KEY);localStorage.removeItem(UK_KEY);}}
+  catch(e){}
+}
+function connectStore(){
+  if(isFileUrl)return dialog(['A storage needs the app on a web page','(https, or http on localhost).','A file opened from disk cannot connect.']);
+  askText('Storage address',storage.server?new URL(storage.server).host:'',40,addr=>{
+    clearTimeout(saveTimer);autosave();savePrefs();   // connecting leaves the page
+    try{sessionStorage.setItem(CONNECTING_KEY,'1');}catch(e){}
+    sto(()=>storage.connect(addr)).catch(e=>{try{sessionStorage.removeItem(CONNECTING_KEY);}catch(_){}dialog(['Cannot connect.',String(e.message||'').slice(0,44)]);});});
+}
+function disconnectStore(){
+  dialog(['Disconnect from the storage?','Songs, patches and kits are then','kept in this browser again.'],[{l:'Cancel'},{l:'Disconnect',def:true,a:()=>
+    sto(()=>storage.disconnect()).then(()=>{storeWho='';refreshLib();flashMsg('Storage disconnected');})}]);
+}
+function browserCounts(){const a=browserStore.all(),c={};for(const ty in TYPES)c[ty]=Object.keys(a[ty]||{}).length;return c;}
+function offerMove(always){
+  if(!storage.connected)return flashMsg('Connect a storage first (File menu)');
+  const c=browserCounts(),n=c.song+c.patch+c.kit;
+  if(!n){if(always)flashMsg('Nothing in this browser to move');return;}
+  const pl=(n,w,ws)=>n+' '+(n===1?w:ws);
+  dialog(['Move '+pl(c.song,'song','songs')+', '+pl(c.patch,'patch','patches')+' and '+pl(c.kit,'kit','kits'),'from this browser to the storage?','','Items whose name is taken in the','storage stay in this browser.'],
+    [{l:'Not Now'},{l:'Move',def:true,a:moveToStorage}]);
+}
+async function moveToStorage(){
+  const a=browserStore.all(),kept=[];let moved=0;
+  try{await sto(async()=>{for(const ty in TYPES)for(const name in a[ty]||{}){
+    try{const etag=await storage.type(ty).save(name,a[ty][name].d,{create:true});moved++;await browserStore.type(ty).remove(name);
+      // the song being edited follows its stored copy
+      if(ty==='song'&&songDoc&&songDoc.where==='BROWSER'&&songDoc.name===name)setSongDoc({where:'STORAGE',server:storage.server,name,etag});}
+    catch(e){if(e.status===412)kept.push(name);else throw e;}}});}
+  catch(e){storeErr(e);}
+  if(songDoc&&songDoc.where==='BROWSER')setSongDoc(null);   // it stayed in this browser
+  refreshLib();
+  dialog(['Moved '+moved+(moved===1?' item':' items')+' to the storage.',...(kept.length?[kept.length+' stayed in this browser:',kept.slice(0,4).join(', ').slice(0,44)+(kept.length>4?' …':'')]:[])]);
+}
+function initStore(){
+  migrateOldLib();
+  if(storage.connectError)dialog(['The storage is not connected:',storage.connectError==='access_denied'?'the app was not allowed.':storage.connectError]);
+  let just=false;try{just=sessionStorage.getItem(CONNECTING_KEY)==='1';sessionStorage.removeItem(CONNECTING_KEY);}catch(e){}
+  refreshLib();
+  if(storage.connected)sto(()=>storage.whoami()).then(w=>{storeWho=w.user+'@'+new URL(storage.server).host;
+    if(just){flashMsg('Connected to '+storeWho);offerMove(false);}},e=>{if(e&&e.status===401)storeErr(e);});
+}
+
+// loading and saving a document; ctx: {name, body(name), saved(name, etag, where), open(obj, name, etag), etagFor(name)}
+function getDoc(type,name,ctx){
+  sto(()=>store().type(type).load(name,'text')).then(r=>{let o;
+    try{o=JSON.parse(r.data);}catch(e){return dialog(['That is not a '+TYPES[type].word+'.']);}
+    try{ctx.open(o,name,r.etag);}catch(e){dialog(['That is not a '+TYPES[type].word+'.',String(e.message||'').slice(0,40)]);}},storeErr);
+}
+function putDoc(type,name,ctx){
+  const word=TYPES[type].word,src=store(),where=storeName(),body=ctx.body(name),match=ctx.etagFor?ctx.etagFor(name):null;
+  const go=opts=>sto(()=>src.type(type).save(name,body,opts)).then(etag=>{ctx.saved(name,etag,where);flashMsg('Saved '+word+' '+name+' '+storeWhere());},e=>{
+    if(!e||e.status!==412)return storeErr(e);
+    if(opts.ifMatch)dialog(['The stored '+word+' '+name,'was changed elsewhere after you','opened or saved it.'],[{l:'Cancel',def:true},{l:'Open It',a:()=>getDoc(type,name,ctx)},{l:'Overwrite',a:()=>go({})}]);
+    else dialog(['A '+word+' called',name,'already exists. Replace it?'],[{l:'Cancel'},{l:'Replace',def:true,a:()=>go({})}]);});
+  go(match?{ifMatch:match}:{create:true});
+}
+function removeDoc(type,name,etag,after){const word=TYPES[type].word;
+  sto(()=>store().type(type).remove(name,etag?{ifMatch:etag}:{})).then(()=>{
+    if(type==='song'&&songDoc&&songDoc.name===name&&songDoc.where===storeName())setSongDoc(null);
+    if(type!=='song')refreshLib();flashMsg('Deleted '+word+' '+name);if(after)after();},
+    e=>{if(e&&e.status===412)dialog(['The '+word+' '+name+' was changed','elsewhere. It was not deleted.']);else storeErr(e);if(after)after();});
+}
+function songCtx(){return {name:S.songName||'untitled',
+  etagFor:n=>{const d=songDoc;return d&&d.name===n&&n===S.songName&&d.where===storeName()&&(d.where==='BROWSER'||d.server===storage.server)?d.etag:null;},
+  body:n=>{const o=songObj();o.name=n;return JSON.stringify(o);},
+  saved:(n,etag,where)=>{S.songName=n;setSongDoc({where,server:storage.server,name:n,etag});songChanged();},
+  savedFile:n=>{if(n!==S.songName){S.songName=n;songChanged();}},
+  open:(o,n,etag)=>{if(!o||!Array.isArray(o.tracks)||!Array.isArray(o.parts))throw new Error('Not an Arranger ST10 song');
+    const where=storeName();snapshot();loadSong(o);
+    if(n!=null){S.songName=n;setSongDoc({where,server:storage.server,name:n,etag});}else setSongDoc(null);
+    songChanged();flashMsg('Loaded song '+S.songName);}};}
+function patchCtx(T_){return {name:T_.dr?T_.dr.name:S.tracks[T_.ti].name,
+  body:n=>JSON.stringify(patchDoc(n,T_.dr,targetExact(T_)?'ds10':'zdf',T_.k.slice(0,33))),
+  saved:()=>{refreshLib();S.pbSrc=0;S.presetPick=true;},
+  open:(o,n)=>loadPatchFile(T_,n!=null?{...o,name:n}:o,n!=null?storeName().toLowerCase():'file')};}
+function kitCtx(ti){const t=S.tracks[ti];return {name:t.name,
+  body:n=>JSON.stringify({app:'arranger-st10',type:'kit',name:n,drums:kitOut(t)}),
+  saved:()=>{refreshLib();S.presetPick=true;},
+  open:(o,n)=>loadKitFile(ti,n!=null?{...o,name:n}:o)};}
+// File > Save and Ctrl+S: to the storage when one is connected, otherwise a .json file
+function quickSave(){if(!storage.connected)return saveJSON();putDoc('song',S.songName||'untitled',songCtx());}
+
+/* the file selector: open or save a song, patch or kit, from or to the store (STORAGE or BROWSER) or a .json file */
+const FS={x:40,y:44,w:560,h:300,rows:10,rh:16};
+const fitName=(type,n)=>{n=String(n||'').slice(0,TYPES[type].max);return TYPES[type].upper?n.toUpperCase():n;};
+function fileSel(mode,type,ctx){S.fsel={mode,type,ctx,src:'store',items:null,err:'',sel:-1,top:0,name:mode==='save'?fitName(type,ctx.name):''};
+  S.menu=S.popup=S.toolbox=null;allOff();fselList();dirty=true;}
+function fselList(){const f=S.fsel;if(!f)return;f.items=null;f.err='';const src=store();
+  sto(()=>src.type(f.type).list()).then(l=>{if(S.fsel!==f)return;f.items=l;f.sel=l.findIndex(d=>d.name===f.name);f.top=clamp(f.sel-FS.rows+1,0,Math.max(0,l.length-FS.rows));dirty=true;},
+    e=>{if(S.fsel!==f)return;f.items=[];f.err=e&&e.status===401?'not connected any more':'the storage did not answer';if(e&&e.status===401)storeErr(e);dirty=true;});}
+function fselPick(i){const f=S.fsel,d=f.items[i];f.sel=i;if(f.mode==='save')f.name=fitName(f.type,d.name);f.top=clamp(f.top,i-FS.rows+1,i);dirty=true;}
+function fselOk(){const f=S.fsel;if(!f)return;const ty=TYPES[f.type];
+  if(f.mode==='save'){const n=fitName(f.type,f.name.trim());if(!n)return flashMsg('Type a name first');S.fsel=null;
+    if(f.src==='file'){saveFile(fileName(n,ty.ext),f.ctx.body(n));if(f.ctx.savedFile)f.ctx.savedFile(n);}else putDoc(f.type,n,f.ctx);}
+  else if(f.src==='file'){S.fsel=null;openFile(o=>f.ctx.open(o,null,null),'a '+ty.word);}
+  else{const d=f.items&&f.items[f.sel];if(!d)return flashMsg('Click a '+ty.word+' first');S.fsel=null;getDoc(f.type,d.name,f.ctx);}
+  dirty=true;}
+function fselKey(e){const f=S.fsel,k=e.key;
+  if(k==='Enter')fselOk();else if(k==='Escape')S.fsel=null;
+  else if(k==='ArrowUp'||k==='ArrowDown'){if(f.src==='store'&&f.items&&f.items.length)fselPick(clamp(f.sel+(k==='ArrowUp'?-1:1),0,f.items.length-1));}
+  else if(f.mode==='save'){if(k==='Backspace')f.name=f.name.slice(0,-1);
+    else if(k.length===1&&!e.ctrlKey&&!e.metaKey&&f.name.length<TYPES[f.type].max&&/^[\x20-\x7e]$/.test(k))f.name+=TYPES[f.type].upper?k.toUpperCase():k;}
+  dirty=true;}
+const fmtDate=s=>{const d=new Date(s*1000),z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());};
+const fmtSize=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB';
+function drawFsel(){
+  const f=S.fsel;if(!f)return;const ty=TYPES[f.type],{x,y,w,h,rows,rh}=FS,save=f.mode==='save',file=f.src==='file',word=ty.word;
+  reg(0,0,W,H,{down:()=>{},wheel:()=>{},hint:[(save?'Save ':'Open ')+word,'Choose where, then '+(save?'SAVE':'OPEN')+'. Esc cancels.','Esc']});
+  clr(x+4,y+4,w,h,B);clr(x,y,w,h,WH);box(x,y,w,h);box(x+3,y+3,w-6,h-6);
+  T((save?'SAVE ':'OPEN ')+word.toUpperCase(),x+w/2,y+17,B,'center');
+  [['store',storeName()],['file','.JSON FILE']].forEach(([k,l],i)=>{const bx=x+14+i*96,by=y+30,on=f.src===k;box(bx,by,90,18,on?B:WH);T(l,bx+45,by+9,on?WH:B,'center');
+    reg(bx,by,90,18,{down:()=>{f.src=k;if(k==='store')fselList();dirty=true;},hint:[l,k==='file'?(save?'Writes a '+ty.ext+' file to your downloads.':'Reads a .json file from this computer.')
+      :storage.connected?'Your storage'+(storeWho?' ('+storeWho+')':'')+'.':'Kept in this browser. Connect a storage (button on the right, or the File menu) to keep them there.','']});});
+  const cbx=x+w-104,cby=y+30;box(cbx,cby,90,18);T(storage.connected?'DISCONNECT':'CONNECT…',cbx+45,cby+9,B,'center');
+  reg(cbx,cby,90,18,{down:()=>{if(storage.connected)disconnectStore();else connectStore();},hint:storage.connected?['Disconnect','Stops using the storage'+(storeWho?' '+storeWho:'')+'. Songs, patches and kits are kept in this browser again.','']:['Connect storage','Asks for the address of a stuff-storage server and signs in there.','']});
+  // user@host between the source buttons and CONNECT/DISCONNECT, shortened with … when it does not fit
+  {const room=cbx-6-(x+14+2*96+4);let who=storage.connected?(storeWho||'connected'):'no storage';
+    if(tw(who,13)>room){while(who.length>1&&tw(who+'…',13)>room)who=who.slice(0,-1);who+='…';}
+    T(who,cbx-6,cby+9,B,'right',13);}
+  const lx=x+14,ly=y+56,lw=w-28,lh=rows*rh+4,n=f.items?f.items.length:0,maxTop=Math.max(0,n-rows);
+  box(lx,ly,lw,lh);
+  const wheel=d=>{f.top=clamp(f.top+d,0,maxTop);dirty=true;};
+  reg(lx,ly,lw,lh,{down:()=>{},wheel,hint:[file?'.json file':storeName(),file?'':'Click to choose, double-click to '+(save?'save over it':'open')+'. The wheel scrolls.','']});
+  const msg=(a)=>a.forEach((s,i)=>T(s,lx+lw/2,ly+lh/2+(i-(a.length-1)/2)*18,B,'center'));
+  if(file)msg(save?['SAVE writes '+fileName(fitName(f.type,f.name)||'untitled',ty.ext),'to your downloads.']:['OPEN… lets you choose a '+ty.ext+' file','on this computer.']);
+  else if(!f.items)msg(['loading…']);
+  else if(f.err)msg([f.err]);
+  else if(!n)msg(['No '+word+'s '+storeWhere()+' yet.']);
+  else{for(let r=0;r<rows;r++){const i=f.top+r,d=f.items[i];if(!d)break;const ry=ly+2+r*rh,on=i===f.sel,c=on?WH:B;
+      if(on)clr(lx+1,ry,lw-2,rh,B);
+      T(d.name,lx+6,ry+rh/2,c,'left',15);T(fmtDate(d.modified),lx+lw-170,ry+rh/2,c,'left',14);T(fmtSize(d.size),lx+lw-28,ry+rh/2,c,'right',14);
+      reg(lx+1,ry,lw-24,rh,{down:()=>fselPick(i),dbl:()=>{fselPick(i);fselOk();},wheel,hint:[d.name,word+', saved '+fmtDate(d.modified)+'. Double-click to '+(save?'save over it':'open it')+'.','']});
+      box(lx+lw-20,ry+2,13,12,on?WH:WH);T('x',lx+lw-13.5,ry+7.5,B,'center',13);
+      reg(lx+lw-20,ry+1,14,14,{down:()=>dialog(['Delete the '+word,d.name+'?'],[{l:'Cancel'},{l:'Delete',def:true,a:()=>removeDoc(f.type,d.name,d.etag,fselList)}]),wheel,hint:['Delete '+word,'Deletes '+d.name+' '+storeWhere()+' (asks first).','']});}
+    if(f.top>0)T('▲',lx+lw-4,ly-7,B,'right',13);if(f.top<maxTop)T('▼',lx+lw-4,ly+lh+7,B,'right',13);}
+  if(save){const ny=ly+lh+10;T('NAME',lx,ny+10);box(lx+50,ny,lw-50,20);T(f.name,lx+56,ny+10);
+    if(Math.floor(performance.now()/450)%2===0)clr(lx+57+tw(f.name),ny+3,7,14,B);
+    reg(lx+50,ny,lw-50,20,{down:()=>{},hint:['Name','Type the name of the '+word+(ty.upper?' (capitals, ':' (')+ty.max+' characters at most).','']});}
+  [['Cancel',false],[save?'SAVE':file?'OPEN…':'OPEN',true]].forEach(([l,o],i)=>{const bx=x+w/2-86+i*100,by=y+h-32;box(bx,by,72,22);if(o)box(bx+2,by+2,68,18);T(l,bx+36,by+11,B,'center');
+    reg(bx,by,72,22,{down:()=>{if(o)fselOk();else{S.fsel=null;dirty=true;}},hint:[l,o?'Enter':'Esc','']});});
+}
 function loadPreset(T_,src,n,k,legacy){
   const ti=T_.ti,t=S.tracks[ti];let conv='';
   if(legacy&&!targetExact(T_)){const c=zdfCutoff(k[11],k[12]);if(c!==k[11]){conv='  (cutoff '+k[11]+' > '+c+')';k=k.slice();k[11]=c;}}
@@ -2593,7 +3032,7 @@ function drawMixer(){
       miniKnob(x,160,'PAN',t.lv[34],0,127,64,v=>setParam(i,34,v,true),['Pan','DS-10 linear pan law. Double-click to centre.',''],pfmt(34,t.lv[34]));
       fader(x+18,200,96,t.lv[33],v=>setParam(i,33,v,true),['Volume','Drag the fader. Double-click for 100.',''],meters.tr[i]*2);
       const btn=(bx,l,on,f,h)=>{box(bx,306,24,14,on?B:WH);T(l,bx+12,313,on?WH:B,'center');reg(bx,306,24,14,{down:f,hint:h});};
-      btn(x+4,'M',t.mute,()=>{t.mute=!t.mute;sendMute(i);dirty=true;},['Mute','Silences the track.','']);
+      btn(x+4,'M',t.mute,()=>toggleTrackMute(i),['Mute','Silences the track.',String(i+1)]);
       btn(x+30,'S',t.solo,()=>{t.solo=!t.solo;sendMute(i);dirty=true;},['Solo','Plays only soloed tracks.','']);
       T(String(t.lv[33]),x+SW/2,328,B,'center');
     }else if(isB){
@@ -2706,7 +3145,7 @@ function drawToolbox(){
     drawBm(CUR[c.t==='pointer'?'arrow':c.t],c.x+c.w/2,c.y+c.h/2,true);
     vl(c.x+c.w,c.y,c.h);hl(c.x,c.y+c.h,c.w);});
 }
-function dialogGeom(){const L=S.dialog.lines;const w=Math.max(220,...L.map(s=>tw(s)+40)),h=L.length*16+60;return {x:(W-w)/2|0,y:(H-h)/2|0,w,h};}
+function dialogGeom(){const L=S.dialog.lines;const w=Math.max(220,S.dialog.buttons.length*86+30,...L.map(s=>tw(s)+40)),h=L.length*16+60;return {x:(W-w)/2|0,y:(H-h)/2|0,w,h};}
 function drawDialog(){
   if(!S.dialog)return;const g=dialogGeom();
   box(g.x,g.y,g.w,g.h);box(g.x+3,g.y+3,g.w-6,g.h-6);
@@ -2733,12 +3172,12 @@ function render(){
   drawTransport();
   if(S.menu!=null)drawList(menuGeom(S.menu));
   if(S.popup)drawList(popupGeom());
-  drawToolbox();drawDialog();drawInput();
+  drawToolbox();drawFsel();drawDialog();drawInput();
   if(S.mx>=0)drawBm(CUR[cursorFor(S.mx,S.my)],S.mx,S.my);
-  $('#saveLbl').textContent=saveState;
+  $('#saveLbl').textContent=storeBusy?'storage…':saveState;
 }
 function cursorFor(x,y){
-  if(S.dialog||S.menu!=null||S.toolbox||S.popup||y<38||y>=TBY)return regionAt(x,y)?.cur||'arrow';
+  if(S.dialog||S.fsel||S.input||S.menu!=null||S.toolbox||S.popup||y<38||y>=TBY)return regionAt(x,y)?.cur||'arrow';
   if(S.view==='arr'){if(x>=TLX&&y>=TRY&&y<TRY+8*TRH){
       if(S.tool==='pointer'){const p=partAtTick(Math.floor((y-TRY)/TRH),xToTick(x));if(p&&x>=tickToX(p.start+p.len)-4)return 'resize';return 'arrow';}
       return S.tool;}}
@@ -2750,7 +3189,13 @@ function cursorFor(x,y){
 }
 
 /* ---------- canvas interaction ---------- */
-function mpos(e){const r=cv.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*W/r.width),y:Math.floor((e.clientY-r.top)*H/r.height)};}
+function mpos(e){const r=cv.getBoundingClientRect(),fy=(e.clientY-r.top)*H/r.height;S.fy=fy;return {x:Math.floor((e.clientX-r.left)*W/r.width),y:Math.floor(fy)};}
+// value under the pointer in the Key Edit lane, from the sub-pixel position; with Shift held it moves 8x slower
+// from where Shift was first held, so every value of PITCH, PAN, START and VEL can be reached
+let laneFine=null;
+function laneVal(y,mn,mx,e){const fy=S.fy!=null&&Math.floor(S.fy)===y?S.fy:y+0.5,a=mn+(VY+VH-0.5-fy)/(VH-2)*(mx-mn);
+  if(!(e&&e.shiftKey)){laneFine=null;return clamp(Math.round(a),mn,mx);}
+  if(!laneFine)laneFine={a0:a};return clamp(Math.round(laneFine.a0+(a-laneFine.a0)/8),mn,mx);}
 const inR=(r,x,y)=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;
 function regionAt(x,y){for(let i=regions.length-1;i>=0;i--)if(inR(regions[i],x,y))return regions[i];return null;}
 let lastDown={t:0,x:0,y:0};
@@ -2781,6 +3226,7 @@ cv.addEventListener('pointerdown',e=>{
   const now=performance.now(),dbl=now-lastDown.t<350&&Math.abs(x-lastDown.x)<5&&Math.abs(y-lastDown.y)<5;lastDown={t:dbl?0:now,x,y};
   if(S.input){const r=regionAt(x,y);if(r&&r.down)r.down(e);return;}
   if(S.dialog){const r=dialogBtns().find(r=>inR(r,x,y));if(r)dialogAnswer(r.o);return;}
+  if(S.fsel){const r=regionAt(x,y);if(r){if(dbl&&r.dbl)r.dbl();else if(r.down)r.down(e);}return;}
   if(S.toolbox){const c=toolboxCells().find(c=>inR(c,x,y));if(c)setTool(c.t);S.toolbox=null;return;}
   if(S.popup){const g=popupGeom();const it=g.rows.find(r=>inR(r,x,y));S.popup=null;if(it&&it.o.l!=='-')it.o.a();return;}
   if(S.menu!=null){const g=menuGeom(S.menu);const it=g.rows.find(r=>inR(r,x,y));
@@ -2863,17 +3309,17 @@ function editDown(x,y,e,dbl){
   if(x<GX&&y>=GY&&y<GY+GH){const pitch=pAtY(y),G=eg();if(G.dr)noteOn('ptr',60,100,pitch);else noteOn('ptr',pitch,100);S.drag={up:()=>noteOff('ptr')};return;}
   if(x<GX&&y>=VY-2&&y<TBY){
     if(y<VY+19){const L=laneList(p);S.lane=L[(L.indexOf(String(S.lane))+1)%L.length];S.ptSel=new Set();}
-    else if(!NOTE_LANES[S.lane]){snapshot();const ln=p.auto[S.lane];if(ln)ln.m=ln.m==='h'?'s':'h';else S.padMode=S.padMode==='h'?'s':'h';}
+    else if(!NOTE_LANES[S.lane]){snapshot();const ln=p.auto[S.lane];if(ln)ln.m=ln.m==='h'?'s':'h';else{const t=S.tracks[p.track];t.padMode=t.padMode==='h'?'s':'h';songChanged();}}
     return;}
   if(y>=VY-2&&y<TBY&&x>=GX){
     let snap=false;
     const NL=NOTE_LANES[S.lane];
     if(NL){
-      const [,,mn,mx,,f]=NL,set=(x2,y2)=>{const v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
+      laneFine=null;const [,,mn,mx,,f]=NL,set=(x2,y2,ev)=>{const v=laneVal(y2,mn,mx,ev);
         for(const n of p.notes){const nx=Math.round(GX+(n.t-ES)*ppt);if(Math.abs(nx-x2)<=3&&(!S.selSet.size||isSel(n))){if(!snap){snapshot();snap=true;}n[f]=v;S.laneNote=n;}}};
-      set(x,y);S.drag={move:set,up:()=>{S.laneNote=null;songChanged();dirty=true;}};return;}
+      set(x,y,e);S.drag={move:set,up:()=>{S.laneNote=null;songChanged();dirty=true;}};return;}
     const id=+S.lane,mn=PD(p.track,id)[2],mx=PD(p.track,id)[3];if(PD(p.track,id)[6])return;
-    const ln=()=>p.auto[id]||(p.auto[id]={m:S.padMode,pts:[]});
+    const ln=()=>p.auto[id]||(p.auto[id]={m:S.tracks[p.track].padMode,pts:[]});
     if(S.tool==='eraser'){const er=x2=>{const L=p.auto[id];if(!L)return;const t=((x2-GX)/ppt+ES);const before=L.pts.length;L.pts=L.pts.filter(pt=>Math.abs(pt.t-t)>q()/2);if(L.pts.length!==before&&!snap){snap=true;}};snapshot();er(x);S.drag={move:er};return;}
     if(S.tool==='pointer'){
       const L=p.auto[id],yv=v=>VY+VH-1-Math.round((v-mn)/(mx-mn)*(VH-2)),vy=y2=>mn+(VY+VH-1-y2)/(VH-2)*(mx-mn);
@@ -2895,38 +3341,41 @@ function editDown(x,y,e,dbl){
           S.ptSel=new Set(keep);if(L)for(const pt of L.pts){const py=yv(pt.v);if(pt.t>=t0&&pt.t<=t1&&py>=ya-1&&py<=yb+1)S.ptSel.add(pt);}},
         up:()=>{S.band=null;dirty=true;}};
       return;}
-    snapshot();let lastT=null;
-    const setA=(x2,y2)=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/q())*q(),0,p.len-1),v=clamp(Math.round(mn+(VY+VH-1-y2)/(VH-2)*(mx-mn)),mn,mx);
+    snapshot();let lastT=null;laneFine=null;
+    const setA=(x2,y2,ev)=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/q())*q(),0,p.len-1),v=laneVal(y2,mn,mx,ev);
       const L=ln();const lo=lastT==null?t:Math.min(lastT,t),hi=lastT==null?t:Math.max(lastT,t);
       L.pts=L.pts.filter(pt=>pt.t<lo||pt.t>hi);
       if(lastT!=null&&lastT!==t){const lv=L._lv;for(let tt=lo;tt<=hi;tt+=q()){const f=(tt-lastT)/(t-lastT);L.pts.push({t:tt,v:Math.round(lv+(v-lv)*f)});}}
       else L.pts.push({t,v});
       L.pts.sort((a,b)=>a.t-b.t);L._lv=v;lastT=t;};
-    setA(x,y);S.drag={move:setA,up:()=>{const L=p.auto[id];if(L)delete L._lv;songChanged();}};return;
+    setA(x,y,e);S.drag={move:setA,up:()=>{const L=p.auto[id];if(L)delete L._lv;songChanged();}};return;
   }
   if(!(x>=GX&&y>=GY&&y<GY+GH))return;
   const tk=((x-GX)/ppt+ES),pitch=pAtY(y),n=noteAtXY(x,y),tool=S.tool,G=eg();
   if(tool==='eraser'){let snap=false;const er=(x2,y2)=>{const nn=noteAtXY(x2,y2);if(nn){if(!snap){snapshot();snap=true;}p.notes=p.notes.filter(o=>o!==nn);S.selSet.delete(nn);if(S.selNote===nn)S.selNote=null;}};er(x,y);S.drag={move:er};return;}
   if(tool==='pencil'&&S.gate){
     const g=gateLen();snapshot();
-    if(n){n.d=g;selOnly(n);audition(n.p,n.v,n);songChanged();return;}
+    if(n){n.d=g;selOnly(n);audition(n.p,n.v,n);fitPart(p);songChanged();return;}
     let last=-1;const paint=x2=>{const t=clamp(Math.floor(((x2-GX)/ppt+ES)/24)*24,0,p.len-24);if(t===last)return;last=t;
       if(!p.notes.some(o=>o.t===t&&o.p===pitch)){const nn={t,p:pitch,v:S.newVel,d:g};p.notes.push(nn);selOnly(nn);}};
-    paint(x);audition(pitch,S.newVel);S.drag={move:x2=>paint(x2),up:songChanged};return;}
+    paint(x);audition(pitch,S.newVel);S.drag={move:x2=>paint(x2),up:()=>{fitPart(p);songChanged();}};return;}
   if(n){
     if(e.shiftKey&&tool==='pointer'){if(isSel(n)){S.selSet.delete(n);if(S.selNote===n)S.selNote=null;}else{S.selSet.add(n);S.selNote=n;}return;}
     if(!isSel(n))selOnly(n);else S.selNote=n;
     audition(n.p,n.v,n);
     // the clicked note is the reference; every selected note moves or stretches by the same amount
-    const edge=tool==='pencil'||x>=noteRight(n)-3,ox=x,oy=y,ot=n.t,op=n.p,od=n.d,grp=selList().map(m=>({m,t:m.t,p:m.p,d:m.d}));let started=false;
-    S.drag={move:(x2,y2,ev)=>{if(!started&&Math.abs(x2-ox)<3&&Math.abs(y2-oy)<3)return;if(!started){snapshot();started=true;}
-      const g=ev.altKey?1:q(),dt=(x2-ox)/ppt;
+    // Alt-drag on a note's body copies the note or the selected group; the copies move and the originals stay
+    const edge=tool==='pencil'||x>=noteRight(n)-3,copy=e.altKey&&!edge,ox=x,oy=y,ot=n.t,op=n.p,od=n.d,grp=selList().map(m=>({m,t:m.t,p:m.p,d:m.d}));let started=false,rn=n;
+    S.drag={move:(x2,y2,ev)=>{if(!started&&Math.abs(x2-ox)<3&&Math.abs(y2-oy)<3)return;
+      if(!started){snapshot();started=true;
+        if(copy){S.selSet=new Set();for(const o of grp){const c={...o.m};p.notes.push(c);S.selSet.add(c);if(o.m===n)rn=c;o.m=c;}S.selNote=rn;}}
+      const g=ev.shiftKey?1:q(),dt=(x2-ox)/ppt;
       if(edge){const dd=Math.round((od+dt)/g)*g-od;for(const o of grp)o.m.d=Math.max(Math.min(g,q()),o.d+dd);}
       else{
         let dT=Math.round((ot+dt)/g)*g-ot,dP=-Math.round((y2-oy)/G.rh);
         const minT=Math.min(...grp.map(o=>o.t)),maxT=Math.max(...grp.map(o=>o.t)),minP=Math.min(...grp.map(o=>o.p)),maxP=Math.max(...grp.map(o=>o.p));
         dT=clamp(dT,-minT,p.len-1-maxT);dP=clamp(dP,-minP,G.maxP-maxP);
-        const moved=n.p!==op+dP;for(const o of grp){o.m.t=o.t+dT;o.m.p=o.p+dP;}if(moved)audition(n.p,n.v,n);}},up:()=>{if(started)songChanged();}};
+        const moved=rn.p!==op+dP;for(const o of grp){o.m.t=o.t+dT;o.m.p=o.p+dP;}if(moved)audition(rn.p,rn.v,rn);}},up:()=>{if(started){fitPart(p);songChanged();}}};
     return;}
   if(tool==='pointer'&&!dbl){
     if(!e.shiftKey)selOnly(null);
@@ -2938,7 +3387,7 @@ function editDown(x,y,e,dbl){
     return;}
   selOnly(null);
   if(tool==='pencil'||dbl){snapshot();const st=clamp(Math.floor(tk/q())*q(),0,p.len-1);const nn={t:st,p:pitch,v:100,d:q()};p.notes.push(nn);selOnly(nn);audition(pitch,100);
-    S.drag={move:x2=>{nn.d=Math.max(q(),Math.ceil((((x2-GX)/ppt+ES)-st)/q())*q());}};}
+    S.drag={move:x2=>{nn.d=Math.max(q(),Math.ceil((((x2-GX)/ppt+ES)-st)/q())*q());},up:()=>{fitPart(p);songChanged();}};}
 }
 
 /* ---------- hints ---------- */
@@ -2966,8 +3415,8 @@ function canvasHint(x,y){
     if(y<56)return x<GX?['Pitch readout','Shows the pitch under the pointer.','']:['Ruler','Click to set the song position inside this part. Double-click to fit the whole part. Wheel scrolls, Ctrl+wheel zooms in whole bars, Shift+wheel scrolls pitch.',''];
     if(x<GX&&y<GY+GH)return eg().dr?['Drums','Click a row to hear that drum. Notes in a row play that drum.','']:['Keyboard','Click a key to hear the pitch on this track.',''];
     if(x<GX&&y>=VY-2)return ['Lane','Click the name to switch between velocity and this part\'s automation lanes; scroll it to pick any knob. The box below switches smooth or hold.',''];
-    if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With notes selected, only those change; with none selected, any note under the pointer.','']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid. The dotted line is the patch value. Right-press to switch tools.','Tab'];
-    const tl={pointer:['Pointer','Drag on empty grid to select a group; Shift-click adds or removes a note; Ctrl+A selects all. Dragging a selected note moves or stretches the whole group (Alt: no snap). Ctrl+C/X/V copy, cut, paste at the song position. Double-click empty grid adds a note.'],
+    if(y>=VY-2&&y<TBY)return NOTE_LANES[S.lane]?[NOTE_LANES[S.lane][1]+' lane','Drag across the bars to set each note\'s value'+(S.lane==='vel'?'':'; the dotted line is the default')+'. With notes selected, only those change; with none selected, any note under the pointer. Hold Shift for fine steps.','Shift']:['Automation lane: '+PD(part(S.editPart).track,+S.lane)[1],S.tool==='pointer'?'Pointer: click a point to select it (Shift adds), drag on empty lane to box-select, drag a selected point to move the group (Alt: off grid). Del deletes. Right-press for pencil or eraser.':S.tool==='eraser'?'Eraser: click or drag over points to delete them. Right-press to switch tools.':'Pencil: drag to draw values on the quantize grid (Shift: fine steps). The dotted line is the patch value. Right-press to switch tools.','Tab'];
+    const tl={pointer:['Pointer','Drag on empty grid to select a group; Shift-click adds or removes a note; Ctrl+A selects all. Dragging a selected note moves or stretches the whole group (Shift: no snap); Alt-drag copies it. Ctrl+C/X/V copy, cut, paste at the song position. Double-click empty grid adds a note.'],
       pencil:['Pencil','Click to draw a note one quantize step long; drag to stretch it.'],eraser:['Eraser','Click or drag over notes to delete them.']}[S.tool]||['',''];
     return [tl[0],tl[1]+(S.step?' Step input is on: play notes to enter them, Space for a rest, Backspace to step back.':' Enter while stopped starts step input.'),'Tab'];
   }
@@ -2976,18 +3425,22 @@ function canvasHint(x,y){
 
 /* ---------- KAOSS pad window ---------- */
 const PADR={x:8,y:62,w:400,h:268};
-function padTarget(axis,d){const k=axis==='x'?'padX':'padY',ti=inputTrack();let v=S[k];for(let n=0;n<NA;n++){v=(v+d+NA)%NA;if(!PD(ti,v)[6])break;}S[k]=v;songChanged();dirty=true;}
+// every track keeps its own pad targets and curve; a target the track cannot use (a synth knob on a drum kit) falls back to its VOLUME / PAN
+function padOf(ti){const t=S.tracks[ti];if(PD(ti,t.padX)[6])t.padX=33;if(PD(ti,t.padY)[6])t.padY=34;return t;}
+const padId=(ti,ax)=>padOf(ti)[ax==='x'?'padX':'padY'];
+function padTarget(axis,d){const k=axis==='x'?'padX':'padY',ti=inputTrack(),t=S.tracks[ti];let v=t[k];for(let n=0;n<NA;n++){v=(v+d+NA)%NA;if(!PD(ti,v)[6])break;}t[k]=v;songChanged();dirty=true;}
 function padApply(fx,fy){
   S.padVX=fx;S.padVY=fy;const ti=inputTrack();
-  for(const [id,f] of [[S.padX,fx],[S.padY,fy]]){const p=PD(ti,id);if(!p[6])setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
+  for(const [id,f] of [[padId(ti,'x'),fx],[padId(ti,'y'),fy]]){const p=PD(ti,id);if(!p[6])setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
 }
 const padAt=(x,y)=>padApply(clamp((x-PADR.x)/PADR.w,0,1),clamp(1-(y-PADR.y)/PADR.h,0,1));
 function padDown(x,y){ensureAudio();S.padOn=true;padAt(x,y);S.drag={move:(x2,y2)=>padAt(x2,y2),up:padUp};}
-function padUp(){
-  S.padOn=false;const ti=inputTrack();recRelease(ti,[S.padX,S.padY]);
-  for(const id of [S.padX,S.padY]){const t=S.tracks[ti];if(t.lv[id]!==t.k[id]&&!(S.playing&&hasLane(ti,id))){t.lv[id]=t.k[id];post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v:t.k[id]}]});}}
-  dirty=true;
-}
+function padUp(){S.padOn=false;padRelease('x');padRelease('y');}
+function padAxis(ax,f){ensureAudio();const ti=inputTrack(),id=padId(ti,ax),p=PD(ti,id);
+  if(ax==='x')S.padVX=f;else S.padVY=f;if(!p[6])setParam(ti,id,p[2]+f*(p[3]-p[2]),false);}
+function padRelease(ax){const ti=inputTrack(),id=padId(ti,ax),t=S.tracks[ti];recRelease(ti,[id]);
+  if(t.lv[id]!==t.k[id]&&!(S.playing&&hasLane(ti,id))){t.lv[id]=t.k[id];post({t:'ev',ev:[{time:0,k:'knob',tr:ti,id,v:t.k[id]}]});}
+  dirty=true;}
 function hasLane(ti,id){return S.parts.some(p=>p.track===ti&&p.auto&&p.auto[id]&&p.auto[id].pts.length);}
 function drawPad(){
   const ti=inputTrack(),t=S.tracks[ti],R=PADR;
@@ -3000,16 +3453,16 @@ function drawPad(){
   else T('Record + play to write moves',W-8,47,B,'right');
   box(R.x-1,R.y-1,R.w+2,R.h+2);
   for(let i=1;i<8;i++){dotV(R.x+Math.round(i*R.w/8),R.y,R.h,4);dotH(R.x,R.y+Math.round(i*R.h/8),R.w,4);}
-  const DX=PD(ti,S.padX),DY=PD(ti,S.padY),vx=clamp((t.lv[S.padX]-DX[2])/(DX[3]-DX[2]),0,1),vy=clamp((t.lv[S.padY]-DY[2])/(DY[3]-DY[2]),0,1);
+  padOf(ti);const DX=PD(ti,t.padX),DY=PD(ti,t.padY),vx=clamp((t.lv[t.padX]-DX[2])/(DX[3]-DX[2]),0,1),vy=clamp((t.lv[t.padY]-DY[2])/(DY[3]-DY[2]),0,1);
   const px=Math.round(R.x+vx*R.w),py=Math.round(R.y+(1-vy)*R.h);
   if(S.padOn){vl(px,R.y,R.h);hl(R.x,py,R.w);clr(px-5,py-5,11,11,B);}
   else{box(px-5,py-5,11,11);}
   clr(R.x+1,R.y+R.h-15,tw('X '+DX[1])+8,14,B);T('X '+DX[1],R.x+5,R.y+R.h-8,WH);
   clr(R.x+1,R.y+1,tw('Y '+DY[1])+8,14,B);T('Y '+DY[1],R.x+5,R.y+8,WH);
-  reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track. Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
+  reg(R.x,R.y,R.w,R.h,{pad:true,cur:'cross',hint:['KAOSS pad','Drag to move the X and Y knobs of the active track (each track keeps its own targets) (or use a MIDI keyboard\'s mod wheel for X, pitch wheel for Y). Releasing returns them to the patch values. With Record on during playback the moves become automation.','']});
   const x0=424,cw=W-x0-8;
   if(S.padPick)return drawPadPick(ti);
-  const axis=(ax,y)=>{const id=ax==='x'?S.padX:S.padY;
+  const axis=(ax,y)=>{const id=padId(ti,ax);
     T(ax.toUpperCase()+' AXIS',x0,y);
     box(x0,y+8,16,18);T('<',x0+8,y+17,B,'center');box(x0+cw-16,y+8,16,18);T('>',x0+cw-8,y+17,B,'center');
     const nm=PD(ti,id)[1];box(x0+18,y+8,cw-36,18);T(nm.slice(0,22),x0+cw/2,y+17,B,'center',nm.length>19?14:16);
@@ -3019,22 +3472,22 @@ function drawPad(){
     reg(x0+18,y+8,cw-36,18,{down:()=>{S.padPick=ax;dirty=true;},wheel:d=>padTarget(ax,d),hint:h});};
   axis('x',70);axis('y',130);
   T('CURVE',x0,198);
-  [['SMOOTH','s'],['HOLD','h']].forEach(([l,m],i)=>{const bx=x0+i*(cw/2),on=S.padMode===m;box(bx,206,cw/2-2,18,on?B:WH);T(l,bx+cw/4-1,215,on?WH:B,'center');
-    reg(bx,206,cw/2-2,18,{down:()=>{S.padMode=m;songChanged();dirty=true;},hint:['Automation curve','SMOOTH draws a line between recorded points; HOLD keeps each value until the next, for stepped sequences. Applies to lanes recorded from now on.','']});});
+  [['SMOOTH','s'],['HOLD','h']].forEach(([l,m],i)=>{const bx=x0+i*(cw/2),on=t.padMode===m;box(bx,206,cw/2-2,18,on?B:WH);T(l,bx+cw/4-1,215,on?WH:B,'center');
+    reg(bx,206,cw/2-2,18,{down:()=>{t.padMode=m;songChanged();dirty=true;},hint:['Automation curve','SMOOTH draws a line between recorded points; HOLD keeps each value until the next, for stepped sequences. Applies to lanes of this track recorded from now on.','']});});
   T('Recorded lanes show',x0,250);T('in Key Edit under the',x0,266);T('note grid (F2).',x0,282);
 }
 
 // full-page chooser for a pad axis: the synth layout, the patch row, the track strip and both inserts
-const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['MG',[24,25]]];
+const PICK_SYN=[['VCO',[0,2,1,19]],['VCO1',[6,9,18]],['VCO2',[7,8,10,16]],['VCF',[11,12,14,13]],['EG',[20,21,22,23]],['MG / BEND',[24,25,BD]]];
 const PICK_LOW=[['PATCH DEPTH',[3,4,5,15,17],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['PATCH SOURCE',[26,27,28,29,30],['PITCH','VCO1','VCO2','CUTOFF','VCA']],['OUTPUT',[31,32,33,34,35,36]],
   ['INSERT 1',[0,1,2,3,4,5,6,7].map(j=>NP+j)],['INSERT 2',[0,1,2,3,4,5,6,7].map(j=>NP+8+j)]];
 function drawPadPick(ti){
-  const ax=S.padPick,cur=ax==='x'?S.padX:S.padY,other=ax==='x'?S.padY:S.padX,cw=106,bh=15;
+  const ax=S.padPick,cur=padId(ti,ax),other=padId(ti,ax==='x'?'y':'x'),cw=106,bh=15;
   clr(0,56,W,TBY-56,WH);
   reg(0,56,W,TBY-56,{down:()=>{S.padPick=null;dirty=true;},hint:['Choose the '+ax.toUpperCase()+' target','Click a knob. Click elsewhere or press Esc to keep the current one.','Esc']});
   const item=(id,x,y,w,label)=>{const d=PD(ti,id);if(d[6]){T('—',x+w/2,y+bh/2,B,'center',13);return;}
     const on=id===cur;box(x,y,w-2,bh-1,on?B:WH);T(label||d[0],x+5,y+bh/2,on?WH:B,'left',13);if(id===other)T(ax==='x'?'Y':'X',x+w-8,y+bh/2,on?WH:B,'right',13);
-    reg(x,y,w-2,bh-1,{down:()=>{S[ax==='x'?'padX':'padY']=id;S.padPick=null;songChanged();dirty=true;},hint:[d[1],'Moves with the pad\'s '+ax.toUpperCase()+' axis.'+(id===other?' Already on the other axis.':''),'']});};
+    reg(x,y,w-2,bh-1,{down:()=>{S.tracks[ti][ax==='x'?'padX':'padY']=id;S.padPick=null;songChanged();dirty=true;},hint:[d[1],'Moves with the pad\'s '+ax.toUpperCase()+' axis.'+(id===other?' Already on the other axis.':''),'']});};
   T('CHOOSE THE '+ax.toUpperCase()+' AXIS TARGET  ·  T'+(ti+1)+' '+S.tracks[ti].name.toUpperCase(),8,66,B,'left',14);
   PICK_SYN.forEach(([title,ids],c)=>{const x=c*cw+2;clr(x,74,cw-4,11,B);T(title,x+(cw-4)/2,79,WH,'center',13);ids.forEach((id,r)=>item(id,x,87+r*bh,cw-2));});
   PICK_LOW.forEach(([title,ids,labels],c)=>{const x=c*128+2;clr(x,152,124,11,B);T(title,x+62,157,WH,'center',13);
@@ -3129,11 +3582,20 @@ function setScale(m){scaleMode=m;try{localStorage.setItem('arranger-st.scale2',m
 window.addEventListener('resize',fit);
 document.addEventListener('pointerdown',()=>ensureAudio(),{once:true});
 
+// CPU meter: the audio engine reports its share; the UI's is the time spent in frame() per second
+const cpu={dsp:-1,ui:0,busy:0,t0:0,shown:''};
+function cpuMeter(){const now=performance.now();if(!cpu.t0)cpu.t0=now;if(now-cpu.t0<500)return;
+  cpu.ui=cpu.busy/(now-cpu.t0);cpu.busy=0;cpu.t0=now;
+  const s='DSP '+(cpu.dsp<0?'--':Math.round(cpu.dsp*100)+'%')+'  UI '+Math.round(cpu.ui*100)+'%';
+  if(s!==cpu.shown){cpu.shown=s;$('#cpuLbl').textContent=s;}}
+let meterPx='';
 function frame(){
+  const fT=performance.now();
+  savePrefs();
   if(S.playing&&ac){
     const cur=curTick();
     if(S.rec){if(S.recMode==='replace')eraseReplace(prevTick,cur);for(const h of held.values())if(h.rn)h.rn.n.d=recLen(h.rn);
-      if(S.padOn){const ti=inputTrack();for(const [id,f] of [[S.padX,S.padVX],[S.padY,S.padVY]]){const p=PD(ti,id);if(!p[6])recAuto(ti,id,Math.round(p[2]+f*(p[3]-p[2])));}}}
+      if(S.padOn){const ti=inputTrack();for(const [id,f] of [[padId(ti,'x'),S.padVX],[padId(ti,'y'),S.padVY]]){const p=PD(ti,id);if(!p[6])recAuto(ti,id,Math.round(p[2]+f*(p[3]-p[2])));}}}
     prevTick=cur;S.pos=cur;
     if(!cycOn()&&cur>=NBARS*BAR){stop();S.pos=0;}
     if(S.view==='arr'){const bar=Math.floor(cur/BAR);if(bar>=S.scroll+VIS||bar<S.scroll)S.scroll=clamp(bar,0,NBARS-VIS);}
@@ -3142,16 +3604,30 @@ function frame(){
     liveQ.sort((a,b)=>a.at-b.at);
     dirty=true;
   }
-  if(gate.some(g=>g>0)||S.step||S.input||held.size||S.view==='drum'||performance.now()-S.inFlash<500||meters.l>0.001)dirty=true;
+  if(gate.some(g=>g>0)||S.step||S.input||S.fsel||held.size||S.view==='drum'||performance.now()-S.inFlash<500)dirty=true;
   meters.l*=0.97;meters.r*=0.97;for(let i=0;i<8;i++)meters.tr[i]*=0.97;
+  // the level meters are only drawn in the Mixer: redraw for them only there, and only when a bar changes height
+  if(S.view==='mix'){const px=meters.tr.map(v=>Math.round(Math.min(1,v*2)*96)).join()+','+Math.round(Math.min(1,Math.max(meters.l,meters.r))*96);if(px!==meterPx){meterPx=px;dirty=true;}}
   if(dirty){dirty=false;render();}
+  cpu.busy+=performance.now()-fT;cpuMeter();
   requestAnimationFrame(frame);
 }
-window.__ast={S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy};
+/* settings (the Options menu, keyboard octave, note gate) are kept in this browser apart from the song;
+   they are checked once per frame and written when one changed */
+const PREF_KEY='arranger-st.prefs',PREFS=['click','autoQ','recMode','qwerty','oct','showKb','midi','midiVel','latComp','gate'];
+let prefsJSON='';
+function loadPrefs(){let o=null;try{o=JSON.parse(localStorage.getItem(PREF_KEY)||'null');}catch(e){}
+  if(o&&typeof o==='object')for(const k of PREFS)if(o[k]!=null&&typeof o[k]===typeof S[k])S[k]=o[k];
+  S.oct=clamp(S.oct|0,-1,6);S.gate=clamp(S.gate|0,0,GATES.length-1);if(S.recMode!=='replace')S.recMode='overdub';
+  const midi=S.midi;S.midi=false;prefsJSON=JSON.stringify(Object.fromEntries(PREFS.map(k=>[k,k==='midi'?midi:S[k]])));return midi;}
+function savePrefs(){const j=JSON.stringify(Object.fromEntries(PREFS.map(k=>[k,S[k]])));if(j===prefsJSON)return;prefsJSON=j;try{localStorage.setItem(PREF_KEY,j);}catch(e){}}
+window.__ast={storage,fileSel,songCtx,patchCtx,refreshLib,offerMove,userKits,browserStore,S,get ac(){return ac},get ready(){return ready},meters,LIB,userPatches,loadPreset,synthTarget,setExact,setView,zdfCutoff,isLegacy,onMidi};
 (function boot(){
   let ok=false;
   try{const s=localStorage.getItem(LS_KEY);if(s){loadSong(JSON.parse(s));ok=true;}}catch(e){ok=false;}
   if(!ok)loadDemo();
+  const midi=loadPrefs();if(midi)toggleMidi(true);
+  initStore();
   buildKb();fit();
   (document.fonts?document.fonts.load('16px VT323'):Promise.resolve()).catch(()=>{}).then(()=>{dirty=true;requestAnimationFrame(frame);});
 })();
